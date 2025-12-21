@@ -73,6 +73,8 @@
         .active-press:active { transform: scale(0.95); background-color: #f3f4f6; }
         @keyframes scan { 0% { top: 10%; opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { top: 90%; opacity: 0; } }
         .scan-line { position: absolute; left: 10%; right: 10%; height: 2px; background: #4ade80; box-shadow: 0 0 10px #4ade80; animation: scan 2s linear infinite; }
+        /* Safe area padding for iPhones */
+        .pb-safe { padding-bottom: env(safe-area-inset-bottom, 20px); }
     </style>
 </head>
 <body class="bg-green-50 text-gray-900 h-screen w-screen overflow-hidden select-none font-sans">
@@ -89,30 +91,19 @@
             
             useEffect(() => {
                 if (!window.db || !restaurantId) return;
-                // Note: La collection est adaptée au mode (Test ou Prod) via window.appId
                 const collectionPath = window.appId === 'epack-prod-data' ? 'haccp_items' : 'data/haccp_items';
-                
-                // Si on est en mode Canvas (Test), on doit respecter la structure 'artifacts/{appId}/public/data/...'
-                // Si on est en mode Prod (Vos clés), on peut simplifier ou garder la même logique.
-                // Pour simplifier ici et garantir la compatibilité, on garde la logique Canvas mais adaptée
-                
                 let q;
                 if (window.appId === 'epack-prod-data') {
-                    // Mode Perso (Vos clés) : On stocke à la racine ou dans une collection dédiée
-                    q = window.collection(window.db, 'haccp_data', restaurantId, category); // Structure plus propre pour la prod
+                    q = window.collection(window.db, 'haccp_data', restaurantId, category); 
                 } else {
-                    // Mode Canvas (Test)
                     q = window.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'haccp_items');
                 }
                 
                 const unsubscribe = window.onSnapshot(q, (snapshot) => {
                     let items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                    
-                    // Filtrage (uniquement nécessaire en mode Canvas où tout est mélangé)
                     if (window.appId !== 'epack-prod-data') {
                         items = items.filter(item => item.restaurantId === restaurantId && item.category === category);
                     }
-                    
                     items.sort((a, b) => (b[sortField] || 0) - (a[sortField] || 0));
                     setData(items);
                 }, (error) => console.error("Sync error:", error));
@@ -153,7 +144,6 @@
 
             useEffect(() => {
                 if (!window.db || !restaurantId) return;
-                
                 let q;
                 if (window.appId === 'epack-prod-data') {
                      q = window.collection(window.db, 'haccp_logs', restaurantId, logCategory);
@@ -165,12 +155,9 @@
                     const loadedLogs = {};
                     snapshot.docs.forEach(doc => {
                         const d = doc.data();
-                        
                         if (window.appId === 'epack-prod-data') {
-                             // En mode prod, le document ID est la date, c'est plus direct
                              loadedLogs[doc.id] = d.data;
                         } else {
-                             // En mode test
                              if (d.restaurantId === restaurantId && d.category === logCategory) {
                                 loadedLogs[d.date] = d.data;
                             }
@@ -186,11 +173,9 @@
                 const newData = { ...existingData, ...dataToMerge };
 
                 if (window.appId === 'epack-prod-data') {
-                     // Mode Prod : Stockage direct par date
                      const docRef = window.doc(window.db, 'haccp_logs', restaurantId, logCategory, dateStr);
                      await window.setDoc(docRef, { data: newData }, { merge: true });
                 } else {
-                    // Mode Test
                     const docId = `${restaurantId}_${logCategory}_${dateStr}`.replace(/[^a-zA-Z0-9]/g, '_');
                     const docRef = window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'haccp_logs', docId);
                     await window.setDoc(docRef, {
@@ -500,36 +485,9 @@
             );
         };
 
-        const LoginScreen = ({ onLogin }) => {
-            const [id, setId] = useState("");
-            return (
-                <div className="flex items-center justify-center h-full bg-green-50 p-6 animate-fadeIn">
-                    <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md text-center">
-                        <h1 className="text-3xl font-extrabold text-green-700 mb-2">eHygiène<span className="text-green-400">.</span></h1>
-                        <p className="text-gray-500 mb-8">Synchronisation Cloud Sécurisée</p>
-                        <div className="space-y-4">
-                            <div className="text-left">
-                                <label className="text-sm font-bold text-gray-700 ml-1">Identifiant Restaurant</label>
-                                <input 
-                                    type="text" 
-                                    value={id}
-                                    onChange={(e) => setId(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
-                                    placeholder="ex: chez-mario-paris" 
-                                    className="w-full p-4 border-2 border-green-100 rounded-xl focus:border-green-500 outline-none text-lg font-bold bg-green-50/50"
-                                />
-                                <p className="text-xs text-gray-400 mt-1 ml-1">Utilisez le même identifiant sur tous vos appareils.</p>
-                            </div>
-                            <Button onClick={() => id && onLogin(id)} className="w-full py-4 text-lg">Accéder à mon espace</Button>
-                        </div>
-                    </div>
-                </div>
-            );
-        };
-
         const App = () => {
             const [user, setUser] = useState(null);
-            const [restaurantId, setRestaurantId] = useState(localStorage.getItem('haccp_restaurant_id') || '');
-            const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem('haccp_restaurant_id'));
+            const [restaurantId, setRestaurantId] = useState(localStorage.getItem('haccp_restaurant_id') || 'mon-restaurant');
             const [tab, setTab] = useState('traceability');
 
             useEffect(() => {
@@ -546,21 +504,12 @@
                 return () => unsubscribe();
             }, []);
 
-            const handleLogin = (id) => {
-                setRestaurantId(id);
-                localStorage.setItem('haccp_restaurant_id', id);
-                setIsLoggedIn(true);
-            };
+            useEffect(() => {
+                localStorage.setItem('haccp_restaurant_id', restaurantId);
+            }, [restaurantId]);
+
+            if (!user) return <div className="flex items-center justify-center h-full text-green-700 font-bold animate-pulse">Chargement...</div>;
             
-            const handleLogout = () => {
-                localStorage.removeItem('haccp_restaurant_id');
-                setRestaurantId('');
-                setIsLoggedIn(false);
-            }
-
-            if (!user) return <div className="flex items-center justify-center h-full text-green-700 font-bold animate-pulse">Connexion au Cloud...</div>;
-            if (!isLoggedIn) return <LoginScreen onLogin={handleLogin} />;
-
             const MenuBtn = ({ id, label, icon }) => (
                 <button onClick={() => setTab(id)} className={`w-full flex items-center gap-4 px-4 py-4 rounded-xl transition-all ${tab === id ? 'bg-green-600 text-white shadow-lg' : 'text-gray-600 hover:bg-green-50'}`}>
                     <Icon name={icon} className="w-6 h-6"/> <span className="font-semibold text-lg hidden lg:inline">{label}</span>
@@ -588,14 +537,10 @@
                             <button onClick={() => setTab('temperature')} className={`flex flex-col items-center ${tab === 'temperature' ? 'text-green-600' : 'text-gray-400'}`}><Icon name="Thermometer" className="w-6 h-6"/><span className="text-xs">Températures</span></button>
                             <button onClick={() => setTab('cleaning')} className={`flex flex-col items-center ${tab === 'cleaning' ? 'text-green-600' : 'text-gray-400'}`}><Icon name="ClipboardCheck" className="w-6 h-6"/><span className="text-xs">Nettoyage</span></button>
                         </div>
-                        <div className="p-4 border-t text-center text-xs text-gray-400 hidden md:block">
-                             <button onClick={handleLogout} className="text-red-400 hover:text-red-600 flex items-center justify-center gap-2 w-full"><Icon name="LogOut" className="w-4 h-4"/> Déconnexion</button>
-                        </div>
                     </div>
                     <main className="flex-1 flex flex-col h-full overflow-hidden relative w-full order-1 md:order-2 pb-16 md:pb-0">
                         <div className="md:hidden bg-white p-4 border-b flex justify-between items-center">
                             <h1 className="text-xl font-extrabold text-green-700">eHygiène<span className="text-green-400">.</span></h1>
-                            <button onClick={handleLogout} className="text-gray-400"><Icon name="LogOut" className="w-5 h-5"/></button>
                         </div>
                         <div className="flex-1 overflow-y-auto p-4 lg:p-10 w-full">
                             <div className="max-w-5xl mx-auto w-full">
