@@ -16,7 +16,6 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc, updateDoc, query, where, setDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        // Ajout du module de stockage
         import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
 
         // --- CONFIGURATION INTELLIGENTE ---
@@ -48,12 +47,12 @@
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
-        const storage = getStorage(app); // Initialisation du stockage
+        const storage = getStorage(app); 
 
         // Export des fonctions pour React
         window.db = db;
         window.auth = auth;
-        window.storage = storage; // Export pour utilisation dans React
+        window.storage = storage; 
         window.appId = appId;
         window.initialAuthToken = initialAuthToken; 
         
@@ -102,6 +101,27 @@
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
 
+        // --- UTILITAIRE DE COMPRESSION (PLAN B) ---
+        const compressImage = (base64Str, maxWidth = 800, quality = 0.6) => {
+            return new Promise((resolve) => {
+                const img = new Image();
+                img.src = base64Str;
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    let width = img.width;
+                    let height = img.height;
+                    if (width > height) { if (width > maxWidth) { height *= maxWidth / width; width = maxWidth; } } 
+                    else { if (height > maxWidth) { width *= maxWidth / height; height = maxWidth; } }
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+                    resolve(canvas.toDataURL('image/jpeg', quality));
+                };
+                img.onerror = (err) => resolve(base64Str);
+            });
+        };
+
         // --- 1. HOOKS DE SYNCHRONISATION (CLOUD) ---
 
         const useSharedCollection = (restaurantId, category, sortField = 'createdAt') => {
@@ -131,25 +151,50 @@
 
             const addItem = async (item) => {
                 if (!restaurantId) return;
-                try {
-                    // Gestion intelligente de l'upload photo
-                    let finalPhotoUrl = item.photo;
-                    
-                    // Si l'objet contient un fichier brut (file ou blob) à uploader
-                    if (item.rawFile) {
+                let itemToSave = { ...item };
+                
+                // Tentative d'upload Cloud avec Timeout (15s)
+                if (item.rawFile) {
+                    try {
                         const fileName = `${restaurantId}/${category}/${Date.now()}_${Math.random().toString(36).substr(2, 9)}.jpg`;
                         const storageRef = window.ref(window.storage, fileName);
                         
-                        // Upload vers le Cloud Storage
-                        await window.uploadBytes(storageRef, item.rawFile);
-                        // Récupération de l'URL publique
-                        finalPhotoUrl = await window.getDownloadURL(storageRef);
+                        // Promesse de timeout
+                        const timeoutPromise = new Promise((_, reject) => 
+                            setTimeout(() => reject(new Error("Timeout")), 15000)
+                        );
+                        
+                        // Course entre l'upload et le timeout
+                        await Promise.race([
+                            window.uploadBytes(storageRef, item.rawFile),
+                            timeoutPromise
+                        ]);
+
+                        // Si on arrive ici, l'upload a réussi
+                        const url = await window.getDownloadURL(storageRef);
+                        itemToSave.photo = url;
+                        delete itemToSave.rawFile; // Nettoyage
+
+                    } catch (e) {
+                        console.warn("Échec upload Cloud ou Timeout, passage en mode compression locale", e);
+                        // PLAN B : Compression locale et sauvegarde Firestore
+                        if (item.photo && item.photo.startsWith('data:')) {
+                            // On compresse fortement pour que ça rentre dans Firestore
+                            const compressed = await compressImage(item.photo, 600, 0.5);
+                            itemToSave.photo = compressed;
+                            delete itemToSave.rawFile;
+                            alert("Connexion lente : Photo sauvegardée en qualité réduite.");
+                        } else {
+                            // Si on n'a pas de data URL (rare), on abandonne la photo
+                            delete itemToSave.photo;
+                            delete itemToSave.rawFile;
+                            alert("Erreur photo : Enregistré sans image.");
+                        }
                     }
+                }
 
-                    // On nettoie l'objet pour ne garder que l'URL
-                    const itemToSave = { ...item, photo: finalPhotoUrl };
-                    delete itemToSave.rawFile; // On ne sauvegarde pas le fichier brut en base
-
+                // Sauvegarde finale des métadonnées (avec URL cloud ou Base64 compressé)
+                try {
                     if (window.appId === 'epack-prod-data') {
                         await window.addDoc(window.collection(window.db, 'haccp_data', restaurantId, category), {
                             createdAt: Date.now(),
@@ -164,8 +209,7 @@
                         });
                     }
                 } catch (e) {
-                    alert("Erreur de sauvegarde Cloud: " + e.message);
-                    console.error(e);
+                    alert("Erreur finale sauvegarde: " + e.message);
                 }
             };
 
@@ -370,9 +414,14 @@
             const handleSubmit = async (e) => { 
                 e.preventDefault(); 
                 setIsUploading(true); // Début chargement
-                await addItem({ ...newProduct, sortDate: new Date().toISOString().split('T')[0] }); 
-                setIsUploading(false); // Fin chargement
-                setNewProduct({ name: '', batch: '', photo: null, rawFile: null }); 
+                try {
+                    await addItem({ ...newProduct, sortDate: new Date().toISOString().split('T')[0] }); 
+                } catch (error) {
+                    console.error(error);
+                } finally {
+                    setIsUploading(false); // Fin chargement TOUJOURS
+                    setNewProduct({ name: '', batch: '', photo: null, rawFile: null }); 
+                }
             };
 
             const filtered = products.filter(p => p.sortDate === selectedDate);
