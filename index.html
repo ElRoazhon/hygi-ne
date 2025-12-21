@@ -19,6 +19,8 @@
         .animate-fadeIn { animation: fadeIn 0.4s ease-out forwards; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        /* Effet bouton appuyé */
+        .active-press:active { transform: scale(0.95); background-color: #f3f4f6; }
     </style>
 </head>
 <body class="bg-green-50 text-gray-900 h-screen overflow-hidden select-none">
@@ -32,7 +34,7 @@
         // --- Code de l'Application (React) ---
         const { useState, useEffect, useRef, useMemo } = React;
 
-        // --- 1. GESTION DES DONNÉES (LocalStorage - Pas de serveur requis) ---
+        // --- 1. GESTION DES DONNÉES ---
         const useLocalCollection = (collectionName, sortField = 'createdAt') => {
             const [data, setData] = useState([]);
             useEffect(() => {
@@ -74,7 +76,9 @@
         // --- 2. ICÔNES INTÉGRÉES ---
         const Icon = ({ name, className }) => {
             const icons = {
-                ScanBarcode: <path d="M3 7V5a2 2 0 0 1 2-2h2m10 0h2a2 2 0 0 1 2 2v2m0 10v2a2 2 0 0 1-2 2h-2M5 21H3a2 2 0 0 1-2-2v-2m4-8h10m-2 4h2m-6 0h2m-6-8v12" />,
+                // NOUVEAU LOGO TRACABILITÉ (Style Carton/Colis)
+                ScanBarcode: <><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></>,
+                
                 Thermometer: <path d="M14 4v10.54a4 4 0 1 1-4 0V4a2 2 0 0 1 4 0Z" />,
                 ClipboardCheck: <><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M15 2H9a1 1 0 0 0-1 1v2a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V3a1 1 0 0 0-1-1Z"/><path d="m9 14 2 2 4-4"/></>,
                 Camera: <><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></>,
@@ -97,7 +101,8 @@
                 TrendingUp: <><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></>,
                 BarChart3: <><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></>,
                 AlertTriangle: <><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" x2="12" y1="9" y2="13"/><line x1="12" x2="12.01" y1="17" y2="17"/></>,
-                Cloud: <path d="M17.5 19c0-1.7-1.3-3-3-3h-1.1c-.2-2.3-2.1-4-4.4-4-2.5 0-4.5 2-4.5 4.5 0 .4.1.8.1 1.2-1.8.3-3.1 1.8-3.1 3.7 0 2.1 1.7 3.8 3.8 3.8h11.2c1.7 0 3-1.3 3-3z"/>
+                Cloud: <path d="M17.5 19c0-1.7-1.3-3-3-3h-1.1c-.2-2.3-2.1-4-4.4-4-2.5 0-4.5 2-4.5 4.5 0 .4.1.8.1 1.2-1.8.3-3.1 1.8-3.1 3.7 0 2.1 1.7 3.8 3.8 3.8h11.2c1.7 0 3-1.3 3-3z"/>,
+                Delete: <path d="M21 4H8l-7 8 7 8h13a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zM18 13l-2.5-2.5L18 8"/>
             };
             return (
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
@@ -142,7 +147,7 @@
                 try {
                     const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
                     setTimeout(() => { if (videoRef.current) videoRef.current.srcObject = stream; }, 100);
-                } catch (e) { alert("Erreur Webcam. Vérifiez HTTPS ou utilisez l'import de fichier."); setIsWebcamOpen(false); }
+                } catch (e) { alert("Erreur Webcam. Vérifiez HTTPS."); setIsWebcamOpen(false); }
             };
             const captureWebcam = () => {
                 if (videoRef.current && canvasRef.current) {
@@ -193,7 +198,10 @@
                              <div className="bg-white p-4 rounded-xl border flex justify-between items-center mb-4">
                                 <div className="flex items-center gap-2">
                                     <button onClick={() => changeDate(-1)}><Icon name="ChevronLeft" className="w-6 h-6"/></button>
-                                    <span className="font-bold flex items-center gap-2"><Icon name="Calendar" className="w-4 h-4 text-green-600"/> {new Date(selectedDate).toLocaleDateString('fr-FR')}</span>
+                                    <div className="flex items-center gap-2 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">
+                                        <Icon name="Calendar" className="w-5 h-5 text-green-600"/>
+                                        <input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} className="bg-transparent font-bold text-gray-700 outline-none" />
+                                    </div>
                                     <button onClick={() => changeDate(1)}><Icon name="ChevronRight" className="w-6 h-6"/></button>
                                 </div>
                                 <span className="text-sm text-gray-500">{filtered.length} produit(s)</span>
@@ -236,22 +244,69 @@
             const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
             const [showAdd, setShowAdd] = useState(false);
             const [newEquip, setNewEquip] = useState("");
+            
+            // État pour le Pad Tactile
             const [picker, setPicker] = useState({ open: false, id: null, name: '', period: '' });
+            const [tempInput, setTempInput] = useState(''); // Stocke la saisie en cours (ex: "3.5")
+
+            const [isSaved, setIsSaved] = useState(false);
             
             const seed = async () => { for (const n of ["Frigo +", "Frigo -", "Vitrine"]) await addEquip({name: n}); };
-            const changeDate = (d) => { const date = new Date(selectedDate); date.setDate(date.getDate() + d); setSelectedDate(date.toISOString().split('T')[0]); };
-            const saveTemp = (val) => { updateLog(selectedDate, { [picker.name]: { ...(temps[selectedDate]?.[picker.name]||{}), [picker.period]: val } }); setPicker({...picker, open: false}); };
+            const changeDate = (d) => { const date = new Date(selectedDate); date.setDate(date.getDate() + d); setSelectedDate(date.toISOString().split('T')[0]); setIsSaved(false); };
+            
+            // Fonctions du Pad Tactile
+            const handleNumClick = (n) => setTempInput(prev => prev + n);
+            const handleDot = () => setTempInput(prev => prev.includes('.') ? prev : prev + '.');
+            const handleClear = () => setTempInput('');
+            const handleBackspace = () => setTempInput(prev => prev.slice(0, -1));
+            const handleValidate = () => {
+                updateLog(selectedDate, { [picker.name]: { ...(temps[selectedDate]?.[picker.name]||{}), [picker.period]: tempInput } });
+                setPicker({...picker, open: false});
+                setTempInput('');
+                setIsSaved(false);
+            };
+
+            const openPad = (equipId, equipName, period) => {
+                setPicker({ open: true, id: equipId, name: equipName, period: period });
+                setTempInput(temps[selectedDate]?.[equipName]?.[period] || '');
+            };
+
             const getVal = (name, p) => temps[selectedDate]?.[name]?.[p] || '';
+            const handleSaveDay = () => { setIsSaved(true); setTimeout(() => setIsSaved(false), 2000); };
+
+            // Touches du Pad
+            const KeypadButton = ({ label, onClick, className = "" }) => (
+                <button 
+                    onClick={onClick} 
+                    className={`h-16 text-xl font-bold rounded-xl active-press transition-colors shadow-sm border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 ${className}`}
+                >
+                    {label}
+                </button>
+            );
 
             return (
-                <div className="space-y-6 animate-fadeIn">
+                <div className="space-y-6 animate-fadeIn pb-32"> {/* Ajout de padding-bottom pour le bouton flottant */}
                     <div className="flex justify-between items-center"><h2 className="text-2xl font-bold text-green-800 flex items-center gap-2"><Icon name="Thermometer" className="w-8 h-8"/> Températures</h2>
                         <div className="flex items-center gap-4 bg-white p-2 rounded-lg border">
-                            <button onClick={() => changeDate(-1)}><Icon name="ChevronLeft"/></button><span className="font-bold">{new Date(selectedDate).toLocaleDateString('fr-FR')}</span><button onClick={() => changeDate(1)}><Icon name="ChevronRight"/></button>
+                            <button onClick={() => changeDate(-1)}><Icon name="ChevronLeft"/></button>
+                            <div className="flex items-center gap-2 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">
+                                <Icon name="Calendar" className="w-5 h-5 text-green-600"/>
+                                <input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} className="bg-transparent font-bold text-gray-700 outline-none" />
+                            </div>
+                            <button onClick={() => changeDate(1)}><Icon name="ChevronRight"/></button>
                         </div>
                     </div>
+
                     <div className="grid gap-4">
+                        {/* BOUTON AJOUTER ÉQUIPEMENT DÉPLACÉ EN HAUT */}
+                         {showAdd ? (
+                            <Card className="bg-green-50 border-dashed border-2 border-green-300">
+                                <div className="flex gap-2"><input autoFocus placeholder="Nom (ex: Frigo 1)..." className="flex-1 p-2 rounded" value={newEquip} onChange={e=>setNewEquip(e.target.value)} /><Button onClick={() => { if(newEquip) { addEquip({name: newEquip}); setNewEquip(""); setShowAdd(false); } }}>OK</Button><Button variant="ghost" onClick={() => setShowAdd(false)}>X</Button></div>
+                            </Card>
+                        ) : <button onClick={() => setShowAdd(true)} className="w-full py-4 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 font-bold hover:bg-green-50 flex items-center justify-center gap-2"><Icon name="Plus" className="w-5 h-5"/> Ajouter équipement</button>}
+
                         {equipments.length === 0 && <div className="text-center py-8"><Button onClick={seed} variant="secondary">Charger liste défaut</Button></div>}
+                        
                         {equipments.map(eq => (
                             <Card key={eq.id} className="flex flex-col md:flex-row items-center gap-4 border-l-4 border-l-green-500">
                                 <div className="w-full md:w-1/3 flex justify-between items-center">
@@ -262,7 +317,7 @@
                                     {['matin', 'soir'].map(p => (
                                         <div key={p} className="flex-1">
                                             <label className="text-xs uppercase text-gray-400 font-bold">{p}</label>
-                                            <button onClick={() => setPicker({open: true, id: eq.id, name: eq.name, period: p})} className={`w-full p-3 rounded-lg border-2 font-bold flex justify-between items-center ${getVal(eq.name, p) ? 'bg-green-50 border-green-500 text-green-700' : 'bg-gray-50'}`}>
+                                            <button onClick={() => openPad(eq.id, eq.name, p)} className={`w-full p-3 rounded-lg border-2 font-bold flex justify-between items-center ${getVal(eq.name, p) ? 'bg-green-50 border-green-500 text-green-700' : 'bg-gray-50'}`}>
                                                 {getVal(eq.name, p) ? getVal(eq.name, p) + '°C' : '--'} <Icon name="ChevronRight" className="w-4 h-4 rotate-90 opacity-50"/>
                                             </button>
                                         </div>
@@ -270,20 +325,50 @@
                                 </div>
                             </Card>
                         ))}
-                        {showAdd ? (
-                            <Card className="bg-green-50 border-dashed border-2 border-green-300">
-                                <div className="flex gap-2"><input autoFocus placeholder="Nom..." className="flex-1 p-2 rounded" value={newEquip} onChange={e=>setNewEquip(e.target.value)} /><Button onClick={() => { if(newEquip) { addEquip({name: newEquip}); setNewEquip(""); setShowAdd(false); } }}>OK</Button><Button variant="ghost" onClick={() => setShowAdd(false)}>X</Button></div>
-                            </Card>
-                        ) : <button onClick={() => setShowAdd(true)} className="w-full py-4 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 font-bold hover:bg-green-50">+ Ajouter équipement</button>}
                     </div>
+
+                    {/* Bouton Enregistrer Flottant */}
+                    <div className="fixed bottom-6 right-6 lg:bottom-10 lg:right-10 z-30">
+                        <button 
+                            onClick={handleSaveDay}
+                            className={`flex items-center gap-3 px-8 py-4 rounded-full font-bold text-lg shadow-xl transition-all transform hover:scale-105 active:scale-95 ${isSaved ? 'bg-green-500 text-white' : 'bg-green-600 text-white hover:bg-green-700'}`}
+                        >
+                            {isSaved ? <Icon name="CheckCircle" className="w-6 h-6"/> : <Icon name="Save" className="w-6 h-6"/>}
+                            {isSaved ? 'Enregistré !' : 'Enregistrer'}
+                        </button>
+                    </div>
+
+                    {/* MODAL PAD TACTILE */}
                     {picker.open && (
-                        <div className="fixed inset-0 z-[100] bg-black/50 flex items-center justify-center p-4" onClick={() => setPicker({...picker, open: false})}>
-                            <div className="bg-white w-full max-w-sm rounded-xl p-4 shadow-xl max-h-[80vh] flex flex-col" onClick={e => e.stopPropagation()}>
-                                <h3 className="font-bold text-lg mb-4">{picker.name} ({picker.period})</h3>
-                                <div className="grid grid-cols-4 gap-2 overflow-y-auto p-2">
-                                    {Array.from({length: 61}, (_, i) => i - 40).reverse().map(t => (
-                                        <button key={t} onClick={() => saveTemp(t)} className={`p-3 rounded font-bold border ${t > 0 ? 'bg-white hover:bg-orange-50' : 'bg-blue-50 hover:bg-blue-100'}`}>{t > 0 ? '+' : ''}{t}</button>
+                        <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fadeIn" onClick={() => setPicker({...picker, open: false})}>
+                            <div className="bg-white w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden flex flex-col" onClick={e => e.stopPropagation()}>
+                                <div className="p-4 bg-green-600 text-white flex justify-between items-center">
+                                    <h3 className="font-bold text-lg">{picker.name} <span className="text-sm font-normal opacity-80">({picker.period})</span></h3>
+                                    <button onClick={() => setPicker({...picker, open: false})}><Icon name="X" className="w-6 h-6"/></button>
+                                </div>
+                                
+                                <div className="p-4 bg-gray-50 border-b flex items-center justify-between">
+                                    <div className="text-3xl font-bold text-gray-800 tracking-widest h-10 min-w-[100px]">
+                                        {tempInput || <span className="text-gray-300">--</span>} <span className="text-sm text-gray-400">°C</span>
+                                    </div>
+                                    <button onClick={handleBackspace} className="text-gray-400 hover:text-red-500 p-2"><Icon name="Delete" className="w-6 h-6"/></button>
+                                </div>
+
+                                <div className="p-4 bg-gray-100 grid grid-cols-3 gap-3">
+                                    {[7, 8, 9, 4, 5, 6, 1, 2, 3].map(n => (
+                                        <KeypadButton key={n} label={n} onClick={() => handleNumClick(n.toString())} />
                                     ))}
+                                    <KeypadButton label="-" onClick={() => !tempInput.includes('-') && setTempInput(prev => '-' + prev)} className="text-blue-600 bg-blue-50 border-blue-100" />
+                                    <KeypadButton label="0" onClick={() => handleNumClick('0')} />
+                                    <KeypadButton label="." onClick={handleDot} className="text-blue-600 bg-blue-50 border-blue-100" />
+                                    
+                                    <KeypadButton label="C" onClick={handleClear} className="bg-red-50 text-red-600 border-red-100" />
+                                    <button 
+                                        onClick={handleValidate} 
+                                        className="col-span-2 h-16 bg-green-600 text-white rounded-xl font-bold text-lg shadow-md active:scale-95 transition-transform flex items-center justify-center gap-2"
+                                    >
+                                        <Icon name="CheckCircle" className="w-6 h-6"/> Valider
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -320,7 +405,16 @@
                         ))}
                         {showAdd ? (
                             <Card className="bg-green-50 border-dashed border-2 border-green-300">
-                                <div className="flex gap-2"><input autoFocus placeholder="Tâche..." className="flex-1 p-2 rounded" value={newZone.name} onChange={e=>setNewZone({...newZone, name: e.target.value})} /><Button onClick={() => { if(newZone.name) { addZone(newZone); setNewZone({name:"", freq:"Journalier"}); setShowAdd(false); } }}>Ajouter</Button></div>
+                                <div className="flex flex-col gap-2">
+                                    <input autoFocus placeholder="Tâche..." className="p-2 rounded border border-gray-300" value={newZone.name} onChange={e=>setNewZone({...newZone, name: e.target.value})} />
+                                    <div className="flex gap-2">
+                                        <select className="p-2 rounded border border-gray-300 bg-white flex-1" value={newZone.freq} onChange={e=>setNewZone({...newZone, freq: e.target.value})}>
+                                            <option value="Journalier">Journalier</option><option value="Hebdomadaire">Hebdomadaire</option><option value="Mensuel">Mensuel</option>
+                                        </select>
+                                        <Button className="flex-1" onClick={() => { if(newZone.name) { addZone(newZone); setNewZone({name:"", freq:"Journalier"}); setShowAdd(false); } }}>Ajouter</Button>
+                                    </div>
+                                    <Button variant="ghost" onClick={() => setShowAdd(false)} className="w-full text-sm py-1">Annuler</Button>
+                                </div>
                             </Card>
                         ) : <button onClick={() => setShowAdd(true)} className="w-full py-4 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 font-bold hover:bg-green-50">+ Nouvelle tâche</button>}
                     </div>
