@@ -132,7 +132,7 @@
             </div>
         );
 
-        // --- 4. MODULE TRAÇABILITÉ (AVEC VALIDATION PHOTO) ---
+        // --- 4. MODULE TRAÇABILITÉ (CAMÉRA NATIVE MOBILE + WEBCAM DESKTOP) ---
         const TraceabilityModule = () => {
             const { data: products, addItem, deleteItem } = useLocalCollection('traceability', 'timestamp');
             const [newProduct, setNewProduct] = useState({ name: '', batch: '', photo: null });
@@ -142,21 +142,46 @@
             
             // États pour Zoom et Preview
             const [zoomLevel, setZoomLevel] = useState(1);
-            const [tempPhoto, setTempPhoto] = useState(null); // Photo en attente de validation
+            const [tempPhoto, setTempPhoto] = useState(null); // Photo en attente de validation (Desktop)
             
             const videoRef = useRef(null);
             const canvasRef = useRef(null);
             const fileInputRef = useRef(null);
+            const nativeCameraInputRef = useRef(null); // Réf pour input caméra mobile
 
             useEffect(() => { if (fullscreenPhoto) setZoomLevel(1); }, [fullscreenPhoto]);
 
+            // Gestion Caméra (Logique Hybride)
+            const handleCameraClick = () => {
+                const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+                if (isMobile) {
+                    // Mobile : Ouvrir l'appli caméra native
+                    nativeCameraInputRef.current?.click();
+                } else {
+                    // Desktop : Ouvrir l'overlay webcam personnalisé
+                    startWebcam();
+                }
+            };
+
+            const handleNativeCameraCapture = (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        setNewProduct(p => ({ ...p, photo: event.target.result }));
+                    };
+                    reader.readAsDataURL(file);
+                }
+            };
+
+            // --- Logique Webcam Desktop ---
             const startWebcam = async () => {
                 setTempPhoto(null);
                 setIsWebcamOpen(true);
                 try {
                     const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
                     setTimeout(() => { if (videoRef.current) videoRef.current.srcObject = stream; }, 100);
-                } catch (e) { alert("Impossible d'accéder à la caméra."); setIsWebcamOpen(false); }
+                } catch (e) { alert("Impossible d'accéder à la webcam."); setIsWebcamOpen(false); }
             };
 
             const captureWebcam = () => {
@@ -166,14 +191,14 @@
                     c.width = v.videoWidth;
                     c.height = v.videoHeight;
                     c.getContext('2d').drawImage(v, 0, 0);
-                    setTempPhoto(c.toDataURL('image/jpeg', 0.7)); // Sauvegarde temporaire
-                    v.pause(); // Figer la vidéo
+                    setTempPhoto(c.toDataURL('image/jpeg', 0.7)); 
+                    v.pause(); 
                 }
             };
 
             const retakePhoto = () => {
                 setTempPhoto(null);
-                if (videoRef.current) videoRef.current.play(); // Relancer la vidéo
+                if (videoRef.current) videoRef.current.play(); 
             };
 
             const confirmPhoto = () => {
@@ -182,6 +207,7 @@
                 setIsWebcamOpen(false);
                 setTempPhoto(null);
             };
+            // ------------------------------
 
             const handleSubmit = (e) => {
                 e.preventDefault();
@@ -207,9 +233,16 @@
                                             </div>
                                         ) : (
                                             <div className="space-y-3">
-                                                <button type="button" onClick={startWebcam} className="w-full py-8 bg-green-50 text-green-700 rounded-xl border-2 border-dashed border-green-300 flex flex-col items-center justify-center hover:bg-green-100 transition-colors"><Icon name="Aperture" className="w-8 h-8 mb-2"/> Scanner / Photo</button>
+                                                {/* Bouton Principal Caméra */}
+                                                <button type="button" onClick={handleCameraClick} className="w-full py-8 bg-green-50 text-green-700 rounded-xl border-2 border-dashed border-green-300 flex flex-col items-center justify-center hover:bg-green-100 transition-colors"><Icon name="Aperture" className="w-8 h-8 mb-2"/> Scanner / Photo</button>
+                                                
                                                 <div onClick={() => fileInputRef.current?.click()} className="text-center text-sm text-gray-400 underline cursor-pointer">Importer fichier</div>
+                                                
+                                                {/* Input caché pour import fichier classique */}
                                                 <input type="file" ref={fileInputRef} onChange={(e) => { const r = new FileReader(); r.onload=()=>setNewProduct(p=>({...p, photo:r.result})); if(e.target.files[0]) r.readAsDataURL(e.target.files[0]); }} accept="image/*" className="hidden"/>
+                                                
+                                                {/* Input caché SPÉCIAL MOBILE (capture="environment" force l'appli caméra) */}
+                                                <input type="file" ref={nativeCameraInputRef} onChange={handleNativeCameraCapture} accept="image/*" capture="environment" className="hidden"/>
                                             </div>
                                         )}
                                     </div>
@@ -243,7 +276,7 @@
                         </div>
                     </div>
 
-                    {/* INTERFACE CAMERA PLEIN ÉCRAN */}
+                    {/* INTERFACE WEBCAM (UNIQUEMENT DESKTOP MAINTENANT) */}
                     {isWebcamOpen && (
                         <div className="fixed inset-0 z-[100] bg-black flex flex-col">
                             <div className="relative flex-1 w-full h-full overflow-hidden">
@@ -258,7 +291,7 @@
                                             </div>
                                         </div>
                                         <div className="absolute top-0 w-full p-4 flex justify-between items-center z-20 bg-gradient-to-b from-black/60 to-transparent">
-                                            <span className="text-white font-bold tracking-wide drop-shadow-md">Scanner</span>
+                                            <span className="text-white font-bold tracking-wide drop-shadow-md">Scanner (Webcam)</span>
                                             <button onClick={() => { if(videoRef.current?.srcObject) videoRef.current.srcObject.getTracks().forEach(t=>t.stop()); setIsWebcamOpen(false); }} className="p-3 bg-black/40 rounded-full text-white backdrop-blur-md border border-white/20"><Icon name="X" className="w-6 h-6"/></button>
                                         </div>
                                         <div className="absolute bottom-8 w-full flex justify-center z-20">
@@ -270,7 +303,7 @@
                                 ) : (
                                     <>
                                         <div className="absolute top-0 w-full p-4 flex justify-end items-center z-20 bg-gradient-to-b from-black/60 to-transparent">
-                                            {/* Header vide ou indicateur */}
+                                            {/* Header vide */}
                                         </div>
                                         <div className="absolute bottom-8 w-full flex justify-center gap-6 z-20 px-8">
                                             <button onClick={retakePhoto} className="flex-1 py-4 bg-red-500/90 backdrop-blur-md text-white rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg active:scale-95 border border-red-400">
