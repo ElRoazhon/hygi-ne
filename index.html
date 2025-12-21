@@ -65,14 +65,22 @@
     </script>
 
     <style>
+        /* Styles de base */
         body { -webkit-tap-highlight-color: transparent; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .animate-fadeIn { animation: fadeIn 0.4s ease-out forwards; }
+        
+        /* Suppression de l'animation globale fadeIn qui causait des bugs d'affichage sur mobile */
+        /* .animate-fadeIn { animation: fadeIn 0.4s ease-out forwards; } */
+        /* On garde fadeIn uniquement pour les petits éléments internes si besoin */
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .fade-in-element { animation: fadeIn 0.3s ease-out; }
+
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         .active-press:active { transform: scale(0.95); background-color: #f3f4f6; }
+        
         @keyframes scan { 0% { top: 10%; opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { top: 90%; opacity: 0; } }
         .scan-line { position: absolute; left: 10%; right: 10%; height: 2px; background: #4ade80; box-shadow: 0 0 10px #4ade80; animation: scan 2s linear infinite; }
+        
         /* Safe area padding for iPhones */
         .pb-safe { padding-bottom: env(safe-area-inset-bottom, 20px); }
     </style>
@@ -83,6 +91,39 @@
 
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
+
+        // --- UTILITAIRE DE COMPRESSION D'IMAGE (CRUCIAL POUR FIREBASE) ---
+        const compressImage = (base64Str, maxWidth = 800, quality = 0.6) => {
+            return new Promise((resolve) => {
+                const img = new Image();
+                img.src = base64Str;
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    let width = img.width;
+                    let height = img.height;
+                    
+                    // Calcul des nouvelles dimensions en gardant le ratio
+                    if (width > height) {
+                        if (width > maxWidth) {
+                            height *= maxWidth / width;
+                            width = maxWidth;
+                        }
+                    } else {
+                        if (height > maxWidth) {
+                            width *= maxWidth / height;
+                            height = maxWidth;
+                        }
+                    }
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+                    // Export en JPEG compressé
+                    resolve(canvas.toDataURL('image/jpeg', quality));
+                };
+                img.onerror = (err) => resolve(base64Str); // En cas d'erreur, on renvoie l'original
+            });
+        };
 
         // --- 1. HOOKS DE SYNCHRONISATION (CLOUD) ---
 
@@ -113,26 +154,34 @@
 
             const addItem = async (item) => {
                 if (!restaurantId) return;
-                if (window.appId === 'epack-prod-data') {
-                    await window.addDoc(window.collection(window.db, 'haccp_data', restaurantId, category), {
-                        createdAt: Date.now(),
-                        ...item
-                    });
-                } else {
-                    await window.addDoc(window.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'haccp_items'), {
-                        restaurantId,
-                        category,
-                        createdAt: Date.now(),
-                        ...item
-                    });
+                try {
+                    if (window.appId === 'epack-prod-data') {
+                        await window.addDoc(window.collection(window.db, 'haccp_data', restaurantId, category), {
+                            createdAt: Date.now(),
+                            ...item
+                        });
+                    } else {
+                        await window.addDoc(window.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'haccp_items'), {
+                            restaurantId,
+                            category,
+                            createdAt: Date.now(),
+                            ...item
+                        });
+                    }
+                } catch (e) {
+                    alert("Erreur de sauvegarde: " + e.message);
                 }
             };
 
             const deleteItem = async (id) => {
-                if (window.appId === 'epack-prod-data') {
-                    await window.deleteDoc(window.doc(window.db, 'haccp_data', restaurantId, category, id));
-                } else {
-                    await window.deleteDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'haccp_items', id));
+                try {
+                    if (window.appId === 'epack-prod-data') {
+                        await window.deleteDoc(window.doc(window.db, 'haccp_data', restaurantId, category, id));
+                    } else {
+                        await window.deleteDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'haccp_items', id));
+                    }
+                } catch (e) {
+                    console.error("Delete error", e);
                 }
             };
 
@@ -251,6 +300,7 @@
             const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
             const [isWebcamOpen, setIsWebcamOpen] = useState(false);
             const [fullscreenPhoto, setFullscreenPhoto] = useState(null);
+            const [isCompressing, setIsCompressing] = useState(false); // État pour l'indicateur de chargement
             
             const [zoomLevel, setZoomLevel] = useState(1);
             const [tempPhoto, setTempPhoto] = useState(null); 
@@ -274,8 +324,14 @@
             const handleNativeCameraCapture = (e) => {
                 const file = e.target.files[0];
                 if (file) {
+                    setIsCompressing(true); // Début compression
                     const reader = new FileReader();
-                    reader.onload = (event) => { setNewProduct(p => ({ ...p, photo: event.target.result })); };
+                    reader.onload = async (event) => { 
+                        const originalBase64 = event.target.result;
+                        const compressedBase64 = await compressImage(originalBase64); // COMPRESSION ICI
+                        setNewProduct(p => ({ ...p, photo: compressedBase64 })); 
+                        setIsCompressing(false); // Fin compression
+                    };
                     reader.readAsDataURL(file);
                 }
             };
@@ -289,14 +345,17 @@
                 } catch (e) { alert("Impossible d'accéder à la webcam."); setIsWebcamOpen(false); }
             };
 
-            const captureWebcam = () => {
+            const captureWebcam = async () => {
                 if (videoRef.current && canvasRef.current) {
                     const v = videoRef.current;
                     const c = canvasRef.current;
                     c.width = v.videoWidth;
                     c.height = v.videoHeight;
                     c.getContext('2d').drawImage(v, 0, 0);
-                    setTempPhoto(c.toDataURL('image/jpeg', 0.7)); 
+                    const rawPhoto = c.toDataURL('image/jpeg', 0.9);
+                    // On compresse aussi la webcam pour être sûr
+                    const compressed = await compressImage(rawPhoto);
+                    setTempPhoto(compressed); 
                     v.pause(); 
                 }
             };
@@ -308,14 +367,18 @@
             const changeDate = (d) => { const date = new Date(selectedDate); date.setDate(date.getDate() + d); setSelectedDate(date.toISOString().split('T')[0]); };
 
             return (
-                <div className="space-y-6 animate-fadeIn pb-24">
+                <div className="space-y-6 fade-in-element pb-24">
                     <div className="flex justify-between items-center"><h2 className="text-2xl font-bold text-green-800 flex items-center gap-2"><Icon name="ScanBarcode" className="w-8 h-8"/> Traçabilité</h2></div>
                     <div className="grid lg:grid-cols-12 gap-6">
                         <div className="lg:col-span-4">
                             <Card className="border-2 border-green-100">
                                 <form onSubmit={handleSubmit}>
                                     <div className="mb-4">
-                                        {newProduct.photo ? (
+                                        {isCompressing ? (
+                                            <div className="w-full py-8 bg-gray-50 rounded-xl flex items-center justify-center text-gray-500 animate-pulse">
+                                                Traitement de l'image...
+                                            </div>
+                                        ) : newProduct.photo ? (
                                             <div onClick={() => setNewProduct({...newProduct, photo: null})} className="relative cursor-pointer group">
                                                 <img src={newProduct.photo} className="w-full rounded-lg" />
                                                 <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 rounded-lg text-white font-bold"><Icon name="Trash2" className="mr-2"/> Retirer</div>
@@ -324,14 +387,28 @@
                                             <div className="space-y-3">
                                                 <button type="button" onClick={handleCameraClick} className="w-full py-8 bg-green-50 text-green-700 rounded-xl border-2 border-dashed border-green-300 flex flex-col items-center justify-center hover:bg-green-100 transition-colors"><Icon name="Aperture" className="w-8 h-8 mb-2"/> Scanner / Photo</button>
                                                 <div onClick={() => fileInputRef.current?.click()} className="text-center text-sm text-gray-400 underline cursor-pointer">Importer fichier</div>
-                                                <input type="file" ref={fileInputRef} onChange={(e) => { const r = new FileReader(); r.onload=()=>setNewProduct(p=>({...p, photo:r.result})); if(e.target.files[0]) r.readAsDataURL(e.target.files[0]); }} accept="image/*" className="hidden"/>
+                                                <input type="file" ref={fileInputRef} onChange={(e) => { 
+                                                    const file = e.target.files[0];
+                                                    if(file) {
+                                                        setIsCompressing(true);
+                                                        const r = new FileReader(); 
+                                                        r.onload=async()=>{
+                                                            const comp = await compressImage(r.result);
+                                                            setNewProduct(p=>({...p, photo:comp}));
+                                                            setIsCompressing(false);
+                                                        }; 
+                                                        r.readAsDataURL(file);
+                                                    }
+                                                }} accept="image/*" className="hidden"/>
                                                 <input type="file" ref={nativeCameraInputRef} onChange={handleNativeCameraCapture} accept="image/*" capture="environment" className="hidden"/>
                                             </div>
                                         )}
                                     </div>
                                     <Input label="Produit" value={newProduct.name} onChange={e => setNewProduct({...newProduct, name: e.target.value})} required />
                                     <Input label="Lot / DLC" value={newProduct.batch} onChange={e => setNewProduct({...newProduct, batch: e.target.value})} />
-                                    <Button type="submit" className="w-full" disabled={!newProduct.name || !newProduct.photo}>Enregistrer</Button>
+                                    <Button type="submit" className="w-full" disabled={!newProduct.name || !newProduct.photo || isCompressing}>
+                                        {isCompressing ? "Traitement..." : "Enregistrer"}
+                                    </Button>
                                 </form>
                             </Card>
                         </div>
@@ -434,7 +511,7 @@
             };
 
             return (
-                <div className="space-y-6 animate-fadeIn pb-32">
+                <div className="space-y-6 fade-in-element pb-32">
                     <div className="flex flex-col md:flex-row justify-between items-center gap-4"><h2 className="text-2xl font-bold text-green-800 flex items-center gap-2"><Icon name="Thermometer" className="w-8 h-8"/> Températures</h2><div className="flex gap-2"><button onClick={() => setExportModalOpen(true)} className="px-4 py-2 bg-green-100 text-green-700 rounded-lg font-bold flex items-center gap-2 hover:bg-green-200 transition-colors"><Icon name="Download" className="w-5 h-5"/> Exporter</button><div className="flex items-center gap-4 bg-white p-2 rounded-lg border"><button onClick={() => changeDate(-1)}><Icon name="ChevronLeft"/></button><div className="flex items-center gap-2 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200"><Icon name="Calendar" className="w-5 h-5 text-green-600"/><input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} className="bg-transparent font-bold text-gray-700 outline-none" /></div><button onClick={() => changeDate(1)}><Icon name="ChevronRight"/></button></div></div></div>
                     <div className="grid gap-4">
                          {showAdd ? (
@@ -448,7 +525,7 @@
                         ))}
                     </div>
                     <div className="fixed bottom-6 right-6 z-30"><button onClick={handleSaveDay} className={`flex items-center gap-3 px-8 py-4 rounded-full font-bold text-lg shadow-xl transition-all transform hover:scale-105 active:scale-95 ${isSaved ? 'bg-green-500 text-white' : 'bg-green-600 text-white hover:bg-green-700'}`}>{isSaved ? <Icon name="CheckCircle" className="w-6 h-6"/> : <Icon name="Save" className="w-6 h-6"/>}{isSaved ? 'Enregistré !' : 'Enregistrer'}</button></div>
-                    {picker.open && (<div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fadeIn" onClick={() => setPicker({...picker, open: false})}><div className="bg-white w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden flex flex-col" onClick={e => e.stopPropagation()}><div className="p-4 bg-green-600 text-white flex justify-between items-center"><h3 className="font-bold text-lg">{picker.name} <span className="text-sm font-normal opacity-80">({picker.period})</span></h3><button onClick={() => setPicker({...picker, open: false})}><Icon name="X" className="w-6 h-6"/></button></div><div className="p-4 bg-gray-50 border-b flex items-center justify-between"><div className="text-3xl font-bold text-gray-800 tracking-widest h-10 min-w-[100px]">{tempInput || <span className="text-gray-300">--</span>} <span className="text-sm text-gray-400">°C</span></div><button onClick={handleBackspace} className="text-gray-400 hover:text-red-500 p-2"><Icon name="Delete" className="w-6 h-6"/></button></div><div className="p-4 bg-gray-100 grid grid-cols-3 gap-3">{[7, 8, 9, 4, 5, 6, 1, 2, 3].map(n => (<KeypadButton key={n} label={n} onClick={() => handleNumClick(n.toString())} />))}<KeypadButton label="-" onClick={() => !tempInput.includes('-') && setTempInput(prev => '-' + prev)} className="text-blue-600 bg-blue-50 border-blue-100" /><KeypadButton label="0" onClick={() => handleNumClick('0')} /><KeypadButton label="." onClick={handleDot} className="text-blue-600 bg-blue-50 border-blue-100" /><KeypadButton label="C" onClick={handleClear} className="bg-red-50 text-red-600 border-red-100" /><button onClick={handleValidate} className="col-span-2 h-16 bg-green-600 text-white rounded-xl font-bold text-lg shadow-md active:scale-95 transition-transform flex items-center justify-center gap-2"><Icon name="CheckCircle" className="w-6 h-6"/> Valider</button></div></div></div>)}
+                    {picker.open && (<div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 fade-in-element" onClick={() => setPicker({...picker, open: false})}><div className="bg-white w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden flex flex-col" onClick={e => e.stopPropagation()}><div className="p-4 bg-green-600 text-white flex justify-between items-center"><h3 className="font-bold text-lg">{picker.name} <span className="text-sm font-normal opacity-80">({picker.period})</span></h3><button onClick={() => setPicker({...picker, open: false})}><Icon name="X" className="w-6 h-6"/></button></div><div className="p-4 bg-gray-50 border-b flex items-center justify-between"><div className="text-3xl font-bold text-gray-800 tracking-widest h-10 min-w-[100px]">{tempInput || <span className="text-gray-300">--</span>} <span className="text-sm text-gray-400">°C</span></div><button onClick={handleBackspace} className="text-gray-400 hover:text-red-500 p-2"><Icon name="Delete" className="w-6 h-6"/></button></div><div className="p-4 bg-gray-100 grid grid-cols-3 gap-3">{[7, 8, 9, 4, 5, 6, 1, 2, 3].map(n => (<KeypadButton key={n} label={n} onClick={() => handleNumClick(n.toString())} />))}<KeypadButton label="-" onClick={() => !tempInput.includes('-') && setTempInput(prev => '-' + prev)} className="text-blue-600 bg-blue-50 border-blue-100" /><KeypadButton label="0" onClick={() => handleNumClick('0')} /><KeypadButton label="." onClick={handleDot} className="text-blue-600 bg-blue-50 border-blue-100" /><KeypadButton label="C" onClick={handleClear} className="bg-red-50 text-red-600 border-red-100" /><button onClick={handleValidate} className="col-span-2 h-16 bg-green-600 text-white rounded-xl font-bold text-lg shadow-md active:scale-95 transition-transform flex items-center justify-center gap-2"><Icon name="CheckCircle" className="w-6 h-6"/> Valider</button></div></div></div>)}
                     {exportModalOpen && (<div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setExportModalOpen(false)}><div className="bg-white p-6 rounded-2xl w-full max-w-sm shadow-2xl" onClick={e => e.stopPropagation()}><h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2"><Icon name="Download" className="text-green-600"/> Exporter vers Excel</h3><p className="text-gray-600 mb-4">Choisissez le mois à exporter :</p><input type="month" value={exportMonth} onChange={(e) => setExportMonth(e.target.value)} className="w-full p-3 border border-gray-300 rounded-lg mb-6 text-lg" /><div className="flex gap-3"><Button onClick={generateExcel} className="flex-1">Télécharger</Button><Button variant="ghost" onClick={() => setExportModalOpen(false)}>Annuler</Button></div></div></div>)}
                 </div>
             );
@@ -466,7 +543,7 @@
             const progress = zones.length === 0 ? 0 : Math.round((zones.filter(z => isDone(z.id)).length / zones.length) * 100);
 
             return (
-                <div className="space-y-6 animate-fadeIn pb-20">
+                <div className="space-y-6 fade-in-element pb-20">
                     <div className="flex justify-between items-end"><h2 className="text-2xl font-bold text-green-800 flex items-center gap-2"><Icon name="ClipboardCheck" className="w-8 h-8"/> Nettoyage</h2><div className="text-right"><span className="text-3xl font-bold text-green-600">{progress}%</span></div></div>
                     <div className="w-full bg-gray-200 rounded-full h-2"><div className="bg-green-600 h-2 rounded-full transition-all duration-500" style={{width: `${progress}%`}}></div></div>
                     <div className="grid gap-3">
@@ -492,7 +569,6 @@
 
             useEffect(() => {
                 const initAuth = async () => {
-                    // Utilisation de la variable globale window.initialAuthToken
                     if (window.initialAuthToken) {
                         await window.signInWithCustomToken(window.auth, window.initialAuthToken);
                     } else {
@@ -518,7 +594,8 @@
             );
 
             return (
-                <div className="flex h-screen bg-green-50/50 w-full overflow-hidden flex-col md:flex-row animate-fadeIn">
+                /* Mise à jour de la hauteur pour mobile (h-[100dvh]) et suppression animation globale */
+                <div className="flex h-[100dvh] bg-green-50/50 w-full overflow-hidden flex-col md:flex-row">
                     <div className="md:w-72 bg-white border-r border-gray-200 z-50 flex flex-col md:h-full shadow-xl order-2 md:order-1">
                         <div className="p-6 border-b hidden md:flex justify-start items-center gap-2">
                              <h1 className="text-2xl font-extrabold text-green-700">eHygiène<span className="text-green-400">.</span></h1>
@@ -533,9 +610,9 @@
                             <MenuBtn id="cleaning" label="Nettoyage" icon="ClipboardCheck"/>
                         </nav>
                         <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 flex justify-around p-3 z-50 pb-safe">
-                            <button onClick={() => setTab('traceability')} className={`flex flex-col items-center ${tab === 'traceability' ? 'text-green-600' : 'text-gray-400'}`}><Icon name="ScanBarcode" className="w-6 h-6"/><span className="text-xs">Traçabilité</span></button>
-                            <button onClick={() => setTab('temperature')} className={`flex flex-col items-center ${tab === 'temperature' ? 'text-green-600' : 'text-gray-400'}`}><Icon name="Thermometer" className="w-6 h-6"/><span className="text-xs">Températures</span></button>
-                            <button onClick={() => setTab('cleaning')} className={`flex flex-col items-center ${tab === 'cleaning' ? 'text-green-600' : 'text-gray-400'}`}><Icon name="ClipboardCheck" className="w-6 h-6"/><span className="text-xs">Nettoyage</span></button>
+                            <button onClick={() => setTab('traceability')} className={`flex flex-col items-center ${tab === 'traceability' ? 'text-green-600' : 'text-green-600/50'}`}><Icon name="ScanBarcode" className="w-6 h-6"/><span className="text-xs">Traçabilité</span></button>
+                            <button onClick={() => setTab('temperature')} className={`flex flex-col items-center ${tab === 'temperature' ? 'text-green-600' : 'text-green-600/50'}`}><Icon name="Thermometer" className="w-6 h-6"/><span className="text-xs">Températures</span></button>
+                            <button onClick={() => setTab('cleaning')} className={`flex flex-col items-center ${tab === 'cleaning' ? 'text-green-600' : 'text-green-600/50'}`}><Icon name="ClipboardCheck" className="w-6 h-6"/><span className="text-xs">Nettoyage</span></button>
                         </div>
                     </div>
                     <main className="flex-1 flex flex-col h-full overflow-hidden relative w-full order-1 md:order-2 pb-16 md:pb-0">
