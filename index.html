@@ -5,55 +5,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>eHygiène - So'Chris</title>
     
-    <!-- 1. ICÔNES CLASSIQUES (Barre d'onglets) -->
+    <!-- 1. IDENTITÉ DE L'APPLICATION ET LOGO (Solution "En Dur") -->
+    <!-- Cette icône verte avec la coche est utilisée par défaut par les navigateurs -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj48cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgcng9IjEyMCIgZmlsbD0iIzE2YTM0YSIvPjxwYXRoIGQ9Ik0xNTAgMjYwIEwyMjAgMzMwIEwzNzAgMTgwIiBmaWxsPSJub25lIiBzdHJva2U9IndoaXRlIiBzdHJva2Utd2lkdGg9IjYwIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48L3N2Zz4=">
+    
+    <!-- Cette ligne force Windows à voir l'icône comme un raccourci bureau -->
+    <link rel="shortcut icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj48cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgcng9IjEyMCIgZmlsbD0iIzE2YTM0YSIvPjxwYXRoIGQ9Ik0xNTAgMjYwIEwyMjAgMzMwIEwzNzAgMTgwIiBmaWxsPSJub25lIiBzdHJva2U9IndoaXRlIiBzdHJva2Utd2lkdGg9IjYwIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48L3N2Zz4=">
+    
+    <!-- Icône pour iPhone/iPad -->
     <link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj48cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgcng9IjEyMCIgZmlsbD0iIzE2YTM0YSIvPjxwYXRoIGQ9Ik0xNTAgMjYwIEwyMjAgMzMwIEwzNzAgMTgwIiBmaWxsPSJub25lIiBzdHJva2U9IndoaXRlIiBzdHJva2Utd2lkdGg9IjYwIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48L3N2Zz4=">
 
-    <!-- MÉTADONNÉES APPLE -->
+    <!-- MANIFESTE DIRECT (Pour l'installation Chrome/Edge PC et Android) -->
+    <!-- Encodé en Base64 pour éviter les erreurs de lecture de fichier local -->
+    <link rel="manifest" href="data:application/manifest+json;base64,eyJuYW1lIjoiZUh5Z2nDqG5lIFNvJ0NocmlzIiwic2hvcnRfbmFtZSI6IlNvJ0NocmlzIiwic3RhcnRfdXJsIjoiLiIsImRpc3BsYXkiOiJzdGFuZGFsb25lIiwiYmFja2dyb3VuZF9jb2xvciI6IiNmMGZkZjQiLCJ0aGVtZV9jb2xvciI6IiMxNmEzNGEiLCJpY29ucyI6W3sic3JjIjoiZGF0YTppbWFnZS9zdmcreG1sO2Jhc2U2NCxQSE4yWnlCNGJXeHVjejBpYUhSMGNEb3ZMM2QzZHk1M015NXZjbWN2TWpBd01DOXpZGGRpSUhabFpXZENiM2c5SWpBd01DQTFNVElnT1RFeUlqNDhjbVZqZENCM2FXUjBhRDBpTlRFeUlpQm9aV2xuYUhROUlqVXhNaUlnY25nOUlqRXlNQ0lnWm1sc2JEMGlJakUyYVRNMFlTSXZQang4Y0dGMGFDQmtQV0lrTVRVd01qWXdJRXd5TWpBZ016TXdJRXd6TnpBZ01UZ3dJaVdtYVd4c1BTSnViMjVsSWlCemRISnZhMlU5SW5kb2FYUmxJaUJ6ZEhKdmEyVXRkMmxrZEdoOUlqWXdJaUJ6ZEhKdmEyVXRiR2x1WldOaGVEMGljbTkxYm1RaUlITjBjbTlyWlMxc2FXNXFiaM0wSWlKeWIzVnVaQ0kvUGp3OEwzTjJaejQ9Iiwic2l6ZXMiOiI1MTJ4NTEyIiwidHlwZSI6ImltYWdlL3N2Zyt4bWwiLCJwdXJwb3NlIjoiYW55IG1hc2thYmxlIn1dfQ==">
+
+    <!-- MÉTADONNÉES -->
     <meta name="apple-mobile-web-app-title" content="So'Chris">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#16a34a">
-
-    <!-- 2. SCRIPT DE GÉNÉRATION DU MANIFESTE (Pour forcer le logo sur PC/Android) -->
-    <script>
-        (function() {
-            const iconSVG = `data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj48cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgcng9IjEyMCIgZmlsbD0iIzE2YTM0YSIvPjxwYXRoIGQ9Ik0xNTAgMjYwIEwyMjAgMzMwIEwzNzAgMTgwIiBmaWxsPSJub25lIiBzdHJva2U9IndoaXRlIiBzdHJva2Utd2lkdGg9IjYwIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48L3N2Zz4=`;
-            
-            const manifest = {
-                "name": "eHygiène So'Chris",
-                "short_name": "So'Chris",
-                "start_url": ".",
-                "display": "standalone",
-                "background_color": "#f0fdf4",
-                "theme_color": "#16a34a",
-                "orientation": "portrait",
-                "icons": [
-                    {
-                        "src": iconSVG,
-                        "sizes": "512x512",
-                        "type": "image/svg+xml",
-                        "purpose": "any maskable"
-                    },
-                    {
-                        "src": iconSVG,
-                        "sizes": "192x192",
-                        "type": "image/svg+xml",
-                        "purpose": "any maskable"
-                    }
-                ]
-            };
-
-            const stringManifest = JSON.stringify(manifest);
-            const blob = new Blob([stringManifest], {type: 'application/manifest+json'});
-            const manifestURL = URL.createObjectURL(blob);
-            
-            const link = document.createElement('link');
-            link.rel = 'manifest';
-            link.href = manifestURL;
-            document.head.appendChild(link);
-        })();
-    </script>
 
     <!-- CHARGEMENT DES OUTILS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -348,6 +318,10 @@
             const canvasRef = useRef(null);
             const fileInputRef = useRef(null);
             const nativeCameraInputRef = useRef(null);
+
+            // Refs pour le pinch-to-zoom
+            const touchStartDist = useRef(null);
+            const startZoom = useRef(1);
             
             useEffect(() => { if (fullscreenPhoto) setZoomLevel(1); }, [fullscreenPhoto]);
 
@@ -406,6 +380,35 @@
             const filtered = products.filter(p => p.sortDate === selectedDate);
             const changeDate = (d) => { const date = new Date(selectedDate); date.setDate(date.getDate() + d); setSelectedDate(date.toISOString().split('T')[0]); };
 
+            // Gestionnaires tactiles pour le zoom
+            const onTouchStart = (e) => {
+                if (e.touches.length === 2) {
+                    const dist = Math.hypot(
+                        e.touches[0].pageX - e.touches[1].pageX,
+                        e.touches[0].pageY - e.touches[1].pageY
+                    );
+                    touchStartDist.current = dist;
+                    startZoom.current = zoomLevel;
+                }
+            };
+
+            const onTouchMove = (e) => {
+                if (e.touches.length === 2 && touchStartDist.current) {
+                    const dist = Math.hypot(
+                        e.touches[0].pageX - e.touches[1].pageX,
+                        e.touches[0].pageY - e.touches[1].pageY
+                    );
+                    const ratio = dist / touchStartDist.current;
+                    const newZoom = Math.min(Math.max(0.5, startZoom.current * ratio), 5); // Max zoom 5x
+                    setZoomLevel(newZoom);
+                    e.stopPropagation(); // Empêche le défilement de la page
+                }
+            };
+
+            const onTouchEnd = () => {
+                touchStartDist.current = null;
+            };
+
             return (
                 <div className="space-y-6 fade-in-element pb-24">
                     <div className="flex justify-between items-center"><h2 className="text-2xl font-bold text-green-800 flex items-center gap-2"><Icon name="ScanBarcode" className="w-8 h-8"/> Traçabilité</h2></div>
@@ -456,8 +459,22 @@
                         </div>
                     )}
                     {fullscreenPhoto && (
-                        <div className="fixed inset-0 z-[100] bg-black flex items-center justify-center overflow-hidden" onClick={() => setFullscreenPhoto(null)}>
-                            <div className="absolute bottom-10 z-50 flex gap-4 pointer-events-auto" onClick={e => e.stopPropagation()}><button className="p-4 bg-white/20 backdrop-blur rounded-full text-white border border-white/30 active:scale-95" onClick={() => setZoomLevel(z => Math.max(0.5, z - 0.5))}><Icon name="ZoomOut"/></button><div className="px-4 py-2 bg-black/50 backdrop-blur rounded-full text-white font-mono flex items-center">{Math.round(zoomLevel * 100)}%</div><button className="p-4 bg-white/20 backdrop-blur rounded-full text-white border border-white/30 active:scale-95" onClick={() => setZoomLevel(z => Math.min(3, z + 0.5))}><Icon name="ZoomIn"/></button></div><button className="absolute top-4 right-4 p-3 bg-black/40 backdrop-blur rounded-full text-white border border-white/20 z-50 pointer-events-auto" onClick={() => setFullscreenPhoto(null)}><Icon name="X"/></button><div className="w-full h-full flex items-center justify-center overflow-auto"><img src={fullscreenPhoto} style={{ transform: `scale(${zoomLevel})`, transition: 'transform 0.2s ease-out' }} className="max-h-screen max-w-full object-contain" onClick={e => e.stopPropagation()} /></div>
+                        <div 
+                            className="fixed inset-0 z-[100] bg-black flex items-center justify-center overflow-hidden touch-none" 
+                            onClick={() => setFullscreenPhoto(null)}
+                            onTouchStart={onTouchStart}
+                            onTouchMove={onTouchMove}
+                            onTouchEnd={onTouchEnd}
+                        >
+                            <div className="absolute bottom-10 z-50 flex gap-4 pointer-events-auto" onClick={e => e.stopPropagation()}><button className="p-4 bg-white/20 backdrop-blur rounded-full text-white border border-white/30 active:scale-95" onClick={() => setZoomLevel(z => Math.max(0.5, z - 0.5))}><Icon name="ZoomOut"/></button><div className="px-4 py-2 bg-black/50 backdrop-blur rounded-full text-white font-mono flex items-center">{Math.round(zoomLevel * 100)}%</div><button className="p-4 bg-white/20 backdrop-blur rounded-full text-white border border-white/30 active:scale-95" onClick={() => setZoomLevel(z => Math.min(3, z + 0.5))}><Icon name="ZoomIn"/></button></div><button className="absolute top-4 right-4 p-3 bg-black/40 backdrop-blur rounded-full text-white border border-white/20 z-50 pointer-events-auto" onClick={() => setFullscreenPhoto(null)}><Icon name="X"/></button>
+                            <div className="w-full h-full flex items-center justify-center overflow-hidden">
+                                <img 
+                                    src={fullscreenPhoto} 
+                                    style={{ transform: `scale(${zoomLevel})`, transition: touchStartDist.current ? 'none' : 'transform 0.2s ease-out' }} 
+                                    className="max-h-screen max-w-full object-contain pointer-events-auto" 
+                                    onClick={e => e.stopPropagation()} 
+                                />
+                            </div>
                         </div>
                     )}
                 </div>
