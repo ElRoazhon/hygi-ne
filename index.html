@@ -6,17 +6,11 @@
     <title>eHygiène - So'Chris</title>
     
     <!-- 1. IDENTITÉ DE L'APPLICATION ET LOGO (Solution "En Dur") -->
-    <!-- Cette icône verte avec la coche est utilisée par défaut par les navigateurs -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj48cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgcng9IjEyMCIgZmlsbD0iIzE2YTM0YSIvPjxwYXRoIGQ9Ik0xNTAgMjYwIEwyMjAgMzMwIEwzNzAgMTgwIiBmaWxsPSJub25lIiBzdHJva2U9IndoaXRlIiBzdHJva2Utd2lkdGg9IjYwIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48L3N2Zz4=">
-    
-    <!-- Cette ligne force Windows à voir l'icône comme un raccourci bureau -->
     <link rel="shortcut icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj48cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgcng9IjEyMCIgZmlsbD0iIzE2YTM0YSIvPjxwYXRoIGQ9Ik0xNTAgMjYwIEwyMjAgMzMwIEwzNzAgMTgwIiBmaWxsPSJub25lIiBzdHJva2U9IndoaXRlIiBzdHJva2Utd2lkdGg9IjYwIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48L3N2Zz4=">
-    
-    <!-- Icône pour iPhone/iPad -->
     <link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj48cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgcng9IjEyMCIgZmlsbD0iIzE2YTM0YSIvPjxwYXRoIGQ9Ik0xNTAgMjYwIEwyMjAgMzMwIEwzNzAgMTgwIiBmaWxsPSJub25lIiBzdHJva2U9IndoaXRlIiBzdHJva2Utd2lkdGg9IjYwIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48L3N2Zz4=">
 
-    <!-- MANIFESTE DIRECT (Pour l'installation Chrome/Edge PC et Android) -->
-    <!-- Encodé en Base64 pour éviter les erreurs de lecture de fichier local -->
+    <!-- MANIFESTE DIRECT -->
     <link rel="manifest" href="data:application/manifest+json;base64,eyJuYW1lIjoiZUh5Z2nDqG5lIFNvJ0NocmlzIiwic2hvcnRfbmFtZSI6IlNvJ0NocmlzIiwic3RhcnRfdXJsIjoiLiIsImRpc3BsYXkiOiJzdGFuZGFsb25lIiwiYmFja2dyb3VuZF9jb2xvciI6IiNmMGZkZjQiLCJ0aGVtZV9jb2xvciI6IiMxNmEzNGEiLCJpY29ucyI6W3sic3JjIjoiZGF0YTppbWFnZS9zdmcreG1sO2Jhc2U2NCxQSE4yWnlCNGJXeHVjejBpYUhSMGNEb3ZMM2QzZHk1M015NXZjbWN2TWpBd01DOXpZGGRpSUhabFpXZENiM2c5SWpBd01DQTFNVElnT1RFeUlqNDhjbVZqZENCM2FXUjBhRDBpTlRFeUlpQm9aV2xuYUhROUlqVXhNaUlnY25nOUlqRXlNQ0lnWm1sc2JEMGlJakUyYVRNMFlTSXZQang4Y0dGMGFDQmtQV0lrTVRVd01qWXdJRXd5TWpBZ016TXdJRXd6TnpBZ01UZ3dJaVdtYVd4c1BTSnViMjVsSWlCemRISnZhMlU5SW5kb2FYUmxJaUJ6ZEhKdmEyVXRkMmxrZEdoOUlqWXdJaUJ6ZEhKdmEyVXRiR2x1WldOaGVEMGljbTkxYm1RaUlITjBjbTlyWlMxc2FXNXFiaM0wSWlKeWIzVnVaQ0kvUGp3OEwzTjJaejQ9Iiwic2l6ZXMiOiI1MTJ4NTEyIiwidHlwZSI6ImltYWdlL3N2Zyt4bWwiLCJwdXJwb3NlIjoiYW55IG1hc2thYmxlIn1dfQ==">
 
     <!-- MÉTADONNÉES -->
@@ -30,6 +24,10 @@
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- OUTILS POUR ZIP (Export Photos) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     
     <!-- FIREBASE -->
     <script type="module">
@@ -314,9 +312,15 @@
             const [fullscreenPhoto, setFullscreenPhoto] = useState(null);
             const [isUploading, setIsUploading] = useState(false);
             const [zoomLevel, setZoomLevel] = useState(1);
-            // --- MODIFICATION: État pour le panoramique (pan) ---
+            // --- État pour le panoramique (pan) ---
             const [pan, setPan] = useState({ x: 0, y: 0 });
             const [tempPhoto, setTempPhoto] = useState(null);
+
+            // --- NOUVEAU: États pour l'export des photos ---
+            const [exportModalOpen, setExportModalOpen] = useState(false);
+            const [exportMonth, setExportMonth] = useState(new Date().toISOString().slice(0, 7));
+            const [isZipping, setIsZipping] = useState(false);
+
             const videoRef = useRef(null);
             const canvasRef = useRef(null);
             const fileInputRef = useRef(null);
@@ -390,6 +394,56 @@
             const filtered = products.filter(p => p.sortDate === selectedDate);
             const changeDate = (d) => { const date = new Date(selectedDate); date.setDate(date.getDate() + d); setSelectedDate(date.toISOString().split('T')[0]); };
 
+            // --- NOUVEAU: Fonction de téléchargement des photos ---
+            const downloadPhotos = async () => {
+                setIsZipping(true);
+                try {
+                    const zip = new JSZip();
+                    const folder = zip.folder(`Photos_${exportMonth}`);
+                    
+                    // Filtrer les produits du mois sélectionné qui ont une photo
+                    const itemsToExport = products.filter(p => p.sortDate && p.sortDate.startsWith(exportMonth) && p.photo);
+                    
+                    if (itemsToExport.length === 0) {
+                        alert("Aucune photo trouvée pour ce mois.");
+                        setIsZipping(false);
+                        return;
+                    }
+
+                    let count = 0;
+                    for (const item of itemsToExport) {
+                        try {
+                            let blob;
+                            // Gestion des images Base64 ou URL (Cloud)
+                            if (item.photo.startsWith('data:')) {
+                                blob = await (await fetch(item.photo)).blob();
+                            } else {
+                                blob = await (await fetch(item.photo)).blob();
+                            }
+                            // Nettoyage du nom de fichier
+                            const safeName = (item.name || 'produit').replace(/[^a-z0-9]/gi, '_');
+                            const filename = `${item.sortDate}_${safeName}_${item.id.substr(0,4)}.jpg`;
+                            folder.file(filename, blob);
+                            count++;
+                        } catch (e) {
+                            console.error("Erreur téléchargement image", item, e);
+                        }
+                    }
+
+                    if (count > 0) {
+                        const content = await zip.generateAsync({ type: "blob" });
+                        saveAs(content, `Traceabilite_${restaurantId}_${exportMonth}.zip`);
+                        setExportModalOpen(false);
+                    } else {
+                        alert("Erreur: Impossible de récupérer les images.");
+                    }
+                } catch (e) {
+                    alert("Erreur ZIP: " + e.message);
+                } finally {
+                    setIsZipping(false);
+                }
+            };
+
             // Gestionnaires tactiles pour le zoom et le pan
             const onTouchStart = (e) => {
                 if (e.touches.length === 2) {
@@ -400,7 +454,6 @@
                     touchStartDist.current = dist;
                     startZoom.current = zoomLevel;
                 } else if (e.touches.length === 1 && zoomLevel > 1) {
-                    // Start panning logic
                     panStart.current = { x: e.touches[0].pageX, y: e.touches[0].pageY };
                     startPan.current = { ...pan };
                 }
@@ -418,7 +471,6 @@
                     if (newZoom <= 1) setPan({x:0, y:0}); // Reset pan if zoomed out
                     e.stopPropagation();
                 } else if (e.touches.length === 1 && panStart.current && zoomLevel > 1) {
-                    // Panning logic
                     const dx = e.touches[0].pageX - panStart.current.x;
                     const dy = e.touches[0].pageY - panStart.current.y;
                     setPan({
@@ -436,7 +488,13 @@
 
             return (
                 <div className="space-y-6 fade-in-element pb-24">
-                    <div className="flex justify-between items-center"><h2 className="text-2xl font-bold text-green-800 flex items-center gap-2"><Icon name="ScanBarcode" className="w-8 h-8"/> Traçabilité</h2></div>
+                    <div className="flex justify-between items-center">
+                        <h2 className="text-2xl font-bold text-green-800 flex items-center gap-2"><Icon name="ScanBarcode" className="w-8 h-8"/> Traçabilité</h2>
+                        {/* --- NOUVEAU: Bouton Export --- */}
+                        <button onClick={() => setExportModalOpen(true)} className="px-4 py-2 bg-green-100 text-green-700 rounded-lg font-bold flex items-center gap-2 hover:bg-green-200 transition-colors">
+                            <Icon name="Download" className="w-5 h-5"/> Exporter
+                        </button>
+                    </div>
                     <div className="grid lg:grid-cols-12 gap-6">
                         <div className="lg:col-span-4">
                             <Card className="border-2 border-green-100">
@@ -469,6 +527,33 @@
                             </div>
                         </div>
                     </div>
+                    {/* --- NOUVEAU: Modale d'export --- */}
+                    {exportModalOpen && (
+                        <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => !isZipping && setExportModalOpen(false)}>
+                            <div className="bg-white p-6 rounded-2xl w-full max-w-sm shadow-2xl" onClick={e => e.stopPropagation()}>
+                                <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+                                    <Icon name="Download" className="text-green-600"/> Exporter Photos
+                                </h3>
+                                <p className="text-gray-600 mb-4">Choisissez le mois à télécharger (ZIP) :</p>
+                                <input 
+                                    type="month" 
+                                    value={exportMonth} 
+                                    onChange={(e) => setExportMonth(e.target.value)} 
+                                    className="w-full p-3 border border-gray-300 rounded-lg mb-6 text-lg"
+                                    disabled={isZipping}
+                                />
+                                <div className="flex gap-3">
+                                    <Button onClick={downloadPhotos} className="flex-1" disabled={isZipping}>
+                                        {isZipping ? "Création ZIP..." : "Télécharger"}
+                                    </Button>
+                                    <Button variant="ghost" onClick={() => setExportModalOpen(false)} disabled={isZipping}>
+                                        Annuler
+                                    </Button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
                     {isWebcamOpen && (
                         <div className="fixed inset-0 z-[100] bg-black flex flex-col">
                             <div className="relative flex-1 w-full h-full overflow-hidden">
