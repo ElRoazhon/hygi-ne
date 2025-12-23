@@ -162,7 +162,8 @@
                     try {
                         const fileName = `${restaurantId}/${category}/${Date.now()}_${Math.random().toString(36).substr(2, 9)}.jpg`;
                         const storageRef = window.ref(window.storage, fileName);
-                        const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 15000));
+                        // --- MODIFICATION: Délai prolongé à 45 secondes ---
+                        const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 45000));
                         await Promise.race([window.uploadBytes(storageRef, item.rawFile), timeoutPromise]);
                         const url = await window.getDownloadURL(storageRef);
                         itemToSave.photo = url;
@@ -313,17 +314,26 @@
             const [fullscreenPhoto, setFullscreenPhoto] = useState(null);
             const [isUploading, setIsUploading] = useState(false);
             const [zoomLevel, setZoomLevel] = useState(1);
+            // --- MODIFICATION: État pour le panoramique (pan) ---
+            const [pan, setPan] = useState({ x: 0, y: 0 });
             const [tempPhoto, setTempPhoto] = useState(null);
             const videoRef = useRef(null);
             const canvasRef = useRef(null);
             const fileInputRef = useRef(null);
             const nativeCameraInputRef = useRef(null);
 
-            // Refs pour le pinch-to-zoom
+            // Refs pour le pinch-to-zoom et pan
             const touchStartDist = useRef(null);
             const startZoom = useRef(1);
+            const panStart = useRef(null);
+            const startPan = useRef({ x: 0, y: 0 });
             
-            useEffect(() => { if (fullscreenPhoto) setZoomLevel(1); }, [fullscreenPhoto]);
+            useEffect(() => { 
+                if (fullscreenPhoto) { 
+                    setZoomLevel(1); 
+                    setPan({x:0, y:0}); 
+                } 
+            }, [fullscreenPhoto]);
 
             const handleCameraClick = () => {
                 const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
@@ -380,7 +390,7 @@
             const filtered = products.filter(p => p.sortDate === selectedDate);
             const changeDate = (d) => { const date = new Date(selectedDate); date.setDate(date.getDate() + d); setSelectedDate(date.toISOString().split('T')[0]); };
 
-            // Gestionnaires tactiles pour le zoom
+            // Gestionnaires tactiles pour le zoom et le pan
             const onTouchStart = (e) => {
                 if (e.touches.length === 2) {
                     const dist = Math.hypot(
@@ -389,6 +399,10 @@
                     );
                     touchStartDist.current = dist;
                     startZoom.current = zoomLevel;
+                } else if (e.touches.length === 1 && zoomLevel > 1) {
+                    // Start panning logic
+                    panStart.current = { x: e.touches[0].pageX, y: e.touches[0].pageY };
+                    startPan.current = { ...pan };
                 }
             };
 
@@ -401,12 +415,23 @@
                     const ratio = dist / touchStartDist.current;
                     const newZoom = Math.min(Math.max(0.5, startZoom.current * ratio), 5); // Max zoom 5x
                     setZoomLevel(newZoom);
-                    e.stopPropagation(); // Empêche le défilement de la page
+                    if (newZoom <= 1) setPan({x:0, y:0}); // Reset pan if zoomed out
+                    e.stopPropagation();
+                } else if (e.touches.length === 1 && panStart.current && zoomLevel > 1) {
+                    // Panning logic
+                    const dx = e.touches[0].pageX - panStart.current.x;
+                    const dy = e.touches[0].pageY - panStart.current.y;
+                    setPan({
+                        x: startPan.current.x + dx,
+                        y: startPan.current.y + dy
+                    });
+                    e.stopPropagation();
                 }
             };
 
             const onTouchEnd = () => {
                 touchStartDist.current = null;
+                panStart.current = null;
             };
 
             return (
@@ -470,7 +495,7 @@
                             <div className="w-full h-full flex items-center justify-center overflow-hidden">
                                 <img 
                                     src={fullscreenPhoto} 
-                                    style={{ transform: `scale(${zoomLevel})`, transition: touchStartDist.current ? 'none' : 'transform 0.2s ease-out' }} 
+                                    style={{ transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoomLevel})`, transition: (touchStartDist.current || panStart.current) ? 'none' : 'transform 0.2s ease-out' }} 
                                     className="max-h-screen max-w-full object-contain pointer-events-auto" 
                                     onClick={e => e.stopPropagation()} 
                                 />
