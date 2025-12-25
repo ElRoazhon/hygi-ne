@@ -160,7 +160,7 @@
                     try {
                         const fileName = `${restaurantId}/${category}/${Date.now()}_${Math.random().toString(36).substr(2, 9)}.jpg`;
                         const storageRef = window.ref(window.storage, fileName);
-                        // --- MODIFICATION: Délai prolongé à 45 secondes ---
+                        // Délai 45 secondes pour le cloud
                         const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 45000));
                         await Promise.race([window.uploadBytes(storageRef, item.rawFile), timeoutPromise]);
                         const url = await window.getDownloadURL(storageRef);
@@ -316,10 +316,13 @@
             const [pan, setPan] = useState({ x: 0, y: 0 });
             const [tempPhoto, setTempPhoto] = useState(null);
 
-            // --- NOUVEAU: États pour l'export des photos ---
+            // --- États pour l'export des photos ---
             const [exportModalOpen, setExportModalOpen] = useState(false);
             const [exportMonth, setExportMonth] = useState(new Date().toISOString().slice(0, 7));
             const [isZipping, setIsZipping] = useState(false);
+            
+            // --- NOUVEAU: État pour éviter le nettoyage en boucle ---
+            const [hasAutoCleaned, setHasAutoCleaned] = useState(false);
 
             const videoRef = useRef(null);
             const canvasRef = useRef(null);
@@ -338,6 +341,36 @@
                     setPan({x:0, y:0}); 
                 } 
             }, [fullscreenPhoto]);
+
+            // --- NOUVEAU: Effect pour supprimer automatiquement les photos > 6 mois ---
+            useEffect(() => {
+                if (products.length > 0 && !hasAutoCleaned) {
+                    // On attend 5 secondes après le chargement pour ne pas ralentir le démarrage
+                    const timer = setTimeout(async () => {
+                        const sixMonthsAgo = Date.now() - (180 * 24 * 60 * 60 * 1000); // 180 jours ~ 6 mois
+                        
+                        const oldItems = products.filter(p => {
+                            // On privilégie createdAt (timestamp), sinon on tente de lire sortDate (YYYY-MM-DD)
+                            const itemDate = p.createdAt || (p.sortDate ? new Date(p.sortDate).getTime() : null);
+                            return itemDate && itemDate < sixMonthsAgo;
+                        });
+
+                        if (oldItems.length > 0) {
+                            console.log(`[Auto-Clean] Suppression de ${oldItems.length} éléments de plus de 6 mois.`);
+                            for (const item of oldItems) {
+                                try {
+                                    await deleteItem(item.id);
+                                } catch (e) {
+                                    console.warn("Erreur suppression auto", e);
+                                }
+                            }
+                        }
+                        setHasAutoCleaned(true);
+                    }, 5000);
+                    
+                    return () => clearTimeout(timer);
+                }
+            }, [products, hasAutoCleaned]);
 
             const handleCameraClick = () => {
                 const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
@@ -394,7 +427,7 @@
             const filtered = products.filter(p => p.sortDate === selectedDate);
             const changeDate = (d) => { const date = new Date(selectedDate); date.setDate(date.getDate() + d); setSelectedDate(date.toISOString().split('T')[0]); };
 
-            // --- NOUVEAU: Fonction de téléchargement des photos ---
+            // --- Fonction de téléchargement des photos ---
             const downloadPhotos = async () => {
                 setIsZipping(true);
                 try {
@@ -490,7 +523,7 @@
                 <div className="space-y-6 fade-in-element pb-24">
                     <div className="flex justify-between items-center">
                         <h2 className="text-2xl font-bold text-green-800 flex items-center gap-2"><Icon name="ScanBarcode" className="w-8 h-8"/> Traçabilité</h2>
-                        {/* --- NOUVEAU: Bouton Export --- */}
+                        {/* --- Bouton Export --- */}
                         <button onClick={() => setExportModalOpen(true)} className="px-4 py-2 bg-green-100 text-green-700 rounded-lg font-bold flex items-center gap-2 hover:bg-green-200 transition-colors">
                             <Icon name="Download" className="w-5 h-5"/> Exporter
                         </button>
@@ -527,7 +560,7 @@
                             </div>
                         </div>
                     </div>
-                    {/* --- NOUVEAU: Modale d'export --- */}
+                    {/* --- Modale d'export --- */}
                     {exportModalOpen && (
                         <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => !isZipping && setExportModalOpen(false)}>
                             <div className="bg-white p-6 rounded-2xl w-full max-w-sm shadow-2xl" onClick={e => e.stopPropagation()}>
@@ -747,10 +780,10 @@
             const [user, setUser] = useState(null);
             const [restaurantId, setRestaurantId] = useState(localStorage.getItem('haccp_restaurant_id') || 'mon-restaurant');
             const [tab, setTab] = useState('traceability');
-            // MODIFICATION ICI: On utilise sessionStorage pour garder l'état déverrouillé pendant la session
-            // Si l'utilisateur rafraîchit la page (ou si le navigateur le fait après une photo),
-            // on vérifie si 'haccp_app_unlocked' est présent.
-            const [isLocked, setIsLocked] = useState(!sessionStorage.getItem('haccp_app_unlocked'));
+            
+            // MODIFICATION: On utilise localStorage (persistant) au lieu de sessionStorage (temporaire)
+            // L'application restera déverrouillée tant qu'on ne clique pas sur "Verrouiller"
+            const [isLocked, setIsLocked] = useState(!localStorage.getItem('haccp_app_unlocked'));
             
             const [isAuthLoading, setIsAuthLoading] = useState(true); // Chargement initial
             const [isLoginLoading, setIsLoginLoading] = useState(false); // Chargement pendant le login PIN
@@ -783,8 +816,8 @@
                 // L'utilisateur est DÉJÀ connecté anonymement au backend (pour sauver les données)
                 // Ce code sert de verrou UI (Interface Utilisateur)
                 if (code === '030613') {
-                    // MODIFICATION ICI: On enregistre l'état déverrouillé dans la session
-                    sessionStorage.setItem('haccp_app_unlocked', 'true');
+                    // MODIFICATION: On enregistre l'état déverrouillé de manière permanente
+                    localStorage.setItem('haccp_app_unlocked', 'true');
                     setIsLocked(false);
                 } else {
                     alert("Code incorrect");
@@ -792,8 +825,8 @@
             };
             
             const handleLock = () => {
-                // MODIFICATION ICI: On nettoie la session lors du verrouillage manuel
-                sessionStorage.removeItem('haccp_app_unlocked');
+                // MODIFICATION: On supprime l'état persistant lors du verrouillage manuel
+                localStorage.removeItem('haccp_app_unlocked');
                 setIsLocked(true);
             };
 
