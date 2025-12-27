@@ -49,7 +49,6 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        // Ajout de enableIndexedDbPersistence pour le mode hors ligne
         import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc, updateDoc, query, where, setDoc, getDocs, enableIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
 
@@ -87,6 +86,9 @@
         window.collection = collection; window.addDoc = addDoc; window.onSnapshot = onSnapshot; window.deleteDoc = deleteDoc; window.doc = doc; window.updateDoc = updateDoc; window.setDoc = setDoc;
         window.signInAnonymously = signInAnonymously; window.signInWithCustomToken = signInWithCustomToken; window.signOut = signOut; window.onAuthStateChanged = onAuthStateChanged;
         window.ref = ref; window.uploadBytes = uploadBytes; window.getDownloadURL = getDownloadURL;
+        
+        // Signal que Firebase est chargé
+        window.firebaseLoaded = true;
     </script>
 
     <style>
@@ -101,10 +103,25 @@
         .pb-safe { padding-bottom: env(safe-area-inset-bottom, 20px); }
         .offline-badge { background-color: #f97316; color: white; padding: 4px 12px; border-radius: 9999px; font-weight: bold; font-size: 0.8rem; box-shadow: 0 2px 4px rgba(0,0,0,0.2); animation: pulse 2s infinite; display: flex; align-items: center; gap: 6px; }
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.8; } 100% { opacity: 1; } }
+        
+        /* Loader Statique */
+        #static-loader { position: fixed; inset: 0; background: #f0fdf4; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; font-family: sans-serif; text-align: center; padding: 20px; transition: opacity 0.5s; }
+        .loader-spinner { width: 40px; height: 40px; border: 4px solid #dcfce7; border-top: 4px solid #16a34a; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body class="bg-green-50 text-gray-900 h-screen w-screen overflow-hidden select-none font-sans">
-    <div id="root" class="h-full w-full"></div>
+    <!-- LOADER INITIAL (Visible avant que React ne charge) -->
+    <div id="root" class="h-full w-full">
+        <div id="static-loader">
+            <div class="loader-spinner"></div>
+            <h2 style="color: #166534; font-weight: bold; font-size: 1.25rem; margin-bottom: 10px;">eHygiène So'Chris</h2>
+            <p style="color: #4b5563; font-size: 0.9rem;">Démarrage de l'application...</p>
+            <p style="color: #9ca3af; font-size: 0.8rem; margin-top: 20px; max-width: 300px;">
+                Si cet écran reste bloqué plus de 10 secondes, vérifiez votre connexion internet pour le chargement initial.
+            </p>
+        </div>
+    </div>
 
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
@@ -132,7 +149,7 @@
             useEffect(() => {
                 if (!window.db || !restaurantId) return;
                 let q = window.appId === 'epack-prod-data' ? window.collection(window.db, 'haccp_data', restaurantId, category) : window.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'haccp_items');
-                // En mode hors ligne, onSnapshot continue de fonctionner avec le cache local
+                
                 const unsubscribe = window.onSnapshot(q, (snapshot) => {
                     let items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                     if (window.appId !== 'epack-prod-data') { items = items.filter(item => item.restaurantId === restaurantId && item.category === category); }
@@ -141,43 +158,38 @@
                         return (b[sortField] || 0) - (a[sortField] || 0);
                     });
                     setData(items);
-                }, (error) => console.error("Sync error:", error));
+                }, (error) => {
+                    console.error("Sync error:", error);
+                    // Silently ignore auth errors offline to keep UI showing cached data if possible
+                });
                 return () => unsubscribe();
             }, [restaurantId, category]);
 
             const addItem = async (item) => {
                 if (!restaurantId) return;
                 let itemToSave = { ...item };
-                
-                // Détection hors ligne pour optimiser l'enregistrement de l'image
                 const isOffline = !navigator.onLine;
 
                 if (item.rawFile) {
                     if (isOffline) {
-                        // Optimisation Hors Ligne : Pas de tentative d'upload Storage (qui échouerait)
-                        // On stocke directement le Base64 dans Firestore, mais avec une compression "intelligente"
-                        // pour ne pas dépasser la limite de 1Mo par document tout en gardant une excellente qualité.
                         console.log("Offline: Saving image directly to Firestore (High Quality)");
                         if (item.photo && item.photo.startsWith('data:')) { 
-                            // 1600px de large et qualité 0.85 = très bonne lisibilité pour étiquettes
+                            // 1600px, 0.85 quality for readable labels
                             const compressed = await compressImage(item.photo, 1600, 0.85); 
                             itemToSave.photo = compressed; 
                         }
                         delete itemToSave.rawFile;
                     } else {
-                        // En ligne : On tente l'upload propre
                         try {
                             const fileName = `${restaurantId}/${category}/${Date.now()}_${Math.random().toString(36).substr(2, 9)}.jpg`;
                             const storageRef = window.ref(window.storage, fileName);
-                            // Timeout plus court pour ne pas bloquer l'interface si la co est mauvaise
                             const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 10000));
                             await Promise.race([window.uploadBytes(storageRef, item.rawFile), timeoutPromise]);
                             const url = await window.getDownloadURL(storageRef);
                             itemToSave.photo = url; delete itemToSave.rawFile;
                         } catch (e) {
-                            console.log("Upload failed (or timeout), falling back to base64 storage", e);
+                            console.log("Upload failed, fallback base64", e);
                             if (item.photo && item.photo.startsWith('data:')) { 
-                                // Fallback haute qualité aussi en cas d'échec upload
                                 const compressed = await compressImage(item.photo, 1600, 0.85); 
                                 itemToSave.photo = compressed; 
                                 delete itemToSave.rawFile; 
@@ -188,10 +200,9 @@
                 }
                 if (itemToSave.order === undefined) itemToSave.order = Date.now();
                 try {
-                    // L'appel addDoc fonctionne hors ligne grâce à enableIndexedDbPersistence
                     if (window.appId === 'epack-prod-data') await window.addDoc(window.collection(window.db, 'haccp_data', restaurantId, category), { createdAt: Date.now(), ...itemToSave });
                     else await window.addDoc(window.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'haccp_items'), { restaurantId, category, createdAt: Date.now(), ...itemToSave });
-                } catch (e) { alert("Erreur sauvegarde: " + e.message); }
+                } catch (e) { alert("Erreur sauvegarde (vérifiez connexion si 1ère fois): " + e.message); }
             };
 
             const deleteItem = async (id) => {
@@ -243,7 +254,7 @@
             const icons = {
                 ScanBarcode: <><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></>,
                 Thermometer: <path d="M14 4v10.54a4 4 0 1 1-4 0V4a2 2 0 0 1 4 0Z" />,
-                ClipboardCheck: <><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1-2-2h2"/><path d="M15 2H9a1 1 0 0 0-1 1v2a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V3a1 1 0 0 0-1-1Z"/><path d="m9 14 2 2 4-4"/></>,
+                ClipboardCheck: <><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M15 2H9a1 1 0 0 0-1 1v2a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V3a1 1 0 0 0-1-1Z"/><path d="m9 14 2 2 4-4"/></>,
                 Camera: <><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></>,
                 ChevronRight: <path d="m9 18 6-6-6-6"/>,
                 ChevronLeft: <path d="m15 18-6-6 6-6"/>,
@@ -597,18 +608,51 @@
             const [isLocked, setIsLocked] = useState(!localStorage.getItem('haccp_app_unlocked'));
             const [isAuthLoading, setIsAuthLoading] = useState(true); 
             const [isLoginLoading, setIsLoginLoading] = useState(false);
-            const isOnline = useNetworkStatus(); // Hook statut réseau
+            const isOnline = useNetworkStatus();
 
             useEffect(() => {
-                const initAuth = async () => { if (window.initialAuthToken) { await window.signInWithCustomToken(window.auth, window.initialAuthToken); } else { await window.signInAnonymously(window.auth); } };
-                initAuth();
-                const unsubscribe = window.onAuthStateChanged(window.auth, (u) => { setUser(u); setIsAuthLoading(false); });
-                return () => unsubscribe();
+                // Masquer le loader statique HTML une fois que React prend le relais
+                const loader = document.getElementById('static-loader');
+                if (loader) loader.style.display = 'none';
+
+                let unsubscribe;
+                const startAuth = async () => {
+                    // 1. D'abord on écoute si une session existe déjà (Persistence Firebase)
+                    unsubscribe = window.onAuthStateChanged(window.auth, (u) => {
+                        if (u) {
+                            console.log("Session restaurée (Offline/Online)");
+                            setUser(u);
+                            setIsAuthLoading(false);
+                        } else {
+                            // 2. Pas d'utilisateur connu ? On tente de se connecter
+                            console.log("Aucune session, tentative de connexion anonyme...");
+                            const doLogin = async () => {
+                                try {
+                                    if (window.initialAuthToken) { 
+                                        await window.signInWithCustomToken(window.auth, window.initialAuthToken); 
+                                    } else { 
+                                        await window.signInAnonymously(window.auth); 
+                                    }
+                                } catch (e) {
+                                    console.error("Erreur Auth (Probablement hors ligne sans cache)", e);
+                                    // Si on échoue à se connecter (hors ligne et jamais venu), on arrête le chargement
+                                    // pour ne pas bloquer sur écran blanc, mais l'accès aux données sera probablement bloqué.
+                                    setIsAuthLoading(false);
+                                }
+                            };
+                            doLogin();
+                        }
+                    });
+                };
+                startAuth();
+                return () => { if(unsubscribe) unsubscribe(); };
             }, []);
+
             useEffect(() => { localStorage.setItem('haccp_restaurant_id', restaurantId); }, [restaurantId]);
             const handleLogin = async (code) => { if (code === '030613') { localStorage.setItem('haccp_app_unlocked', 'true'); setIsLocked(false); } else { alert("Code incorrect"); } };
             const handleLock = () => { localStorage.removeItem('haccp_app_unlocked'); setIsLocked(true); };
-            if (isAuthLoading) return <div className="flex items-center justify-center h-full text-green-700 font-bold animate-pulse">Chargement Cloud...</div>;
+            
+            if (isAuthLoading) return <div className="flex items-center justify-center h-full text-green-700 font-bold animate-pulse">Chargement de vos données...</div>;
             if (isLocked) { return <PinScreen onLogin={handleLogin} isLoading={isLoginLoading} />; }
             
             const MenuBtn = ({ id, label, icon }) => ( <button onClick={() => setTab(id)} className={`w-full flex items-center gap-4 px-4 py-4 rounded-xl transition-all ${tab === id ? 'bg-green-600 text-white shadow-lg' : 'text-gray-600 hover:bg-green-50'}`}><Icon name={icon} className="w-6 h-6"/> <span className="font-semibold text-lg hidden lg:inline">{label}</span><span className="lg:hidden"><Icon name={icon} className="w-8 h-8"/></span></button> );
