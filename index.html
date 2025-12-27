@@ -49,7 +49,8 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc, updateDoc, query, where, setDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        // Ajout de enableIndexedDbPersistence pour le mode hors ligne
+        import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc, updateDoc, query, where, setDoc, getDocs, enableIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
 
         let firebaseConfig;
@@ -71,6 +72,17 @@
         const db = getFirestore(app);
         const storage = getStorage(app); 
 
+        // --- ACTIVATION PERSISTANCE HORS LIGNE ---
+        try {
+            enableIndexedDbPersistence(db).catch((err) => {
+                if (err.code == 'failed-precondition') {
+                    console.warn("Persistance échouée : multiples onglets ouverts.");
+                } else if (err.code == 'unimplemented') {
+                    console.warn("Persistance non supportée par ce navigateur.");
+                }
+            });
+        } catch(e) { console.log("Erreur init persistence", e); }
+
         window.db = db; window.auth = auth; window.storage = storage; window.appId = appId; window.initialAuthToken = initialAuthToken; 
         window.collection = collection; window.addDoc = addDoc; window.onSnapshot = onSnapshot; window.deleteDoc = deleteDoc; window.doc = doc; window.updateDoc = updateDoc; window.setDoc = setDoc;
         window.signInAnonymously = signInAnonymously; window.signInWithCustomToken = signInWithCustomToken; window.signOut = signOut; window.onAuthStateChanged = onAuthStateChanged;
@@ -87,6 +99,8 @@
         @keyframes scan { 0% { top: 10%; opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { top: 90%; opacity: 0; } }
         .scan-line { position: absolute; left: 10%; right: 10%; height: 2px; background: #4ade80; box-shadow: 0 0 10px #4ade80; animation: scan 2s linear infinite; }
         .pb-safe { padding-bottom: env(safe-area-inset-bottom, 20px); }
+        .offline-badge { background-color: #f97316; color: white; padding: 4px 12px; border-radius: 9999px; font-weight: bold; font-size: 0.8rem; box-shadow: 0 2px 4px rgba(0,0,0,0.2); animation: pulse 2s infinite; display: flex; align-items: center; gap: 6px; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.8; } 100% { opacity: 1; } }
     </style>
 </head>
 <body class="bg-green-50 text-gray-900 h-screen w-screen overflow-hidden select-none font-sans">
@@ -118,6 +132,7 @@
             useEffect(() => {
                 if (!window.db || !restaurantId) return;
                 let q = window.appId === 'epack-prod-data' ? window.collection(window.db, 'haccp_data', restaurantId, category) : window.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'haccp_items');
+                // En mode hors ligne, onSnapshot continue de fonctionner avec le cache local
                 const unsubscribe = window.onSnapshot(q, (snapshot) => {
                     let items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                     if (window.appId !== 'epack-prod-data') { items = items.filter(item => item.restaurantId === restaurantId && item.category === category); }
@@ -133,21 +148,47 @@
             const addItem = async (item) => {
                 if (!restaurantId) return;
                 let itemToSave = { ...item };
+                
+                // Détection hors ligne pour optimiser l'enregistrement de l'image
+                const isOffline = !navigator.onLine;
+
                 if (item.rawFile) {
-                    try {
-                        const fileName = `${restaurantId}/${category}/${Date.now()}_${Math.random().toString(36).substr(2, 9)}.jpg`;
-                        const storageRef = window.ref(window.storage, fileName);
-                        const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 45000));
-                        await Promise.race([window.uploadBytes(storageRef, item.rawFile), timeoutPromise]);
-                        const url = await window.getDownloadURL(storageRef);
-                        itemToSave.photo = url; delete itemToSave.rawFile;
-                    } catch (e) {
-                        if (item.photo && item.photo.startsWith('data:')) { const compressed = await compressImage(item.photo, 600, 0.5); itemToSave.photo = compressed; delete itemToSave.rawFile; } 
-                        else { delete itemToSave.photo; delete itemToSave.rawFile; }
+                    if (isOffline) {
+                        // Optimisation Hors Ligne : Pas de tentative d'upload Storage (qui échouerait)
+                        // On stocke directement le Base64 dans Firestore, mais avec une compression "intelligente"
+                        // pour ne pas dépasser la limite de 1Mo par document tout en gardant une excellente qualité.
+                        console.log("Offline: Saving image directly to Firestore (High Quality)");
+                        if (item.photo && item.photo.startsWith('data:')) { 
+                            // 1600px de large et qualité 0.85 = très bonne lisibilité pour étiquettes
+                            const compressed = await compressImage(item.photo, 1600, 0.85); 
+                            itemToSave.photo = compressed; 
+                        }
+                        delete itemToSave.rawFile;
+                    } else {
+                        // En ligne : On tente l'upload propre
+                        try {
+                            const fileName = `${restaurantId}/${category}/${Date.now()}_${Math.random().toString(36).substr(2, 9)}.jpg`;
+                            const storageRef = window.ref(window.storage, fileName);
+                            // Timeout plus court pour ne pas bloquer l'interface si la co est mauvaise
+                            const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 10000));
+                            await Promise.race([window.uploadBytes(storageRef, item.rawFile), timeoutPromise]);
+                            const url = await window.getDownloadURL(storageRef);
+                            itemToSave.photo = url; delete itemToSave.rawFile;
+                        } catch (e) {
+                            console.log("Upload failed (or timeout), falling back to base64 storage", e);
+                            if (item.photo && item.photo.startsWith('data:')) { 
+                                // Fallback haute qualité aussi en cas d'échec upload
+                                const compressed = await compressImage(item.photo, 1600, 0.85); 
+                                itemToSave.photo = compressed; 
+                                delete itemToSave.rawFile; 
+                            } 
+                            else { delete itemToSave.photo; delete itemToSave.rawFile; }
+                        }
                     }
                 }
                 if (itemToSave.order === undefined) itemToSave.order = Date.now();
                 try {
+                    // L'appel addDoc fonctionne hors ligne grâce à enableIndexedDbPersistence
                     if (window.appId === 'epack-prod-data') await window.addDoc(window.collection(window.db, 'haccp_data', restaurantId, category), { createdAt: Date.now(), ...itemToSave });
                     else await window.addDoc(window.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'haccp_items'), { restaurantId, category, createdAt: Date.now(), ...itemToSave });
                 } catch (e) { alert("Erreur sauvegarde: " + e.message); }
@@ -202,7 +243,7 @@
             const icons = {
                 ScanBarcode: <><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></>,
                 Thermometer: <path d="M14 4v10.54a4 4 0 1 1-4 0V4a2 2 0 0 1 4 0Z" />,
-                ClipboardCheck: <><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M15 2H9a1 1 0 0 0-1 1v2a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V3a1 1 0 0 0-1-1Z"/><path d="m9 14 2 2 4-4"/></>,
+                ClipboardCheck: <><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1-2-2h2"/><path d="M15 2H9a1 1 0 0 0-1 1v2a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V3a1 1 0 0 0-1-1Z"/><path d="m9 14 2 2 4-4"/></>,
                 Camera: <><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></>,
                 ChevronRight: <path d="m9 18 6-6-6-6"/>,
                 ChevronLeft: <path d="m15 18-6-6 6-6"/>,
@@ -227,11 +268,13 @@
                 Truck: <path d="M10 17h4V5H2v12h3m10 0h3l4-4V8h-7v9zm-9 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm11 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/>,
                 ArrowUp: <path d="M12 19V5M5 12l7-7 7 7"/>,
                 ArrowDown: <path d="M12 5v14M5 12l7 7 7-7"/>,
-                ClipboardList: <><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/></>
+                ClipboardList: <><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/></>,
+                WifiOff: <line x1="1" y1="1" x2="23" y2="23"></line>
             };
             return (
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
                     {icons[name] || <circle cx="12" cy="12" r="10" />}
+                    {name === 'WifiOff' && <><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/><line x1="2" y1="2" x2="22" y2="22"/></>}
                     {name === 'Lock' && <path d="M7 11V7a5 5 0 0 1 10 0v4" />}
                 </svg>
             );
@@ -253,6 +296,22 @@
             const handleSelect = (val) => { onChange({ target: { value: val } }); setShow(false); };
             const handleFocus = () => { if (value && value.length > 0) { const uniqueOptions = [...new Set(options)]; const filtered = uniqueOptions.filter(opt => opt && opt.toLowerCase().includes(value.toLowerCase()) && opt !== value).slice(0, 5); if(filtered.length > 0) { setSuggestions(filtered); setShow(true); } } };
             return ( <div className="mb-4 relative" ref={wrapperRef}> {label && <label className="block text-sm font-semibold text-gray-700 mb-1">{label}</label>} <input className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none" value={value} onChange={handleChange} onFocus={handleFocus} placeholder={placeholder} required={required} autoComplete="off" /> {show && suggestions.length > 0 && (<ul className="absolute z-50 w-full bg-white border border-gray-200 rounded-lg shadow-xl mt-1 max-h-48 overflow-y-auto">{suggestions.map((s, i) => (<li key={i} className="p-3 hover:bg-green-50 cursor-pointer border-b last:border-b-0 text-gray-700 font-medium" onClick={() => handleSelect(s)}>{s}</li>))}</ul>)} </div> );
+        };
+
+        // Hook pour détecter le statut réseau
+        const useNetworkStatus = () => {
+            const [isOnline, setIsOnline] = useState(navigator.onLine);
+            useEffect(() => {
+                const handleOnline = () => setIsOnline(true);
+                const handleOffline = () => setIsOnline(false);
+                window.addEventListener('online', handleOnline);
+                window.addEventListener('offline', handleOffline);
+                return () => {
+                    window.removeEventListener('online', handleOnline);
+                    window.removeEventListener('offline', handleOffline);
+                };
+            }, []);
+            return isOnline;
         };
 
         const TraceabilityModule = ({ restaurantId }) => {
@@ -538,6 +597,7 @@
             const [isLocked, setIsLocked] = useState(!localStorage.getItem('haccp_app_unlocked'));
             const [isAuthLoading, setIsAuthLoading] = useState(true); 
             const [isLoginLoading, setIsLoginLoading] = useState(false);
+            const isOnline = useNetworkStatus(); // Hook statut réseau
 
             useEffect(() => {
                 const initAuth = async () => { if (window.initialAuthToken) { await window.signInWithCustomToken(window.auth, window.initialAuthToken); } else { await window.signInAnonymously(window.auth); } };
@@ -572,7 +632,17 @@
                         </div>
                     </div>
                     <main className="flex-1 flex flex-col h-full overflow-hidden relative w-full order-1 md:order-2 pb-16 md:pb-0">
-                        <div className="md:hidden bg-white p-4 border-b flex justify-between items-center"><h1 className="text-xl font-extrabold text-green-700">eHygiène<span className="text-green-400">.</span></h1><button onClick={handleLock} className="text-red-500"><Icon name="LogOut" className="w-6 h-6"/></button></div>
+                        {/* HEADER MOBILE + BADGE OFFLINE */}
+                        <div className="md:hidden bg-white p-4 border-b flex justify-between items-center relative">
+                            <h1 className="text-xl font-extrabold text-green-700">eHygiène<span className="text-green-400">.</span></h1>
+                            {!isOnline && <div className="absolute left-1/2 transform -translate-x-1/2 bg-orange-100 text-orange-600 px-3 py-1 rounded-full text-xs font-bold border border-orange-200 flex items-center gap-1 shadow-sm"><Icon name="WifiOff" className="w-3 h-3"/> Hors Ligne</div>}
+                            <button onClick={handleLock} className="text-red-500"><Icon name="LogOut" className="w-6 h-6"/></button>
+                        </div>
+                         {/* HEADER DESKTOP BADGE OFFLINE */}
+                         <div className="hidden md:flex absolute top-4 right-10 z-50">
+                            {!isOnline && <div className="offline-badge"><Icon name="WifiOff" className="w-4 h-4"/> Mode Hors Ligne</div>}
+                        </div>
+
                         <div className="flex-1 overflow-y-auto p-4 lg:p-10 w-full">
                             <div className="max-w-5xl mx-auto w-full">
                                 {tab === 'traceability' && <TraceabilityModule restaurantId={restaurantId} />}
