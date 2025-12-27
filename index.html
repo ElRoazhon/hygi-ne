@@ -5,6 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>eHygiène - So'Chris</title>
     
+    <!-- OPTIMISATION CACHE & PRELOAD -->
+    <meta http-equiv="Cache-Control" content="public, max-age=31536000">
+    <link rel="preload" href="https://cdn.tailwindcss.com" as="script">
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js" as="script">
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js" as="script">
+    <link rel="preload" href="https://unpkg.com/@babel/standalone/babel.min.js" as="script">
+    <link rel="preload" href="https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js" as="script">
+    <link rel="preload" href="https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js" as="script">
+    
     <!-- ICONS -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj48cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgcng9IjEyMCIgZmlsbD0iIzE2YTM0YSIvPjxwYXRoIGQ9Ik0yNTYgODBjMCAwIDE0MCAyNSAxNDAgMTQwYzAgMTAwLTgwIDE4MC0xNDAgMjEyYy02MC0zMi0xNDAtMTEyLTE0MC0yMTJjMC0xMTUgMTQwLTE0MCAxNDAtMTQweiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjMwIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48cGF0aCBkPSJNMzM2IDIwMGwtMTAwIDEwMGwtNjAtNjAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2ZmZiIgc3Ryb2tlLXdpZHRoPSIzMCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PC9zdmc+">
     <link rel="apple-touch-icon" id="dynamic-apple-icon" href="">
@@ -28,7 +37,16 @@
                 const pngUrl = canvas.toDataURL('image/png');
                 const appleIcon = document.getElementById('dynamic-apple-icon');
                 if (appleIcon) appleIcon.href = pngUrl;
-                const manifest = { "name": "eHygiène So'Chris", "short_name": "So'Chris", "start_url": ".", "display": "standalone", "background_color": "#f0fdf4", "theme_color": "#16a34a", "icons": [ { "src": pngUrl, "sizes": "512x512", "type": "image/png", "purpose": "any maskable" } ] };
+                const manifest = { 
+                    "name": "eHygiène So'Chris", 
+                    "short_name": "So'Chris", 
+                    "start_url": ".", 
+                    "display": "standalone", 
+                    "orientation": "portrait",
+                    "background_color": "#f0fdf4", 
+                    "theme_color": "#16a34a", 
+                    "icons": [ { "src": pngUrl, "sizes": "512x512", "type": "image/png", "purpose": "any maskable" } ] 
+                };
                 const stringManifest = JSON.stringify(manifest);
                 const blob = new Blob([stringManifest], {type: 'application/json'});
                 const manifestUrl = URL.createObjectURL(blob);
@@ -39,9 +57,10 @@
         })();
     </script>
 
+    <!-- SCRIPTS MOTEUR (Chargés via CDN pour mise en cache) -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+    <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
@@ -104,24 +123,50 @@
         .offline-badge { background-color: #f97316; color: white; padding: 4px 12px; border-radius: 9999px; font-weight: bold; font-size: 0.8rem; box-shadow: 0 2px 4px rgba(0,0,0,0.2); animation: pulse 2s infinite; display: flex; align-items: center; gap: 6px; }
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.8; } 100% { opacity: 1; } }
         
-        /* Loader Statique */
+        /* Loader Statique et Error Screen */
         #static-loader { position: fixed; inset: 0; background: #f0fdf4; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; font-family: sans-serif; text-align: center; padding: 20px; transition: opacity 0.5s; }
         .loader-spinner { width: 40px; height: 40px; border: 4px solid #dcfce7; border-top: 4px solid #16a34a; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        #offline-error { display: none; color: #b91c1c; background: #fef2f2; padding: 20px; border-radius: 10px; border: 1px solid #fecaca; max-width: 90%; margin-top: 20px; }
     </style>
 </head>
 <body class="bg-green-50 text-gray-900 h-screen w-screen overflow-hidden select-none font-sans">
     <!-- LOADER INITIAL (Visible avant que React ne charge) -->
     <div id="root" class="h-full w-full">
         <div id="static-loader">
-            <div class="loader-spinner"></div>
+            <div class="loader-spinner" id="loader-spinner"></div>
             <h2 style="color: #166534; font-weight: bold; font-size: 1.25rem; margin-bottom: 10px;">eHygiène So'Chris</h2>
-            <p style="color: #4b5563; font-size: 0.9rem;">Démarrage de l'application...</p>
-            <p style="color: #9ca3af; font-size: 0.8rem; margin-top: 20px; max-width: 300px;">
-                Si cet écran reste bloqué plus de 10 secondes, vérifiez votre connexion internet pour le chargement initial.
+            <p id="loader-text" style="color: #4b5563; font-size: 0.9rem;">Démarrage de l'application...</p>
+            
+            <div id="offline-error">
+                <h3 style="font-weight: bold; margin-bottom: 5px;">⚠️ Connexion Requise</h3>
+                <p style="font-size: 0.9rem; margin-bottom: 10px;">Impossible de charger les fichiers de l'application.</p>
+                <ul style="text-align: left; font-size: 0.85rem; color: #7f1d1d; list-style-type: disc; padding-left: 20px;">
+                    <li>Connectez-vous à Internet (Wi-Fi/4G).</li>
+                    <li>Rechargez la page.</li>
+                    <li>Utilisez ensuite le bouton <b>"Installer pour Hors-Ligne"</b> dans le menu.</li>
+                </ul>
+                <button onclick="window.location.reload()" style="margin-top: 15px; padding: 10px 20px; background: #dc2626; color: white; border: none; border-radius: 5px; font-weight: bold;">Réessayer</button>
+            </div>
+
+            <p id="loader-hint" style="color: #9ca3af; font-size: 0.8rem; margin-top: 20px; max-width: 300px;">
+                Initialisation des composants...
             </p>
         </div>
     </div>
+
+    <!-- Script de secours pour détecter l'échec de chargement -->
+    <script>
+        setTimeout(function() {
+            // Si React n'est pas chargé après 8 secondes, c'est probablement un problème réseau au démarrage
+            if (!window.React) {
+                document.getElementById('loader-spinner').style.display = 'none';
+                document.getElementById('loader-text').style.display = 'none';
+                document.getElementById('loader-hint').style.display = 'none';
+                document.getElementById('offline-error').style.display = 'block';
+            }
+        }, 8000);
+    </script>
 
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
@@ -160,7 +205,6 @@
                     setData(items);
                 }, (error) => {
                     console.error("Sync error:", error);
-                    // Silently ignore auth errors offline to keep UI showing cached data if possible
                 });
                 return () => unsubscribe();
             }, [restaurantId, category]);
@@ -174,7 +218,6 @@
                     if (isOffline) {
                         console.log("Offline: Saving image directly to Firestore (High Quality)");
                         if (item.photo && item.photo.startsWith('data:')) { 
-                            // 1600px, 0.85 quality for readable labels
                             const compressed = await compressImage(item.photo, 1600, 0.85); 
                             itemToSave.photo = compressed; 
                         }
@@ -202,7 +245,7 @@
                 try {
                     if (window.appId === 'epack-prod-data') await window.addDoc(window.collection(window.db, 'haccp_data', restaurantId, category), { createdAt: Date.now(), ...itemToSave });
                     else await window.addDoc(window.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'haccp_items'), { restaurantId, category, createdAt: Date.now(), ...itemToSave });
-                } catch (e) { alert("Erreur sauvegarde (vérifiez connexion si 1ère fois): " + e.message); }
+                } catch (e) { alert("Erreur sauvegarde: " + e.message); }
             };
 
             const deleteItem = async (id) => {
@@ -280,7 +323,8 @@
                 ArrowUp: <path d="M12 19V5M5 12l7-7 7 7"/>,
                 ArrowDown: <path d="M12 5v14M5 12l7 7 7-7"/>,
                 ClipboardList: <><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/></>,
-                WifiOff: <line x1="1" y1="1" x2="23" y2="23"></line>
+                WifiOff: <line x1="1" y1="1" x2="23" y2="23"></line>,
+                Smartphone: <><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></>
             };
             return (
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
@@ -309,7 +353,6 @@
             return ( <div className="mb-4 relative" ref={wrapperRef}> {label && <label className="block text-sm font-semibold text-gray-700 mb-1">{label}</label>} <input className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none" value={value} onChange={handleChange} onFocus={handleFocus} placeholder={placeholder} required={required} autoComplete="off" /> {show && suggestions.length > 0 && (<ul className="absolute z-50 w-full bg-white border border-gray-200 rounded-lg shadow-xl mt-1 max-h-48 overflow-y-auto">{suggestions.map((s, i) => (<li key={i} className="p-3 hover:bg-green-50 cursor-pointer border-b last:border-b-0 text-gray-700 font-medium" onClick={() => handleSelect(s)}>{s}</li>))}</ul>)} </div> );
         };
 
-        // Hook pour détecter le statut réseau
         const useNetworkStatus = () => {
             const [isOnline, setIsOnline] = useState(navigator.onLine);
             useEffect(() => {
@@ -325,6 +368,7 @@
             return isOnline;
         };
 
+        // --- MODULES ---
         const TraceabilityModule = ({ restaurantId }) => {
             const { data: products, addItem, deleteItem } = useSharedCollection(restaurantId, 'traceability', 'timestamp');
             const [newProduct, setNewProduct] = useState({ name: '', batch: '', photo: null, rawFile: null });
@@ -608,6 +652,7 @@
             const [isLocked, setIsLocked] = useState(!localStorage.getItem('haccp_app_unlocked'));
             const [isAuthLoading, setIsAuthLoading] = useState(true); 
             const [isLoginLoading, setIsLoginLoading] = useState(false);
+            const [isCaching, setIsCaching] = useState(false);
             const isOnline = useNetworkStatus();
 
             useEffect(() => {
@@ -636,7 +681,6 @@
                                 } catch (e) {
                                     console.error("Erreur Auth (Probablement hors ligne sans cache)", e);
                                     // Si on échoue à se connecter (hors ligne et jamais venu), on arrête le chargement
-                                    // pour ne pas bloquer sur écran blanc, mais l'accès aux données sera probablement bloqué.
                                     setIsAuthLoading(false);
                                 }
                             };
@@ -652,6 +696,33 @@
             const handleLogin = async (code) => { if (code === '030613') { localStorage.setItem('haccp_app_unlocked', 'true'); setIsLocked(false); } else { alert("Code incorrect"); } };
             const handleLock = () => { localStorage.removeItem('haccp_app_unlocked'); setIsLocked(true); };
             
+            const handleInstallCache = async () => {
+                setIsCaching(true);
+                alert("L'application va télécharger tous les fichiers nécessaires. Veuillez patienter...");
+                const urlsToCache = [
+                    "https://cdn.tailwindcss.com",
+                    "https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js",
+                    "https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js",
+                    "https://unpkg.com/@babel/standalone/babel.min.js",
+                    "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js",
+                    "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js",
+                    "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js",
+                    "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js",
+                    "https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js",
+                    "https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"
+                ];
+
+                try {
+                    // On tente de fetch chaque ressource pour que le navigateur la mette en cache
+                    await Promise.all(urlsToCache.map(url => fetch(url, { mode: 'cors' })));
+                    alert("✅ Succès ! L'application est prête.\n\nIMPORTANT : Maintenant, ajoutez cette page à votre Écran d'Accueil (via le menu du navigateur) pour garantir l'accès hors ligne.");
+                } catch (e) {
+                    alert("⚠️ Erreur lors du téléchargement. Vérifiez votre connexion et réessayez.");
+                } finally {
+                    setIsCaching(false);
+                }
+            };
+
             if (isAuthLoading) return <div className="flex items-center justify-center h-full text-green-700 font-bold animate-pulse">Chargement de vos données...</div>;
             if (isLocked) { return <PinScreen onLogin={handleLogin} isLoading={isLoginLoading} />; }
             
@@ -667,12 +738,19 @@
                             <MenuBtn id="temperature" label="Températures" icon="Thermometer"/>
                             {/* Renommé de Nettoyage à Suivi */}
                             <MenuBtn id="tracking" label="Suivi & Hygiène" icon="ClipboardList"/>
+                            
+                            <div className="pt-4 mt-4 border-t px-2">
+                                <button onClick={handleInstallCache} disabled={isCaching || !isOnline} className="w-full py-3 px-3 text-sm bg-orange-50 text-orange-700 hover:bg-orange-100 rounded-lg flex items-center gap-2 border border-orange-200 font-semibold disabled:opacity-50">
+                                    <Icon name="Smartphone" className="w-5 h-5"/> {isCaching ? "Téléchargement..." : "Installer pour Hors-Ligne"}
+                                </button>
+                            </div>
                         </nav>
                         <div className="p-4 border-t hidden md:block"><button onClick={handleLock} className="w-full py-2 text-sm text-red-500 hover:bg-red-50 rounded flex items-center justify-center gap-2"><Icon name="LogOut" className="w-4 h-4"/> Verrouiller</button></div>
                         <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 flex justify-around p-3 z-50 pb-safe">
                             <button onClick={() => setTab('traceability')} className={`flex flex-col items-center ${tab === 'traceability' ? 'text-green-600' : 'text-green-600/50'}`}><Icon name="ScanBarcode" className="w-6 h-6"/><span className="text-xs">Traçabilité</span></button>
                             <button onClick={() => setTab('temperature')} className={`flex flex-col items-center ${tab === 'temperature' ? 'text-green-600' : 'text-green-600/50'}`}><Icon name="Thermometer" className="w-6 h-6"/><span className="text-xs">Températures</span></button>
                             <button onClick={() => setTab('tracking')} className={`flex flex-col items-center ${tab === 'tracking' ? 'text-green-600' : 'text-green-600/50'}`}><Icon name="ClipboardList" className="w-6 h-6"/><span className="text-xs">Suivi</span></button>
+                            <button onClick={handleInstallCache} className={`flex flex-col items-center text-orange-600/70`}><Icon name="Smartphone" className="w-6 h-6"/><span className="text-xs">Install</span></button>
                         </div>
                     </div>
                     <main className="flex-1 flex flex-col h-full overflow-hidden relative w-full order-1 md:order-2 pb-16 md:pb-0">
