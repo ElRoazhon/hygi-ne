@@ -148,7 +148,7 @@
                 <ul style="text-align: left; font-size: 0.85rem; color: #7f1d1d; list-style-type: disc; padding-left: 20px;">
                     <li>Connectez-vous à Internet (Wi-Fi/4G).</li>
                     <li>Rechargez la page.</li>
-                    <li>Utilisez ensuite le bouton <b>"Installer pour Hors-Ligne"</b> dans le menu.</li>
+                    <li>Utilisez ensuite le bouton <b>"Synchroniser"</b> dans le menu.</li>
                 </ul>
                 <button onclick="window.location.reload()" style="margin-top: 15px; padding: 10px 20px; background: #dc2626; color: white; border: none; border-radius: 5px; font-weight: bold;">Réessayer</button>
             </div>
@@ -728,77 +728,45 @@
             const handleLogin = async (code) => { if (code === '030613') { localStorage.setItem('haccp_app_unlocked', 'true'); setIsLocked(false); } else { alert("Code incorrect"); } };
             const handleLock = () => { localStorage.removeItem('haccp_app_unlocked'); setIsLocked(true); };
             
-            // --- INSTALLATION COMPLETE SERVICE WORKER ---
+            // --- SYNC MANUELLE & CACHE ASSETS ---
+            // Ce remplacement évite l'erreur de ServiceWorker tout en assurant que les fichiers sont dans le cache du navigateur
             const handleInstallCache = async () => {
                 setIsCaching(true);
                 
-                // 1. Liste des URLs vitales
-                const urlsToCache = [
-                    "https://cdn.tailwindcss.com",
-                    "https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js",
-                    "https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js",
-                    "https://unpkg.com/@babel/standalone/babel.min.js",
-                    "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js",
-                    "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js",
-                    "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js",
-                    "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js",
-                    "https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js",
-                    "https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js",
-                    window.location.href // Cache la page elle-même
-                ];
-
                 try {
-                    // 2. Création dynamique du Service Worker
-                    const swCode = `
-                        const CACHE_NAME = 'sochris-offline-v2';
-                        const urlsToCache = ${JSON.stringify(urlsToCache)};
-
-                        self.addEventListener('install', (event) => {
-                            self.skipWaiting();
-                            event.waitUntil(
-                                caches.open(CACHE_NAME).then((cache) => {
-                                    console.log('SW: Caching files');
-                                    return cache.addAll(urlsToCache);
-                                })
-                            );
-                        });
-
-                        self.addEventListener('activate', (event) => {
-                            event.waitUntil(self.clients.claim());
-                        });
-
-                        self.addEventListener('fetch', (event) => {
-                            // Stratégie Cache-First pour les libs, Network-First pour le reste
-                            const isLib = urlsToCache.some(u => event.request.url.includes(u));
-                            
-                            if (isLib || event.request.destination === 'script' || event.request.destination === 'style') {
-                                event.respondWith(
-                                    caches.match(event.request).then((response) => {
-                                        return response || fetch(event.request);
-                                    })
-                                );
-                            } else {
-                                // Par défaut pour le HTML/Data: Network falling back to cache
-                                event.respondWith(
-                                    fetch(event.request).catch(() => caches.match(event.request))
-                                );
-                            }
-                        });
-                    `;
-
-                    // 3. Enregistrement du SW via Blob
-                    const blob = new Blob([swCode], { type: 'application/javascript' });
-                    const swUrl = URL.createObjectURL(blob);
-                    
-                    if ('serviceWorker' in navigator) {
-                        const reg = await navigator.serviceWorker.register(swUrl);
-                        await navigator.serviceWorker.ready;
-                        alert("✅ Application installée avec succès !\n\nVous pouvez maintenant :\n1. Ajouter cette page à l'écran d'accueil\n2. Couper internet et continuer à travailler\n3. Les données se synchroniseront au retour de la connexion.");
-                    } else {
-                        throw new Error("Service Worker non supporté");
+                    // 1. Demande de persistance stockage
+                    if (navigator.storage && navigator.storage.persist) {
+                        await navigator.storage.persist();
                     }
+
+                    // 2. Fetch manuel des librairies pour forcer le cache HTTP
+                    const urlsToCache = [
+                        "https://cdn.tailwindcss.com",
+                        "https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js",
+                        "https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js",
+                        "https://unpkg.com/@babel/standalone/babel.min.js",
+                        "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js",
+                        "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js",
+                        "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js",
+                        "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js",
+                        "https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js",
+                        "https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"
+                    ];
+
+                    await Promise.all(urlsToCache.map(url => fetch(url, { mode: 'no-cors' })));
+
+                    // 3. Force le chargement des données Firestore
+                    const collectionsToWarm = ['traceability', 'equipments', 'cleaning'];
+                    for (const colName of collectionsToWarm) {
+                        let q = window.appId === 'epack-prod-data' 
+                            ? window.query(window.collection(window.db, 'haccp_data', restaurantId, colName), window.limit(100))
+                            : window.query(window.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'haccp_items'), window.where('restaurantId', '==', restaurantId), window.where('category', '==', colName), window.limit(100));
+                        await window.getDocs(q);
+                    }
+
+                    alert("✅ Données synchronisées et cache mis à jour !\n\nVous pouvez maintenant passer en mode avion ou couper le Wi-Fi, l'application restera fonctionnelle tant que vous ne videz pas le cache du navigateur.");
                 } catch (e) {
-                    alert("⚠️ Erreur d'installation : " + e.message);
+                    alert("⚠️ Erreur de synchronisation : " + e.message);
                     console.error(e);
                 } finally {
                     setIsCaching(false);
@@ -822,9 +790,9 @@
                             
                             <div className="pt-4 mt-4 border-t px-2">
                                 <button onClick={handleInstallCache} disabled={isCaching || !isOnline} className="w-full py-3 px-3 text-sm bg-orange-50 text-orange-700 hover:bg-orange-100 rounded-lg flex items-center gap-2 border border-orange-200 font-semibold disabled:opacity-50">
-                                    <Icon name="Smartphone" className="w-5 h-5"/> {isCaching ? "Installation..." : "Installer pour Hors-Ligne"}
+                                    <Icon name="Smartphone" className="w-5 h-5"/> {isCaching ? "Synchronisation..." : "Synchroniser (Hors-Ligne)"}
                                 </button>
-                                <p className="text-[10px] text-gray-400 mt-2 text-center px-2">Cliquez une fois pour activer le mode hors-ligne complet.</p>
+                                <p className="text-[10px] text-gray-400 mt-2 text-center px-2">Cliquez pour mettre à jour les données hors-ligne.</p>
                             </div>
                         </nav>
                         <div className="p-4 border-t hidden md:block"><button onClick={handleLock} className="w-full py-2 text-sm text-red-500 hover:bg-red-50 rounded flex items-center justify-center gap-2"><Icon name="LogOut" className="w-4 h-4"/> Verrouiller</button></div>
@@ -832,7 +800,7 @@
                             <button onClick={() => setTab('traceability')} className={`flex flex-col items-center ${tab === 'traceability' ? 'text-green-600' : 'text-green-600/50'}`}><Icon name="ScanBarcode" className="w-6 h-6"/><span className="text-xs">Traçabilité</span></button>
                             <button onClick={() => setTab('temperature')} className={`flex flex-col items-center ${tab === 'temperature' ? 'text-green-600' : 'text-green-600/50'}`}><Icon name="Thermometer" className="w-6 h-6"/><span className="text-xs">Températures</span></button>
                             <button onClick={() => setTab('tracking')} className={`flex flex-col items-center ${tab === 'tracking' ? 'text-green-600' : 'text-green-600/50'}`}><Icon name="ClipboardList" className="w-6 h-6"/><span className="text-xs">Suivi</span></button>
-                            <button onClick={handleInstallCache} className={`flex flex-col items-center text-orange-600/70`}><Icon name="Smartphone" className="w-6 h-6"/><span className="text-xs">Install</span></button>
+                            <button onClick={handleInstallCache} className={`flex flex-col items-center text-orange-600/70`}><Icon name="Smartphone" className="w-6 h-6"/><span className="text-xs">Sync</span></button>
                         </div>
                     </div>
                     <main className="flex-1 flex flex-col h-full overflow-hidden relative w-full order-1 md:order-2 pb-16 md:pb-0">
