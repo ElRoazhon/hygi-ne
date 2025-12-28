@@ -14,7 +14,7 @@
     <link rel="preload" href="https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js" as="script">
     <link rel="preload" href="https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js" as="script">
     
-    <!-- ICONS -->
+    <!-- ICONS & PWA CONFIG -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj48cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgcng9IjEyMCIgZmlsbD0iIzE2YTM0YSIvPjxwYXRoIGQ9Ik0yNTYgODBjMCAwIDE0MCAyNSAxNDAgMTQwYzAgMTAwLTgwIDE4MC0xNDAgMjEyYy02MC0zMi0xNDAtMTEyLTE0MC0yMTJjMC0xMTUgMTQwLTE0MCAxNDAtMTQweiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjMwIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48cGF0aCBkPSJNMzM2IDIwMGwtMTAwIDEwMGwtNjAtNjAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2ZmZiIgc3Ryb2tlLXdpZHRoPSIzMCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PC9zdmc+">
     <link rel="apple-touch-icon" id="dynamic-apple-icon" href="">
     <link rel="manifest" id="dynamic-manifest" href="">
@@ -26,6 +26,7 @@
     <meta name="mobile-web-app-capable" content="yes">
 
     <script>
+        // Génération dynamique du Manifeste PWA et de l'icône Apple
         (function() {
             const svgIcon = `data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj48cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgcng9IjEyMCIgZmlsbD0iIzE2YTM0YSIvPjxwYXRoIGQ9Ik0yNTYgODBjMCAwIDE0MCAyNSAxNDAgMTQwYzAgMTAwLTgwIDE4MC0xNDAgMjEyYy02MC0zMi0xNDAtMTEyLTE0MC0yMTJjMC0xMTUgMTQwLTE0MCAxNDAtMTQweiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjMwIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48cGF0aCBkPSJNMzM2IDIwMGwtMTAwIDEwMGwtNjAtNjAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2ZmZiIgc3Ryb2tlLXdpZHRoPSIzMCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PC9zdmc+`;
             const img = new Image();
@@ -35,16 +36,19 @@
                 const ctx = canvas.getContext('2d');
                 ctx.drawImage(img, 0, 0, 512, 512);
                 const pngUrl = canvas.toDataURL('image/png');
+                
                 const appleIcon = document.getElementById('dynamic-apple-icon');
                 if (appleIcon) appleIcon.href = pngUrl;
+                
                 const manifest = { 
                     "name": "eHygiène So'Chris", 
                     "short_name": "So'Chris", 
-                    "start_url": ".", 
+                    "start_url": window.location.href, // Force l'URL courante comme point de départ
                     "display": "standalone", 
                     "orientation": "portrait",
                     "background_color": "#f0fdf4", 
                     "theme_color": "#16a34a", 
+                    "scope": ".",
                     "icons": [ { "src": pngUrl, "sizes": "512x512", "type": "image/png", "purpose": "any maskable" } ] 
                 };
                 const stringManifest = JSON.stringify(manifest);
@@ -68,7 +72,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc, updateDoc, query, where, setDoc, getDocs, enableIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc, updateDoc, query, where, setDoc, getDocs, enableIndexedDbPersistence, limit, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
 
         let firebaseConfig;
@@ -80,7 +84,7 @@
             appId = __app_id;
             if (typeof __initial_auth_token !== 'undefined') { initialAuthToken = __initial_auth_token; }
         } catch (e) {
-            console.log("Mode Production");
+            console.log("Mode Production / Secours");
             firebaseConfig = { apiKey: "AIzaSyCoMV_kNz-eI1JlLp33h0iJ4MZR7NnoI-w", authDomain: "epack-hygiene-99e64.firebaseapp.com", projectId: "epack-hygiene-99e64", storageBucket: "epack-hygiene-99e64.firebasestorage.app", messagingSenderId: "917463324646", appId: "1:917463324646:web:14856a7207be0353aca827" };
             appId = 'epack-prod-data'; 
         }
@@ -90,7 +94,7 @@
         const db = getFirestore(app);
         const storage = getStorage(app); 
 
-        // --- ACTIVATION PERSISTANCE HORS LIGNE ---
+        // --- ACTIVATION PERSISTANCE HORS LIGNE (CRITIQUE) ---
         try {
             enableIndexedDbPersistence(db).catch((err) => {
                 if (err.code == 'failed-precondition') {
@@ -103,10 +107,10 @@
 
         window.db = db; window.auth = auth; window.storage = storage; window.appId = appId; window.initialAuthToken = initialAuthToken; 
         window.collection = collection; window.addDoc = addDoc; window.onSnapshot = onSnapshot; window.deleteDoc = deleteDoc; window.doc = doc; window.updateDoc = updateDoc; window.setDoc = setDoc;
+        window.query = query; window.where = where; window.getDocs = getDocs; window.limit = limit; window.orderBy = orderBy;
         window.signInAnonymously = signInAnonymously; window.signInWithCustomToken = signInWithCustomToken; window.signOut = signOut; window.onAuthStateChanged = onAuthStateChanged;
         window.ref = ref; window.uploadBytes = uploadBytes; window.getDownloadURL = getDownloadURL;
         
-        // Signal que Firebase est chargé
         window.firebaseLoaded = true;
     </script>
 
@@ -155,10 +159,9 @@
         </div>
     </div>
 
-    <!-- Script de secours pour détecter l'échec de chargement -->
+    <!-- Script de secours -->
     <script>
         setTimeout(function() {
-            // Si React n'est pas chargé après 8 secondes, c'est probablement un problème réseau au démarrage
             if (!window.React) {
                 document.getElementById('loader-spinner').style.display = 'none';
                 document.getElementById('loader-text').style.display = 'none';
@@ -204,7 +207,7 @@
                     });
                     setData(items);
                 }, (error) => {
-                    console.error("Sync error:", error);
+                    console.warn("Sync (hors ligne?):", error.message);
                 });
                 return () => unsubscribe();
             }, [restaurantId, category]);
@@ -216,9 +219,9 @@
 
                 if (item.rawFile) {
                     if (isOffline) {
-                        console.log("Offline: Saving image directly to Firestore (High Quality)");
+                        console.log("Hors-ligne détecté: Sauvegarde locale de l'image (Optimisée)");
                         if (item.photo && item.photo.startsWith('data:')) { 
-                            const compressed = await compressImage(item.photo, 1600, 0.85); 
+                            const compressed = await compressImage(item.photo, 1200, 0.8); 
                             itemToSave.photo = compressed; 
                         }
                         delete itemToSave.rawFile;
@@ -226,14 +229,16 @@
                         try {
                             const fileName = `${restaurantId}/${category}/${Date.now()}_${Math.random().toString(36).substr(2, 9)}.jpg`;
                             const storageRef = window.ref(window.storage, fileName);
+                            // Timeout upload 10s pour éviter bloquage
                             const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 10000));
                             await Promise.race([window.uploadBytes(storageRef, item.rawFile), timeoutPromise]);
                             const url = await window.getDownloadURL(storageRef);
                             itemToSave.photo = url; delete itemToSave.rawFile;
                         } catch (e) {
-                            console.log("Upload failed, fallback base64", e);
+                            console.log("Upload échoué, repli local base64", e);
+                            // Fallback Base64 si upload échoue (ex: connexion instable)
                             if (item.photo && item.photo.startsWith('data:')) { 
-                                const compressed = await compressImage(item.photo, 1600, 0.85); 
+                                const compressed = await compressImage(item.photo, 1200, 0.8); 
                                 itemToSave.photo = compressed; 
                                 delete itemToSave.rawFile; 
                             } 
@@ -243,6 +248,7 @@
                 }
                 if (itemToSave.order === undefined) itemToSave.order = Date.now();
                 try {
+                    // Écriture Firestore (mise en file d'attente auto si hors ligne)
                     if (window.appId === 'epack-prod-data') await window.addDoc(window.collection(window.db, 'haccp_data', restaurantId, category), { createdAt: Date.now(), ...itemToSave });
                     else await window.addDoc(window.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'haccp_items'), { restaurantId, category, createdAt: Date.now(), ...itemToSave });
                 } catch (e) { alert("Erreur sauvegarde: " + e.message); }
@@ -655,22 +661,49 @@
             const [isCaching, setIsCaching] = useState(false);
             const isOnline = useNetworkStatus();
 
+            // --- DATA WARMING (Pré-chargement des données pour le offline) ---
             useEffect(() => {
-                // Masquer le loader statique HTML une fois que React prend le relais
+                if(isOnline && user && restaurantId) {
+                    // Fonction silencieuse qui interroge Firestore pour remplir le cache local IndexedDB
+                    const warmUpCache = async () => {
+                        console.log("🔥 Warming up cache for offline usage...");
+                        try {
+                            const collectionsToWarm = [
+                                { name: 'traceability', limit: 50 }, // 50 derniers produits
+                                { name: 'equipments', limit: 100 },
+                                { name: 'cleaning', limit: 100 },
+                            ];
+
+                            // Pour chaque collection, on fait un get() simple qui va peupler le cache
+                            for (const col of collectionsToWarm) {
+                                let q = window.appId === 'epack-prod-data' 
+                                    ? window.query(window.collection(window.db, 'haccp_data', restaurantId, col.name), window.limit(col.limit))
+                                    : window.query(window.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'haccp_items'), window.where('restaurantId', '==', restaurantId), window.where('category', '==', col.name), window.limit(col.limit));
+                                await window.getDocs(q);
+                            }
+                            console.log("✅ Cache warmed up!");
+                        } catch (e) {
+                            console.warn("Warmup error (minor):", e);
+                        }
+                    };
+                    // Petit délai pour ne pas bloquer le chargement initial
+                    setTimeout(warmUpCache, 3000);
+                }
+            }, [isOnline, user, restaurantId]);
+
+            useEffect(() => {
                 const loader = document.getElementById('static-loader');
                 if (loader) loader.style.display = 'none';
 
                 let unsubscribe;
                 const startAuth = async () => {
-                    // 1. D'abord on écoute si une session existe déjà (Persistence Firebase)
                     unsubscribe = window.onAuthStateChanged(window.auth, (u) => {
                         if (u) {
-                            console.log("Session restaurée (Offline/Online)");
+                            console.log("Session active (User ID: " + u.uid + ")");
                             setUser(u);
                             setIsAuthLoading(false);
                         } else {
-                            // 2. Pas d'utilisateur connu ? On tente de se connecter
-                            console.log("Aucune session, tentative de connexion anonyme...");
+                            console.log("Connexion anonyme...");
                             const doLogin = async () => {
                                 try {
                                     if (window.initialAuthToken) { 
@@ -679,8 +712,7 @@
                                         await window.signInAnonymously(window.auth); 
                                     }
                                 } catch (e) {
-                                    console.error("Erreur Auth (Probablement hors ligne sans cache)", e);
-                                    // Si on échoue à se connecter (hors ligne et jamais venu), on arrête le chargement
+                                    console.error("Auth Error:", e);
                                     setIsAuthLoading(false);
                                 }
                             };
@@ -696,9 +728,11 @@
             const handleLogin = async (code) => { if (code === '030613') { localStorage.setItem('haccp_app_unlocked', 'true'); setIsLocked(false); } else { alert("Code incorrect"); } };
             const handleLock = () => { localStorage.removeItem('haccp_app_unlocked'); setIsLocked(true); };
             
+            // --- INSTALLATION COMPLETE SERVICE WORKER ---
             const handleInstallCache = async () => {
                 setIsCaching(true);
-                alert("L'application va télécharger tous les fichiers nécessaires. Veuillez patienter...");
+                
+                // 1. Liste des URLs vitales
                 const urlsToCache = [
                     "https://cdn.tailwindcss.com",
                     "https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js",
@@ -709,15 +743,63 @@
                     "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js",
                     "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js",
                     "https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js",
-                    "https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"
+                    "https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js",
+                    window.location.href // Cache la page elle-même
                 ];
 
                 try {
-                    // On tente de fetch chaque ressource pour que le navigateur la mette en cache
-                    await Promise.all(urlsToCache.map(url => fetch(url, { mode: 'cors' })));
-                    alert("✅ Succès ! L'application est prête.\n\nIMPORTANT : Maintenant, ajoutez cette page à votre Écran d'Accueil (via le menu du navigateur) pour garantir l'accès hors ligne.");
+                    // 2. Création dynamique du Service Worker
+                    const swCode = `
+                        const CACHE_NAME = 'sochris-offline-v2';
+                        const urlsToCache = ${JSON.stringify(urlsToCache)};
+
+                        self.addEventListener('install', (event) => {
+                            self.skipWaiting();
+                            event.waitUntil(
+                                caches.open(CACHE_NAME).then((cache) => {
+                                    console.log('SW: Caching files');
+                                    return cache.addAll(urlsToCache);
+                                })
+                            );
+                        });
+
+                        self.addEventListener('activate', (event) => {
+                            event.waitUntil(self.clients.claim());
+                        });
+
+                        self.addEventListener('fetch', (event) => {
+                            // Stratégie Cache-First pour les libs, Network-First pour le reste
+                            const isLib = urlsToCache.some(u => event.request.url.includes(u));
+                            
+                            if (isLib || event.request.destination === 'script' || event.request.destination === 'style') {
+                                event.respondWith(
+                                    caches.match(event.request).then((response) => {
+                                        return response || fetch(event.request);
+                                    })
+                                );
+                            } else {
+                                // Par défaut pour le HTML/Data: Network falling back to cache
+                                event.respondWith(
+                                    fetch(event.request).catch(() => caches.match(event.request))
+                                );
+                            }
+                        });
+                    `;
+
+                    // 3. Enregistrement du SW via Blob
+                    const blob = new Blob([swCode], { type: 'application/javascript' });
+                    const swUrl = URL.createObjectURL(blob);
+                    
+                    if ('serviceWorker' in navigator) {
+                        const reg = await navigator.serviceWorker.register(swUrl);
+                        await navigator.serviceWorker.ready;
+                        alert("✅ Application installée avec succès !\n\nVous pouvez maintenant :\n1. Ajouter cette page à l'écran d'accueil\n2. Couper internet et continuer à travailler\n3. Les données se synchroniseront au retour de la connexion.");
+                    } else {
+                        throw new Error("Service Worker non supporté");
+                    }
                 } catch (e) {
-                    alert("⚠️ Erreur lors du téléchargement. Vérifiez votre connexion et réessayez.");
+                    alert("⚠️ Erreur d'installation : " + e.message);
+                    console.error(e);
                 } finally {
                     setIsCaching(false);
                 }
@@ -736,13 +818,13 @@
                         <nav className="p-2 space-y-2 flex-1 overflow-y-auto hidden md:block">
                             <MenuBtn id="traceability" label="Traçabilité" icon="ScanBarcode"/>
                             <MenuBtn id="temperature" label="Températures" icon="Thermometer"/>
-                            {/* Renommé de Nettoyage à Suivi */}
                             <MenuBtn id="tracking" label="Suivi & Hygiène" icon="ClipboardList"/>
                             
                             <div className="pt-4 mt-4 border-t px-2">
                                 <button onClick={handleInstallCache} disabled={isCaching || !isOnline} className="w-full py-3 px-3 text-sm bg-orange-50 text-orange-700 hover:bg-orange-100 rounded-lg flex items-center gap-2 border border-orange-200 font-semibold disabled:opacity-50">
-                                    <Icon name="Smartphone" className="w-5 h-5"/> {isCaching ? "Téléchargement..." : "Installer pour Hors-Ligne"}
+                                    <Icon name="Smartphone" className="w-5 h-5"/> {isCaching ? "Installation..." : "Installer pour Hors-Ligne"}
                                 </button>
+                                <p className="text-[10px] text-gray-400 mt-2 text-center px-2">Cliquez une fois pour activer le mode hors-ligne complet.</p>
                             </div>
                         </nav>
                         <div className="p-4 border-t hidden md:block"><button onClick={handleLock} className="w-full py-2 text-sm text-red-500 hover:bg-red-50 rounded flex items-center justify-center gap-2"><Icon name="LogOut" className="w-4 h-4"/> Verrouiller</button></div>
@@ -769,7 +851,6 @@
                             <div className="max-w-5xl mx-auto w-full">
                                 {tab === 'traceability' && <TraceabilityModule restaurantId={restaurantId} />}
                                 {tab === 'temperature' && <TemperatureModule restaurantId={restaurantId} />}
-                                {/* Changé CleaningModule par MonitoringModule */}
                                 {tab === 'tracking' && <MonitoringModule restaurantId={restaurantId} />}
                             </div>
                         </div>
