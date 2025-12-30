@@ -402,13 +402,63 @@
             useEffect(() => { if (fullscreenPhoto) { setZoomLevel(1); setPan({x:0, y:0}); } }, [fullscreenPhoto]);
             useEffect(() => { if (products.length > 0 && !hasAutoCleaned) { const timer = setTimeout(async () => { const sixMonthsAgo = Date.now() - (180 * 24 * 60 * 60 * 1000); const oldItems = products.filter(p => { const itemDate = p.createdAt || (p.sortDate ? new Date(p.sortDate).getTime() : null); return itemDate && itemDate < sixMonthsAgo; }); if (oldItems.length > 0) { for (const item of oldItems) { try { await deleteItem(item.id); } catch (e) { console.warn("Erreur suppression auto", e); } } } setHasAutoCleaned(true); }, 5000); return () => clearTimeout(timer); } }, [products, hasAutoCleaned]);
 
+            // --- NOUVEAUTÉ : RESTAURATION ET SAUVEGARDE BROUILLON ---
+            useEffect(() => {
+                const savedDraft = localStorage.getItem('draft_traceability');
+                if (savedDraft) {
+                    try { setNewProduct(JSON.parse(savedDraft)); } catch (e) { console.error("Erreur lecture brouillon", e); }
+                }
+            }, []);
+
+            useEffect(() => {
+                // Sauvegarde automatique du brouillon à chaque changement
+                if (newProduct.name || newProduct.photo) {
+                    try { localStorage.setItem('draft_traceability', JSON.stringify(newProduct)); } catch (e) { console.warn("Quota Storage Limit", e); }
+                }
+            }, [newProduct]);
+
             const handleCameraClick = () => { if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) { nativeCameraInputRef.current?.click(); } else { startWebcam(); } };
-            const handleNativeCameraCapture = (e) => { const file = e.target.files[0]; if (file) { const reader = new FileReader(); reader.onload = (event) => { setNewProduct(p => ({ ...p, photo: event.target.result, rawFile: file })); }; reader.readAsDataURL(file); } };
+            
+            // OPTIMISATION IMAGE : On compresse avant de mettre dans le state (pour que le localStorage tienne le coup)
+            const handleNativeCameraCapture = async (e) => { 
+                const file = e.target.files[0]; 
+                if (file) { 
+                    const reader = new FileReader(); 
+                    reader.onload = async (event) => { 
+                        // Compression immédiate pour le brouillon
+                        const compressed = await compressImage(event.target.result, 1000, 0.7);
+                        setNewProduct(p => ({ ...p, photo: compressed, rawFile: file })); 
+                    }; 
+                    reader.readAsDataURL(file); 
+                } 
+            };
+
             const startWebcam = async () => { setTempPhoto(null); setIsWebcamOpen(true); try { const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } }); setTimeout(() => { if (videoRef.current) videoRef.current.srcObject = stream; }, 100); } catch (e) { alert("Impossible d'accéder à la webcam."); setIsWebcamOpen(false); } };
             const captureWebcam = () => { if (videoRef.current && canvasRef.current) { const v = videoRef.current; const c = canvasRef.current; c.width = v.videoWidth; c.height = v.videoHeight; c.getContext('2d').drawImage(v, 0, 0); c.toBlob((blob) => { const previewUrl = c.toDataURL('image/jpeg', 0.8); setTempPhoto({ preview: previewUrl, file: blob }); }, 'image/jpeg', 0.95); v.pause(); } };
             const retakePhoto = () => { setTempPhoto(null); if (videoRef.current) videoRef.current.play(); };
-            const confirmPhoto = () => { if (tempPhoto) { setNewProduct(p => ({ ...p, photo: tempPhoto.preview, rawFile: tempPhoto.file })); } if(videoRef.current?.srcObject) videoRef.current.srcObject.getTracks().forEach(t => t.stop()); setIsWebcamOpen(false); setTempPhoto(null); };
-            const handleSubmit = async (e) => { e.preventDefault(); setIsUploading(true); try { await addItem({ ...newProduct, sortDate: new Date().toISOString().split('T')[0] }); } catch (error) { console.error(error); } finally { setIsUploading(false); setNewProduct({ name: '', batch: '', photo: null, rawFile: null }); } };
+            
+            const confirmPhoto = async () => { 
+                if (tempPhoto) { 
+                    // Compression aussi ici pour le brouillon
+                    const compressed = await compressImage(tempPhoto.preview, 1000, 0.7);
+                    setNewProduct(p => ({ ...p, photo: compressed, rawFile: tempPhoto.file })); 
+                } 
+                if(videoRef.current?.srcObject) videoRef.current.srcObject.getTracks().forEach(t => t.stop()); 
+                setIsWebcamOpen(false); setTempPhoto(null); 
+            };
+
+            const handleSubmit = async (e) => { 
+                e.preventDefault(); 
+                setIsUploading(true); 
+                try { 
+                    await addItem({ ...newProduct, sortDate: new Date().toISOString().split('T')[0] });
+                    // Nettoyage du brouillon après succès
+                    localStorage.removeItem('draft_traceability');
+                } catch (error) { console.error(error); } finally { 
+                    setIsUploading(false); 
+                    setNewProduct({ name: '', batch: '', photo: null, rawFile: null }); 
+                } 
+            };
             const filtered = products.filter(p => p.sortDate === selectedDate);
             const changeDate = (d) => { const date = new Date(selectedDate); date.setDate(date.getDate() + d); setSelectedDate(date.toISOString().split('T')[0]); };
             const downloadPhotos = async () => { setIsZipping(true); try { const zip = new JSZip(); const folder = zip.folder(`Photos_${exportMonth}`); const itemsToExport = products.filter(p => p.sortDate && p.sortDate.startsWith(exportMonth) && p.photo); if (itemsToExport.length === 0) { alert("Aucune photo trouvée pour ce mois."); setIsZipping(false); return; } let count = 0; for (const item of itemsToExport) { try { let blob = await (await fetch(item.photo)).blob(); const safeName = (item.name || 'produit').replace(/[^a-z0-9]/gi, '_'); const filename = `${item.sortDate}_${safeName}_${item.id.substr(0,4)}.jpg`; folder.file(filename, blob); count++; } catch (e) { console.error("Erreur téléchargement image", item, e); } } if (count > 0) { const content = await zip.generateAsync({ type: "blob" }); saveAs(content, `Traceabilite_${restaurantId}_${exportMonth}.zip`); setExportModalOpen(false); } else { alert("Erreur: Impossible de récupérer les images."); } } catch (e) { alert("Erreur ZIP: " + e.message); } finally { setIsZipping(false); } };
@@ -523,11 +573,29 @@
             const videoRef = useRef(null);
             const canvasRef = useRef(null);
 
+            // --- BROUILLON LIVRAISON ---
+            useEffect(() => {
+                const savedDraft = localStorage.getItem('draft_delivery');
+                if (savedDraft) {
+                    try { setNewDelivery(JSON.parse(savedDraft)); } catch (e) { console.error("Erreur lecture brouillon livraison", e); }
+                }
+            }, []);
+
+            useEffect(() => {
+                if (newDelivery.supplier || newDelivery.photo || newDelivery.product) {
+                    try { localStorage.setItem('draft_delivery', JSON.stringify(newDelivery)); } catch (e) { console.warn("Quota Storage Limit Delivery", e); }
+                }
+            }, [newDelivery]);
+
             const startWebcam = async () => { setTempPhoto(null); setIsWebcamOpen(true); try { const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } }); setTimeout(() => { if (videoRef.current) videoRef.current.srcObject = stream; }, 100); } catch (e) { alert("Impossible d'accéder à la webcam."); setIsWebcamOpen(false); } };
             const captureWebcam = () => { if (videoRef.current && canvasRef.current) { const v = videoRef.current; const c = canvasRef.current; c.width = v.videoWidth; c.height = v.videoHeight; c.getContext('2d').drawImage(v, 0, 0); c.toBlob((blob) => { const previewUrl = c.toDataURL('image/jpeg', 0.8); setTempPhoto({ preview: previewUrl, file: blob }); }, 'image/jpeg', 0.95); v.pause(); } };
             const retakePhoto = () => { setTempPhoto(null); if (videoRef.current) videoRef.current.play(); };
-            const confirmPhoto = () => { 
-                if (tempPhoto) { setNewDelivery({...newDelivery, photo: tempPhoto.preview, rawFile: tempPhoto.file}); } 
+            
+            const confirmPhoto = async () => { 
+                if (tempPhoto) { 
+                    const compressed = await compressImage(tempPhoto.preview, 1000, 0.7);
+                    setNewDelivery({...newDelivery, photo: compressed, rawFile: tempPhoto.file}); 
+                } 
                 if(videoRef.current?.srcObject) videoRef.current.srcObject.getTracks().forEach(t => t.stop()); 
                 setIsWebcamOpen(false); setTempPhoto(null); 
             };
@@ -549,17 +617,22 @@
                 setNewCooling({ type: 'Refroidissement', start: '', end: '', product: '', tempIn: '', tempOut: '' });
             };
 
-            const handleDeliveryPhoto = (e) => {
+            const handleDeliveryPhoto = async (e) => {
                 const file = e.target.files[0];
                 if(file) {
                     const reader = new FileReader();
-                    reader.onload = (ev) => setNewDelivery({...newDelivery, photo: ev.target.result, rawFile: file});
+                    reader.onload = async (ev) => {
+                        const compressed = await compressImage(ev.target.result, 1000, 0.7);
+                        setNewDelivery({...newDelivery, photo: compressed, rawFile: file});
+                    };
                     reader.readAsDataURL(file);
                 }
             };
+
             const submitDelivery = async (e) => {
                 e.preventDefault();
                 await addDelivery({ ...newDelivery, sortDate: selectedDate, timestamp: Date.now() });
+                localStorage.removeItem('draft_delivery');
                 setNewDelivery({ supplier: '', product: '', batch: '', dlc: '', temp: '', compliant: 'Oui', comment: '', photo: null });
             };
 
@@ -661,36 +734,6 @@
             const [isCaching, setIsCaching] = useState(false);
             const isOnline = useNetworkStatus();
 
-            // --- DATA WARMING (Pré-chargement des données pour le offline) ---
-            useEffect(() => {
-                if(isOnline && user && restaurantId) {
-                    // Fonction silencieuse qui interroge Firestore pour remplir le cache local IndexedDB
-                    const warmUpCache = async () => {
-                        console.log("🔥 Warming up cache for offline usage...");
-                        try {
-                            const collectionsToWarm = [
-                                { name: 'traceability', limit: 50 }, // 50 derniers produits
-                                { name: 'equipments', limit: 100 },
-                                { name: 'cleaning', limit: 100 },
-                            ];
-
-                            // Pour chaque collection, on fait un get() simple qui va peupler le cache
-                            for (const col of collectionsToWarm) {
-                                let q = window.appId === 'epack-prod-data' 
-                                    ? window.query(window.collection(window.db, 'haccp_data', restaurantId, col.name), window.limit(col.limit))
-                                    : window.query(window.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'haccp_items'), window.where('restaurantId', '==', restaurantId), window.where('category', '==', col.name), window.limit(col.limit));
-                                await window.getDocs(q);
-                            }
-                            console.log("✅ Cache warmed up!");
-                        } catch (e) {
-                            console.warn("Warmup error (minor):", e);
-                        }
-                    };
-                    // Petit délai pour ne pas bloquer le chargement initial
-                    setTimeout(warmUpCache, 3000);
-                }
-            }, [isOnline, user, restaurantId]);
-
             useEffect(() => {
                 const loader = document.getElementById('static-loader');
                 if (loader) loader.style.display = 'none';
@@ -729,7 +772,6 @@
             const handleLock = () => { localStorage.removeItem('haccp_app_unlocked'); setIsLocked(true); };
             
             // --- SYNC MANUELLE & CACHE ASSETS ---
-            // Ce remplacement évite l'erreur de ServiceWorker tout en assurant que les fichiers sont dans le cache du navigateur
             const handleInstallCache = async () => {
                 setIsCaching(true);
                 
