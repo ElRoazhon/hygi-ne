@@ -539,7 +539,29 @@
                         <div className="lg:col-span-4">
                             <Card className="border-2 border-green-100">
                                 <form onSubmit={handleSubmit}>
-                                    <div className="mb-4">{isUploading ? <div className="w-full py-8 bg-gray-50 rounded-xl flex flex-col items-center justify-center text-green-600 animate-pulse border-2 border-green-200"><Icon name="Wifi" className="mb-2 animate-bounce"/>Envoi vers le Cloud...</div> : newProduct.photo ? <div onClick={() => setNewProduct({...newProduct, photo: null, rawFile: null})} className="relative cursor-pointer group"><img src={newProduct.photo} className="w-full rounded-lg" /><div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 rounded-lg text-white font-bold"><Icon name="Trash2" className="mr-2"/> Retirer</div></div> : <div className="space-y-3"><button type="button" onClick={handleCameraClick} className="w-full py-8 bg-green-50 text-green-700 rounded-xl border-2 border-dashed border-green-300 flex flex-col items-center justify-center hover:bg-green-100 transition-colors"><Icon name="Aperture" className="w-8 h-8 mb-2"/> Scanner / Photo</button><div onClick={() => fileInputRef.current?.click()} className="text-center text-sm text-gray-400 underline cursor-pointer">Importer fichier</div><input type="file" ref={fileInputRef} onChange={handleNativeCameraCapture} accept="image/*" className="hidden"/><input type="file" ref={nativeCameraInputRef} onChange={handleNativeCameraCapture} accept="image/*" capture="environment" className="hidden"/></div>}</div>
+                                    <div className="mb-4">
+                                        {isUploading ? (
+                                            <div className="w-full h-56 bg-gray-50 rounded-xl flex flex-col items-center justify-center text-green-600 animate-pulse border-2 border-green-200">
+                                                <Icon name="Wifi" className="mb-2 animate-bounce"/>Envoi vers le Cloud...
+                                            </div>
+                                        ) : newProduct.photo ? (
+                                            <div onClick={() => setNewProduct({...newProduct, photo: null, rawFile: null})} className="relative cursor-pointer group h-56 w-full bg-gray-100 rounded-xl overflow-hidden border border-green-200 flex items-center justify-center">
+                                                <img src={newProduct.photo} className="h-full w-full object-contain" />
+                                                <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 rounded-xl text-white font-bold transition-all">
+                                                    <Icon name="Trash2" className="mr-2"/> Retirer
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <div className="space-y-3">
+                                                <button type="button" onClick={handleCameraClick} className="w-full h-56 bg-green-50 text-green-700 rounded-xl border-2 border-dashed border-green-300 flex flex-col items-center justify-center hover:bg-green-100 transition-colors">
+                                                    <Icon name="Aperture" className="w-12 h-12 mb-4"/> 
+                                                    <span className="font-bold text-lg">Scanner / Photo</span>
+                                                </button>
+                                                <div onClick={() => fileInputRef.current?.click()} className="text-center text-sm text-gray-400 underline cursor-pointer pb-2">Importer fichier</div>
+                                                <input type="file" ref={fileInputRef} onChange={handleNativeCameraCapture} accept="image/*" className="hidden"/><input type="file" ref={nativeCameraInputRef} onChange={handleNativeCameraCapture} accept="image/*" capture="environment" className="hidden"/>
+                                            </div>
+                                        )}
+                                    </div>
                                     <AutocompleteInput label="Produit" value={newProduct.name} onChange={e => setNewProduct({...newProduct, name: e.target.value})} options={productHistory} required />
                                     <Input label="Lot / DLC" value={newProduct.batch} onChange={e => setNewProduct({...newProduct, batch: e.target.value})} />
                                     <Button type="submit" className="w-full" disabled={!newProduct.name || !newProduct.photo || isUploading}>{isUploading ? "Enregistrement..." : "Enregistrer (Cloud)"}</Button>
