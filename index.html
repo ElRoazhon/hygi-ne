@@ -184,7 +184,7 @@
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
 
-        // --- 4. GESTIONNAIRE DE CACHE IDB (Images/Drafts) ---
+        // --- 4. GESTIONNAIRE DE CACHE IDB (Images Haute Qualité) ---
         const SimpleIDB = {
             dbName: 'SoChrisDrafts',
             storeName: 'drafts',
@@ -276,47 +276,75 @@
             const addItem = async (item) => {
                 if (!restaurantId) return;
                 let itemToSave = { ...item };
-                const isOffline = !navigator.onLine; // DÉTECTION STRICTE DU RÉSEAU
+                const isOffline = !navigator.onLine;
 
-                // GESTION INTELLIGENTE DES FICHIERS HORS-LIGNE (QUEUE SYNC)
                 if (item.rawFile) {
                     if (isOffline) {
-                        // 1. MODE HORS-LIGNE : On stocke l'image EN BASE64 dans le document Firestore
-                        // Cela force Firestore à garder le document en "Pending Write" (File d'attente)
-                        // L'upload se fera automatiquement quand le réseau reviendra.
-                        // On compresse + fort pour ne pas dépasser la limite de 1MB par doc.
-                        if (item.photo && item.photo.startsWith('data:')) { 
-                            const compressed = await compressImage(item.photo, 800, 0.6); // Compression agressive
-                            itemToSave.photo = compressed; 
+                        // --- MODE HORS-LIGNE AVANCÉ ---
+                        // 1. Sauvegarde Haute Qualité en local (IDB)
+                        const offlineKey = `offline_hq_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
+                        await SimpleIDB.save(offlineKey, item.rawFile);
+
+                        // 2. Génération Miniature (pour affichage immédiat sans saturer Firestore)
+                        if (item.photo && item.photo.startsWith('data:')) {
+                            // On crée une miniature très légère (150px) juste pour l'UI
+                            const thumbnail = await compressImage(item.photo, 150, 0.5);
+                            itemToSave.photo = thumbnail;
                         }
-                        delete itemToSave.rawFile; // On ne garde pas le fichier Raw Blob (non-serialisable)
+
+                        // 3. Marquage pour Synchro future
+                        itemToSave.pendingUploadKey = offlineKey;
+                        itemToSave.targetStoragePath = `${restaurantId}/${category}/${Date.now()}_${Math.random().toString(36).substr(2, 9)}.jpg`;
+                        itemToSave.syncStatus = 'pending';
+                        
+                        delete itemToSave.rawFile;
                     } else {
-                        // 2. MODE EN LIGNE : On upload proprement sur Storage
+                        // --- MODE EN LIGNE STANDARD ---
                         try {
                             const fileName = `${restaurantId}/${category}/${Date.now()}_${Math.random().toString(36).substr(2, 9)}.jpg`;
                             const storageRef = window.ref(window.storage, fileName);
                             // Timeout de secours
-                            const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout Upload")), 8000));
+                            const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout Upload")), 10000));
                             await Promise.race([window.uploadBytes(storageRef, item.rawFile), timeoutPromise]);
                             const url = await window.getDownloadURL(storageRef);
                             itemToSave.photo = url; delete itemToSave.rawFile;
                         } catch (e) {
-                            console.log("Upload échoué (réseau instable?), repli Local", e);
-                            // Si l'upload échoue, on fallback sur la méthode hors-ligne (Base64)
-                            if (item.photo && item.photo.startsWith('data:')) { 
-                                const compressed = await compressImage(item.photo, 800, 0.6); 
-                                itemToSave.photo = compressed; 
-                                delete itemToSave.rawFile; 
-                            } 
-                            else { delete itemToSave.photo; delete itemToSave.rawFile; }
+                            console.log("Upload échoué (réseau instable?), bascule en sauvegarde locale HQ", e);
+                            // Repli stratégie hors-ligne si échec upload
+                            const offlineKey = `offline_hq_${Date.now()}`;
+                            await SimpleIDB.save(offlineKey, item.rawFile);
+                            if (item.photo) itemToSave.photo = await compressImage(item.photo, 150, 0.5);
+                            itemToSave.pendingUploadKey = offlineKey;
+                            itemToSave.targetStoragePath = `${restaurantId}/${category}/${Date.now()}.jpg`;
+                            itemToSave.syncStatus = 'pending';
+                            delete itemToSave.rawFile;
                         }
                     }
                 }
                 if (itemToSave.order === undefined) itemToSave.order = Date.now();
+                
                 try {
-                    // L'écriture Firestore est asynchrone mais "optimiste" (réussite locale immédiate)
-                    if (window.appId === 'epack-prod-data') await window.addDoc(window.collection(window.db, 'haccp_data', restaurantId, category), { createdAt: Date.now(), ...itemToSave });
-                    else await window.addDoc(window.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'haccp_items'), { restaurantId, category, createdAt: Date.now(), ...itemToSave });
+                    // Sauvegarde du document (avec flag 'pending' si hors ligne)
+                    let docRef;
+                    if (window.appId === 'epack-prod-data') {
+                        docRef = await window.addDoc(window.collection(window.db, 'haccp_data', restaurantId, category), { createdAt: Date.now(), ...itemToSave });
+                    } else {
+                        docRef = await window.addDoc(window.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'haccp_items'), { restaurantId, category, createdAt: Date.now(), ...itemToSave });
+                    }
+
+                    // Ajout à la file d'attente locale (LocalStorage) pour robustesse
+                    if (itemToSave.pendingUploadKey) {
+                        const queue = JSON.parse(localStorage.getItem('offline_sync_queue') || '[]');
+                        queue.push({
+                            docId: docRef.id,
+                            collectionType: window.appId === 'epack-prod-data' ? 'prod' : 'artifact',
+                            collectionPath: category, // pour artifacts c'est le champ category
+                            idbKey: itemToSave.pendingUploadKey,
+                            storagePath: itemToSave.targetStoragePath
+                        });
+                        localStorage.setItem('offline_sync_queue', JSON.stringify(queue));
+                    }
+
                 } catch (e) { alert("Erreur sauvegarde: " + e.message); }
             };
 
@@ -398,7 +426,8 @@
                 ArrowDown: <path d="M12 5v14M5 12l7 7 7-7"/>,
                 ClipboardList: <><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/></>,
                 WifiOff: <line x1="1" y1="1" x2="23" y2="23"></line>,
-                Smartphone: <><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></>
+                Smartphone: <><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></>,
+                CloudUpload: <path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242M12 12v9m-4-4 4-4 4 4" />
             };
             return (
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
@@ -442,6 +471,87 @@
             return isOnline;
         };
 
+        // --- GESTIONNAIRE DE SYNC DE PHOTOS (BACKGROUND) ---
+        const SyncManager = ({ restaurantId }) => {
+            const isOnline = useNetworkStatus();
+            const [pendingCount, setPendingCount] = useState(0);
+
+            useEffect(() => {
+                const checkQueue = () => {
+                    const queue = JSON.parse(localStorage.getItem('offline_sync_queue') || '[]');
+                    setPendingCount(queue.length);
+                };
+                
+                const interval = setInterval(checkQueue, 2000);
+                return () => clearInterval(interval);
+            }, []);
+
+            useEffect(() => {
+                const processQueue = async () => {
+                    if (!isOnline) return;
+
+                    const queue = JSON.parse(localStorage.getItem('offline_sync_queue') || '[]');
+                    if (queue.length === 0) return;
+
+                    console.log("Début synchro photos:", queue.length);
+
+                    // Traitement UN par UN (séquentiel pour fiabilité)
+                    const item = queue[0];
+                    try {
+                        // 1. Récupérer l'image HD locale
+                        const blob = await SimpleIDB.get(item.idbKey);
+                        if (!blob) {
+                            console.warn("Image perdue pour", item.idbKey);
+                            // On retire de la file pour ne pas bloquer
+                            const newQueue = queue.slice(1);
+                            localStorage.setItem('offline_sync_queue', JSON.stringify(newQueue));
+                            return;
+                        }
+
+                        // 2. Upload vers Storage
+                        const storageRef = window.ref(window.storage, item.storagePath);
+                        await window.uploadBytes(storageRef, blob);
+                        const url = await window.getDownloadURL(storageRef);
+
+                        // 3. Mise à jour du document Firestore
+                        const collectionRef = item.collectionType === 'prod' 
+                            ? window.collection(window.db, 'haccp_data', restaurantId, item.collectionPath)
+                            : window.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'haccp_items');
+                        
+                        await window.updateDoc(window.doc(collectionRef, item.docId), {
+                            photo: url,
+                            syncStatus: 'synced',
+                            pendingUploadKey: window.deleteField ? window.deleteField() : null
+                        });
+
+                        // 4. Nettoyage
+                        await SimpleIDB.delete(item.idbKey);
+                        const newQueue = queue.slice(1);
+                        localStorage.setItem('offline_sync_queue', JSON.stringify(newQueue));
+                        setPendingCount(newQueue.length);
+                        console.log("Photo synchronisée !");
+
+                    } catch (e) {
+                        console.error("Erreur sync item", e);
+                        // En cas d'erreur, on attend un peu avant de retenter (le useEffect se relancera si online change ou au prochain montage)
+                    }
+                };
+
+                if (isOnline && pendingCount > 0) {
+                    processQueue();
+                }
+            }, [isOnline, pendingCount, restaurantId]);
+
+            if (pendingCount === 0) return null;
+
+            return (
+                <div className="fixed bottom-20 left-1/2 transform -translate-x-1/2 bg-blue-600 text-white px-4 py-2 rounded-full shadow-lg z-50 flex items-center gap-2 text-sm font-bold animate-pulse">
+                    <Icon name="CloudUpload" className="w-4 h-4" />
+                    Synchro photos ({pendingCount})...
+                </div>
+            );
+        };
+
         // --- MODULES ---
         const TraceabilityModule = ({ restaurantId }) => {
             const { data: products, addItem, deleteItem } = useSharedCollection(restaurantId, 'traceability', 'timestamp');
@@ -456,7 +566,6 @@
             const [exportModalOpen, setExportModalOpen] = useState(false);
             const [exportMonth, setExportMonth] = useState(new Date().toISOString().slice(0, 7));
             const [isZipping, setIsZipping] = useState(false);
-            const [hasAutoCleaned, setHasAutoCleaned] = useState(false);
             const videoRef = useRef(null);
             const canvasRef = useRef(null);
             const fileInputRef = useRef(null);
@@ -469,7 +578,6 @@
 
             useEffect(() => { if (fullscreenPhoto) { setZoomLevel(1); setPan({x:0, y:0}); } }, [fullscreenPhoto]);
             
-            // --- NOUVEAUTÉ : RESTAURATION VIA INDEXEDDB + LOCALSTORAGE ---
             useEffect(() => {
                 const loadDraft = async () => {
                     const savedDraft = localStorage.getItem('draft_traceability_meta');
@@ -486,17 +594,15 @@
                 loadDraft();
             }, []);
 
-            // Sauvegarde texte uniquement dans LocalStorage
             useEffect(() => {
                 if (newProduct.name || newProduct.batch) {
-                    const meta = { ...newProduct, photo: null, rawFile: null }; // Don't save image to LS
+                    const meta = { ...newProduct, photo: null, rawFile: null }; 
                     try { localStorage.setItem('draft_traceability_meta', JSON.stringify(meta)); } catch (e) {}
                 }
             }, [newProduct.name, newProduct.batch]);
 
             const handleCameraClick = () => { if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) { nativeCameraInputRef.current?.click(); } else { startWebcam(); } };
             
-            // OPTIMISATION IMAGE : Save directly to IDB immediately
             const handleNativeCameraCapture = async (e) => { 
                 const file = e.target.files[0]; 
                 if (file) { 
@@ -529,7 +635,6 @@
                 setIsUploading(true); 
                 try { 
                     await addItem({ ...newProduct, sortDate: new Date().toISOString().split('T')[0] });
-                    // Nettoyage après succès
                     localStorage.removeItem('draft_traceability_meta');
                     await SimpleIDB.delete('draft_traceability_photo');
                 } catch (error) { console.error(error); } finally { 
@@ -576,7 +681,7 @@
                                     </div>
                                     <AutocompleteInput label="Produit" value={newProduct.name} onChange={e => setNewProduct({...newProduct, name: e.target.value})} options={productHistory} required />
                                     <Input label="Lot / DLC" value={newProduct.batch} onChange={e => setNewProduct({...newProduct, batch: e.target.value})} />
-                                    <Button type="submit" className="w-full" disabled={!newProduct.name || !newProduct.photo || isUploading}>{isUploading ? "Enregistrement..." : "Enregistrer (Cloud)"}</Button>
+                                    <Button type="submit" className="w-full" disabled={!newProduct.name || !newProduct.photo || isUploading}>{isUploading ? "Enregistrement..." : "Enregistrer"}</Button>
                                 </form>
                             </Card>
                         </div>
@@ -584,7 +689,7 @@
                              <div className="bg-white p-4 rounded-xl border flex justify-between items-center mb-4"><div className="flex items-center gap-2"><button onClick={() => changeDate(-1)}><Icon name="ChevronLeft" className="w-6 h-6"/></button><div className="flex items-center gap-2 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200"><Icon name="Calendar" className="w-5 h-5 text-green-600"/><input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} className="bg-transparent font-bold text-gray-700 outline-none" /></div><button onClick={() => changeDate(1)}><Icon name="ChevronRight" className="w-6 h-6"/></button></div><span className="text-sm text-gray-500">{filtered.length} produit(s)</span></div>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 {filtered.length === 0 && <div className="col-span-full text-center py-10 text-gray-400">Rien ce jour.</div>}
-                                {filtered.map(item => (<div key={item.id} className="bg-white rounded-lg border p-3 flex justify-between items-start"><div className="flex gap-3 w-full" onClick={() => setFullscreenPhoto(item.photo)}><img src={item.photo} className="w-20 h-20 object-cover rounded-lg bg-gray-100 cursor-zoom-in" /><div><p className="font-bold">{item.name}</p><p className="text-sm text-green-600">{item.batch}</p></div></div><button onClick={() => deleteItem(item.id)} className="text-gray-300 hover:text-red-500"><Icon name="Trash2"/></button></div>))}
+                                {filtered.map(item => (<div key={item.id} className="bg-white rounded-lg border p-3 flex justify-between items-start"><div className="flex gap-3 w-full" onClick={() => setFullscreenPhoto(item.photo)}><img src={item.photo} className={`w-20 h-20 object-cover rounded-lg bg-gray-100 cursor-zoom-in ${item.syncStatus === 'pending' ? 'opacity-50 blur-[1px]' : ''}`} /><div><p className="font-bold">{item.name}</p><p className="text-sm text-green-600">{item.batch}</p>{item.syncStatus === 'pending' && <p className="text-xs text-orange-500 font-bold flex items-center gap-1"><Icon name="WifiOff" className="w-3 h-3"/> En attente synchro...</p>}</div></div><button onClick={() => deleteItem(item.id)} className="text-gray-300 hover:text-red-500"><Icon name="Trash2"/></button></div>))}
                             </div>
                         </div>
                     </div>
@@ -801,7 +906,7 @@
                             <Button type="submit" className="col-span-full bg-orange-600 hover:bg-orange-700 text-white">Valider réception</Button>
                         </form>
                         <div className="space-y-2">
-                            {filteredDeliveries.map(d => ( <div key={d.id} className={`flex justify-between items-start bg-white p-3 rounded-lg border shadow-sm ${d.compliant === 'Non' ? 'border-l-4 border-l-red-500' : ''}`}><div className="flex gap-3">{d.photo && <img src={d.photo} className="w-12 h-12 object-cover rounded bg-gray-200" />}<div><div className="font-bold text-gray-800">{d.product} <span className="text-xs text-gray-500">({d.supplier})</span></div><div className="text-sm text-gray-600">Lot: {d.batch} • {d.temp}°C • <span className={d.compliant==='Oui'?'text-green-600 font-bold':'text-red-600 font-bold'}>{d.compliant==='Oui'?'Conforme':'Non Conforme'}</span></div>{d.comment && <div className="text-xs text-red-500 mt-1 italic">⚠️ {d.comment}</div>}</div></div><button onClick={() => removeDelivery(d.id)} className="text-gray-300 hover:text-red-500"><Icon name="Trash2"/></button></div> ))}
+                            {filteredDeliveries.map(d => ( <div key={d.id} className={`flex justify-between items-start bg-white p-3 rounded-lg border shadow-sm ${d.compliant === 'Non' ? 'border-l-4 border-l-red-500' : ''}`}><div className="flex gap-3">{d.photo && <img src={d.photo} className={`w-12 h-12 object-cover rounded bg-gray-200 ${d.syncStatus === 'pending' ? 'opacity-50 blur-[1px]' : ''}`} />}<div><div className="font-bold text-gray-800">{d.product} <span className="text-xs text-gray-500">({d.supplier})</span></div><div className="text-sm text-gray-600">Lot: {d.batch} • {d.temp}°C • <span className={d.compliant==='Oui'?'text-green-600 font-bold':'text-red-600 font-bold'}>{d.compliant==='Oui'?'Conforme':'Non Conforme'}</span></div>{d.comment && <div className="text-xs text-red-500 mt-1 italic">⚠️ {d.comment}</div>}{d.syncStatus === 'pending' && <p className="text-xs text-orange-500 font-bold flex items-center gap-1 mt-1"><Icon name="WifiOff" className="w-3 h-3"/> En attente synchro...</p>}</div></div><button onClick={() => removeDelivery(d.id)} className="text-gray-300 hover:text-red-500"><Icon name="Trash2"/></button></div> ))}
                             {filteredDeliveries.length === 0 && <p className="text-center text-gray-400 italic text-sm">Aucune livraison scannée ce jour.</p>}
                         </div>
                     </Card>
@@ -965,6 +1070,7 @@
 
             return (
                 <div className="flex h-[100dvh] bg-green-50/50 w-full overflow-hidden flex-col md:flex-row fade-in-element">
+                    <SyncManager restaurantId={restaurantId} />
                     <div className="md:w-72 bg-white border-r border-gray-200 z-50 flex flex-col md:h-full shadow-xl order-2 md:order-1">
                         <div className="p-6 border-b hidden md:flex justify-start items-center gap-2"><h1 className="text-2xl font-extrabold text-green-700">eHygiène<span className="text-green-400">.</span></h1></div>
                         <div className="p-4 bg-green-50 border-b hidden md:block"><p className="text-xs text-green-600 font-bold uppercase tracking-wider">Restaurant</p><p className="font-bold text-gray-800 truncate">{restaurantId}</p></div>
