@@ -3,1527 +3,976 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Application de Pointage d'Heure</title>
+    <title>eHygiène - So'Chris</title>
     
-    <!-- Méta-données pour PWA (Progressive Web App) -->
-    <meta name="mobile-web-app-capable" content="yes">
+    <!-- OPTIMISATION CACHE & PRELOAD -->
+    <meta http-equiv="Cache-Control" content="public, max-age=31536000">
+    <link rel="preload" href="https://cdn.tailwindcss.com" as="script">
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js" as="script">
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js" as="script">
+    <link rel="preload" href="https://unpkg.com/@babel/standalone/babel.min.js" as="script">
+    <link rel="preload" href="https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js" as="script">
+    <link rel="preload" href="https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js" as="script">
+    
+    <!-- ICONS & PWA CONFIG -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj48cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgcng9IjEyMCIgZmlsbD0iIzE2YTM0YSIvPjxwYXRoIGQ9Ik0yNTYgODBjMCAwIDE0MCAyNSAxNDAgMTQwYzAgMTAwLTgwIDE4MC0xNDAgMjEyYy02MC0zMi0xNDAtMTEyLTE0MC0yMTJjMC0xMTUgMTQwLTE0MCAxNDAtMTQweiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjMwIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48cGF0aCBkPSJNMzM2IDIwMGwtMTAwIDEwMGwtNjAtNjAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2ZmZiIgc3Ryb2tlLXdpZHRoPSIzMCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PC9zdmc+">
+    <link rel="apple-touch-icon" id="dynamic-apple-icon" href="">
+    <link rel="manifest" id="dynamic-manifest" href="">
+
+    <meta name="apple-mobile-web-app-title" content="So'Chris">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Pointage">
-    <meta name="application-name" content="Pointage">
-    <meta name="theme-color" content="#2563eb">
+    <meta name="theme-color" content="#16a34a">
+    <meta name="mobile-web-app-capable" content="yes">
 
-    <!-- Placeholders pour les icônes -->
-    <link rel="icon" type="image/png" id="dynamic-favicon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🕒</text></svg>">
-    <link rel="apple-touch-icon" id="dynamic-apple-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🕒</text></svg>">
-    <link rel="manifest" id="dynamic-manifest">
+    <script>
+        // Génération dynamique du Manifeste PWA et de l'icône Apple
+        (function() {
+            const svgIcon = `data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj48cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgcng9IjEyMCIgZmlsbD0iIzE2YTM0YSIvPjxwYXRoIGQ9Ik0yNTYgODBjMCAwIDE0MCAyNSAxNDAgMTQwYzAgMTAwLTgwIDE4MC0xNDAgMjEyYy02MC0zMi0xNDAtMTEyLTE0MC0yMTJjMC0xMTUgMTQwLTE0MCAxNDAtMTQweiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjMwIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48cGF0aCBkPSJNMzM2IDIwMGwtMTAwIDEwMGwtNjAtNjAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2ZmZiIgc3Ryb2tlLXdpZHRoPSIzMCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PC9zdmc+`;
+            const img = new Image();
+            img.onload = function() {
+                const canvas = document.createElement('canvas');
+                canvas.width = 512; canvas.height = 512;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, 512, 512);
+                const pngUrl = canvas.toDataURL('image/png');
+                
+                const appleIcon = document.getElementById('dynamic-apple-icon');
+                if (appleIcon) appleIcon.href = pngUrl;
+                
+                const manifest = { 
+                    "name": "eHygiène So'Chris", 
+                    "short_name": "So'Chris", 
+                    "start_url": window.location.href, // Force l'URL courante comme point de départ
+                    "display": "standalone", 
+                    "orientation": "portrait",
+                    "background_color": "#f0fdf4", 
+                    "theme_color": "#16a34a", 
+                    "scope": ".",
+                    "icons": [ { "src": pngUrl, "sizes": "512x512", "type": "image/png", "purpose": "any maskable" } ] 
+                };
+                const stringManifest = JSON.stringify(manifest);
+                const blob = new Blob([stringManifest], {type: 'application/json'});
+                const manifestUrl = URL.createObjectURL(blob);
+                const manifestLink = document.getElementById('dynamic-manifest');
+                if (manifestLink) manifestLink.href = manifestUrl;
+            };
+            img.src = svgIcon;
+        })();
+    </script>
 
+    <!-- SCRIPTS MOTEUR (Chargés via CDN pour mise en cache) -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+    <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     
-    <!-- Utilisation de xlsx-js-style pour le style Excel -->
-    <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
-    
-    <!-- Firebase SDKs -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, addDoc, setDoc, updateDoc, onSnapshot, collection, query, where, limit, getDocs, deleteDoc, orderBy, serverTimestamp, getDoc, Timestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc, updateDoc, query, where, setDoc, getDocs, enableIndexedDbPersistence, limit, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
+
+        let firebaseConfig;
+        let appId;
+        let initialAuthToken = null;
+
+        try {
+            firebaseConfig = JSON.parse(__firebase_config);
+            appId = __app_id;
+            if (typeof __initial_auth_token !== 'undefined') { initialAuthToken = __initial_auth_token; }
+        } catch (e) {
+            console.log("Mode Production / Secours");
+            firebaseConfig = { apiKey: "AIzaSyCoMV_kNz-eI1JlLp33h0iJ4MZR7NnoI-w", authDomain: "epack-hygiene-99e64.firebaseapp.com", projectId: "epack-hygiene-99e64", storageBucket: "epack-hygiene-99e64.firebasestorage.app", messagingSenderId: "917463324646", appId: "1:917463324646:web:14856a7207be0353aca827" };
+            appId = 'epack-prod-data'; 
+        }
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const storage = getStorage(app); 
+
+        // --- ACTIVATION PERSISTANCE HORS LIGNE (CRITIQUE) ---
+        try {
+            enableIndexedDbPersistence(db).catch((err) => {
+                if (err.code == 'failed-precondition') {
+                    console.warn("Persistance échouée : multiples onglets ouverts.");
+                } else if (err.code == 'unimplemented') {
+                    console.warn("Persistance non supportée par ce navigateur.");
+                }
+            });
+        } catch(e) { console.log("Erreur init persistence", e); }
+
+        window.db = db; window.auth = auth; window.storage = storage; window.appId = appId; window.initialAuthToken = initialAuthToken; 
+        window.collection = collection; window.addDoc = addDoc; window.onSnapshot = onSnapshot; window.deleteDoc = deleteDoc; window.doc = doc; window.updateDoc = updateDoc; window.setDoc = setDoc;
+        window.query = query; window.where = where; window.getDocs = getDocs; window.limit = limit; window.orderBy = orderBy;
+        window.signInAnonymously = signInAnonymously; window.signInWithCustomToken = signInWithCustomToken; window.signOut = signOut; window.onAuthStateChanged = onAuthStateChanged;
+        window.ref = ref; window.uploadBytes = uploadBytes; window.getDownloadURL = getDownloadURL;
         
-        window.firebase = {
-            initializeApp,
-            getAuth,
-            signInAnonymously,
-            signInWithCustomToken,
-            onAuthStateChanged,
-            getFirestore,
-            doc,
-            addDoc,
-            setDoc,
-            updateDoc,
-            onSnapshot,
-            collection,
-            query,
-            where,
-            limit,
-            getDocs,
-            deleteDoc,
-            orderBy,
-            serverTimestamp,
-            getDoc,
-            Timestamp
-        };
+        window.firebaseLoaded = true;
     </script>
+
     <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f7f7f9;
-            touch-action: manipulation; 
-            overscroll-behavior-y: none;
-        }
-        .container-card {
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05), 0 0 10px rgba(0, 0, 0, 0.03);
-            background-color: white;
-        }
-        .btn-primary {
-            transition: all 0.2s;
-        }
-        .btn-primary:active {
-            transform: scale(0.98);
-        }
-        .input-4-digit {
-            letter-spacing: 0.5rem;
-            text-align: center;
-            font-family: monospace;
-        }
+        body { -webkit-tap-highlight-color: transparent; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .fade-in-element { animation: fadeIn 0.3s ease-out; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .active-press:active { transform: scale(0.95); background-color: #f3f4f6; }
+        @keyframes scan { 0% { top: 10%; opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { top: 90%; opacity: 0; } }
+        .scan-line { position: absolute; left: 10%; right: 10%; height: 2px; background: #4ade80; box-shadow: 0 0 10px #4ade80; animation: scan 2s linear infinite; }
+        .pb-safe { padding-bottom: env(safe-area-inset-bottom, 20px); }
+        .offline-badge { background-color: #f97316; color: white; padding: 4px 12px; border-radius: 9999px; font-weight: bold; font-size: 0.8rem; box-shadow: 0 2px 4px rgba(0,0,0,0.2); animation: pulse 2s infinite; display: flex; align-items: center; gap: 6px; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.8; } 100% { opacity: 1; } }
         
-        /* SCROLL WHEEL STYLES */
-        .no-scrollbar::-webkit-scrollbar {
-            display: none;
-        }
-        .no-scrollbar {
-            -ms-overflow-style: none;
-            scrollbar-width: none;
-        }
-        .wheel-container {
-            position: relative;
-            height: 160px;
-            overflow: hidden;
-            background: #f8fafc;
-            border-radius: 0.75rem;
-            border: 1px solid #e2e8f0;
-        }
-        .wheel-highlight {
-            position: absolute;
-            top: 50%;
-            left: 0;
-            right: 0;
-            height: 40px;
-            margin-top: -20px;
-            background-color: #dbeafe;
-            border-top: 1px solid #93c5fd;
-            border-bottom: 1px solid #93c5fd;
-            pointer-events: none;
-            z-index: 0;
-        }
-        .wheel-column {
-            height: 100%;
-            overflow-y: scroll;
-            scroll-snap-type: y mandatory;
-            padding-top: 60px; /* Aligns perfectly with highlight at top 50% - 20px */
-            padding-bottom: 60px;
-            position: relative;
-            z-index: 10;
-        }
-        .wheel-item {
-            height: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            scroll-snap-align: center;
-            font-size: 1.25rem;
-            font-weight: 600;
-            color: #64748b;
-            transition: color 0.2s, transform 0.2s;
-        }
-        
-        .numpad-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 12px;
-            margin-bottom: 20px;
-        }
-        .numpad-btn {
-            background-color: white;
-            border: 1px solid #e2e8f0;
-            border-radius: 0.75rem;
-            height: 60px;
-            font-size: 1.5rem;
-            font-weight: 600;
-            color: #1f2937;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-            transition: background-color 0.15s, transform 0.1s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            user-select: none;
-            -webkit-tap-highlight-color: transparent;
-        }
-        .numpad-btn:active {
-            background-color: #f1f5f9;
-            transform: scale(0.95);
-        }
-        .numpad-btn.action-btn {
-            background-color: #eff6ff;
-            color: #2563eb;
-            border-color: #bfdbfe;
-        }
-        .numpad-btn.clear-btn {
-            background-color: #fef2f2;
-            color: #dc2626;
-            border-color: #fecaca;
-        }
-        
-        /* Toast notification */
-        #toast-notification {
-            visibility: hidden;
-            min-width: 250px;
-            background-color: #333;
-            color: #fff;
-            text-align: center;
-            border-radius: 8px;
-            padding: 16px;
-            position: fixed;
-            z-index: 100;
-            left: 50%;
-            bottom: 30px;
-            transform: translateX(-50%);
-            font-size: 17px;
-            opacity: 0;
-            transition: opacity 0.3s, bottom 0.3s;
-        }
-        #toast-notification.show {
-            visibility: visible;
-            opacity: 1;
-            bottom: 50px;
-        }
-        
-        /* Logo Upload Styles */
-        .logo-container {
-            position: relative;
-            cursor: pointer;
-            display: inline-block;
-        }
-        .logo-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0,0,0,0.5);
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            opacity: 0;
-            transition: opacity 0.2s;
-            border-radius: 0.5rem;
-            font-size: 0.8rem;
-            font-weight: bold;
-            text-align: center;
-        }
-        .logo-container:hover .logo-overlay {
-            opacity: 1;
-        }
-        
-        /* Loading spinner for logo */
-        .loading-spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #3498db;
-            border-radius: 50%;
-            width: 30px;
-            height: 30px;
-            animation: spin 2s linear infinite;
-            margin: auto;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        
-        /* Success Animation */
-        @keyframes progress { from { width: 100%; } to { width: 0%; } }
-        .progress-bar { animation: progress 5s linear forwards; }
-        
-        /* Table Preview Styles - AGRANDI ET CLARIFIÉ */
-        .preview-header { 
-            background-color: #FFC000; 
-            font-weight: bold; 
-            text-align: center; 
-            font-size: 0.85rem;
-            border: 1px solid #94a3b8;
-            padding: 12px 6px;
-            color: #0f172a;
-            white-space: nowrap;
-        }
-        .preview-cell { 
-            text-align: center; 
-            font-size: 0.95rem;
-            border: 1px solid #cbd5e1; 
-            padding: 12px 6px;
-            color: #334155;
-            white-space: nowrap;
-        }
-        .preview-week-row { 
-            background-color: #FFFF00; 
-            font-weight: bold; 
-            color: #DC2626; 
-            text-align: center;
-            font-size: 0.9rem;
-            padding: 8px;
-        }
-        .preview-total-row { 
-            background-color: #FFF2CC; 
-            font-weight: bold; 
-            text-align: center; 
-            font-size: 0.85rem; 
-        }
+        /* Loader Statique et Error Screen */
+        #static-loader { position: fixed; inset: 0; background: #f0fdf4; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; font-family: sans-serif; text-align: center; padding: 20px; transition: opacity 0.5s; }
+        .loader-spinner { width: 40px; height: 40px; border: 4px solid #dcfce7; border-top: 4px solid #16a34a; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        #offline-error { display: none; color: #b91c1c; background: #fef2f2; padding: 20px; border-radius: 10px; border: 1px solid #fecaca; max-width: 90%; margin-top: 20px; }
     </style>
 </head>
-<body class="min-h-screen p-4 md:p-8 flex flex-col items-center">
-
-    <!-- Auth / App Info -->
-    <div id="auth-info" class="mb-4 text-xs text-gray-500 w-full max-w-4xl text-center">
-        Statut: <span id="connection-status" class="font-bold text-orange-500">Démarrage...</span>
-    </div>
-
-    <!-- Main Application Container -->
-    <div id="app-container" class="w-full max-w-4xl container-card rounded-xl p-6 md:p-10 relative">
-        <div id="error-banner-container"></div>
-
-        <div class="flex flex-col items-center justify-center mb-6">
-            <!-- Hidden File Input for Logo -->
-            <input type="file" id="logo-upload-input" accept="image/*" class="hidden" onchange="handleLogoUpload(this)">
+<body class="bg-green-50 text-gray-900 h-screen w-screen overflow-hidden select-none font-sans">
+    <!-- LOADER INITIAL (Visible avant que React ne charge) -->
+    <div id="root" class="h-full w-full">
+        <div id="static-loader">
+            <div class="loader-spinner" id="loader-spinner"></div>
+            <h2 style="color: #166534; font-weight: bold; font-size: 1.25rem; margin-bottom: 10px;">eHygiène So'Chris</h2>
+            <p id="loader-text" style="color: #4b5563; font-size: 0.9rem;">Démarrage de l'application...</p>
             
-            <!-- Logo Image Container with Click-to-Edit -->
-            <div class="logo-container mb-4" onclick="document.getElementById('logo-upload-input').click()" title="Cliquez pour changer le logo">
-                <img id="app-logo" src="logo.png" 
-                     alt="Logo Pointage" 
-                     class="h-48 w-auto object-contain rounded-lg shadow-sm hover:shadow-md transition-shadow duration-300 hidden">
-                
-                <!-- Fallback Icon (also clickable) -->
-                <div id="fallback-logo-icon" class="bg-blue-50 p-4 rounded-full text-blue-600 border border-blue-100 shadow-sm cursor-pointer">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                    </svg>
-                    <div class="text-xs text-center mt-1 font-bold">Ajouter Logo</div>
-                </div>
-                
-                <!-- Loading State -->
-                <div id="logo-loading" class="hidden absolute inset-0 bg-white bg-opacity-80 flex items-center justify-center rounded-lg">
-                    <div class="loading-spinner"></div>
-                </div>
-
-                <!-- Hover Overlay -->
-                <div class="logo-overlay">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                </div>
+            <div id="offline-error">
+                <h3 style="font-weight: bold; margin-bottom: 5px;">⚠️ Connexion Requise</h3>
+                <p style="font-size: 0.9rem; margin-bottom: 10px;">Impossible de charger les fichiers de l'application.</p>
+                <ul style="text-align: left; font-size: 0.85rem; color: #7f1d1d; list-style-type: disc; padding-left: 20px;">
+                    <li>Connectez-vous à Internet (Wi-Fi/4G).</li>
+                    <li>Rechargez la page.</li>
+                    <li>Utilisez ensuite le bouton <b>"Synchroniser"</b> dans le menu.</li>
+                </ul>
+                <button onclick="window.location.reload()" style="margin-top: 15px; padding: 10px 20px; background: #dc2626; color: white; border: none; border-radius: 5px; font-weight: bold;">Réessayer</button>
             </div>
 
-            <h1 class="text-3xl font-bold text-gray-800 text-center">Système de Pointage d'Heure</h1>
-            <p class="text-xs text-gray-400 mt-2">Mode: Données Partagées (Cloud Public)</p>
-        </div>
-
-        <!-- Navigation Tabs -->
-        <div class="flex border-b border-gray-200 mb-8">
-            <button id="tab-punch" onclick="showView('punch')" class="flex-1 py-3 text-sm font-medium border-b-2 transition-colors duration-200" data-active-class="border-blue-600 text-blue-600" data-inactive-class="border-transparent text-gray-500 hover:text-gray-700">Pointage Employé</button>
-            <button id="tab-admin" onclick="requestAdminAccess()" class="flex-1 py-3 text-sm font-medium border-b-2 transition-colors duration-200" data-active-class="border-blue-600 text-blue-600" data-inactive-class="border-transparent text-gray-500 hover:text-gray-700">
-                <span class="flex items-center justify-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                    </svg>
-                    Administration
-                </span>
-            </button>
-        </div>
-
-        <!-- 1. PUNCH CLOCK INTERFACE -->
-        <div id="view-punch" class="view-content">
-            <div class="max-w-md mx-auto">
-                
-                <!-- STEP 1: LOGIN (Code Entry) -->
-                <div id="step-login" class="p-6 bg-blue-50 rounded-lg shadow-inner mb-8">
-                    <p class="text-center text-lg font-medium text-blue-800 mb-4">Entrez votre code</p>
-                    <input id="employee-code" type="text" maxlength="4" placeholder="••••" readonly class="input-4-digit w-full p-4 text-4xl border-2 border-blue-300 rounded-lg bg-white focus:ring-blue-500 focus:border-blue-500 mb-6 text-gray-800">
-                    <div class="numpad-grid select-none">
-                        <div onclick="typeNum('employee-code', '1')" class="numpad-btn">1</div>
-                        <div onclick="typeNum('employee-code', '2')" class="numpad-btn">2</div>
-                        <div onclick="typeNum('employee-code', '3')" class="numpad-btn">3</div>
-                        <div onclick="typeNum('employee-code', '4')" class="numpad-btn">4</div>
-                        <div onclick="typeNum('employee-code', '5')" class="numpad-btn">5</div>
-                        <div onclick="typeNum('employee-code', '6')" class="numpad-btn">6</div>
-                        <div onclick="typeNum('employee-code', '7')" class="numpad-btn">7</div>
-                        <div onclick="typeNum('employee-code', '8')" class="numpad-btn">8</div>
-                        <div onclick="typeNum('employee-code', '9')" class="numpad-btn">9</div>
-                        <div onclick="clearNum('employee-code')" class="numpad-btn clear-btn">Effacer</div>
-                        <div onclick="typeNum('employee-code', '0')" class="numpad-btn">0</div>
-                        <div onclick="verifyCodeAndShowMenu()" class="numpad-btn action-btn bg-blue-600 text-white border-blue-600">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                            </svg>
-                        </div>
-                    </div>
-                    <button onclick="verifyCodeAndShowMenu()" class="w-full btn-primary bg-blue-600 text-white font-bold py-4 rounded-xl text-xl shadow-lg hover:bg-blue-700 flex items-center justify-center">
-                        <span class="mr-2">VALIDER</span>
-                    </button>
-                    <p id="punch-message" class="text-center mt-4 text-sm font-medium h-6"></p>
-                </div>
-
-                <!-- STEP 2: EMPLOYEE DASHBOARD (Choice: Punch or History) -->
-                <div id="step-dashboard" class="hidden">
-                    <div class="text-center mb-8">
-                        <h2 id="dashboard-welcome" class="text-2xl font-bold text-gray-800">Bonjour</h2>
-                        <p class="text-sm text-gray-500">Que souhaitez-vous faire ?</p>
-                    </div>
-                    
-                    <div class="grid grid-cols-1 gap-6">
-                        <button onclick="onMenuPunch()" id="btn-punch-action" class="p-8 rounded-xl shadow-lg border-2 text-left transition-all transform active:scale-95 flex items-center justify-between group">
-                            <!-- JS will update class and text here (Green/Red) -->
-                            <div class="flex items-center">
-                                <div id="btn-punch-icon" class="p-4 rounded-full mr-4 bg-gray-100">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                    </svg>
-                                </div>
-                                <div>
-                                    <span id="btn-punch-text" class="block text-xl font-bold text-gray-800">Pointer / Dépointer</span>
-                                    <span id="btn-punch-sub" class="text-sm text-gray-500">Chargement...</span>
-                                </div>
-                            </div>
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-400 group-hover:text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                            </svg>
-                        </button>
-
-                        <button onclick="onMenuHistory()" class="bg-white p-8 rounded-xl shadow-lg border-2 border-blue-100 hover:border-blue-300 text-left transition-all transform active:scale-95 flex items-center justify-between group">
-                            <div class="flex items-center">
-                                <div class="bg-blue-50 p-4 rounded-full mr-4 text-blue-600">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                    </svg>
-                                </div>
-                                <div>
-                                    <span class="block text-xl font-bold text-gray-800">Voir mes heures</span>
-                                    <span class="text-sm text-gray-500">Consulter le tableau du mois</span>
-                                </div>
-                            </div>
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-400 group-hover:text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                            </svg>
-                        </button>
-                    </div>
-
-                    <button onclick="resetToCodeEntry()" class="w-full mt-8 py-3 text-gray-500 font-medium hover:text-red-600 flex items-center justify-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 15l-3-3m0 0l3-3m-3 3h8M3 12a9 9 0 1118 0 9 9 0 01-18 0z" />
-                        </svg>
-                        Retour / Déconnexion
-                    </button>
-                </div>
-
-                <!-- STEP 3: EMPLOYEE HISTORY TABLE -->
-                <div id="step-history" class="hidden">
-                    <div class="flex items-center justify-between mb-4">
-                        <h2 class="text-xl font-bold text-gray-800">Mes Heures (Ce mois)</h2>
-                        <button onclick="document.getElementById('step-history').classList.add('hidden'); document.getElementById('step-dashboard').classList.remove('hidden');" class="text-blue-600 font-bold text-sm bg-blue-50 px-3 py-2 rounded-lg hover:bg-blue-100">
-                            Retour
-                        </button>
-                    </div>
-                    <!-- Hauteur augmentée à h-[70vh] pour une meilleure vue sur mobile/tablette -->
-                    <div class="overflow-auto border border-gray-300 rounded-lg shadow-inner bg-white h-[70vh]">
-                        <table class="min-w-full border-collapse">
-                            <thead class="sticky top-0 z-10 shadow-sm">
-                                <tr>
-                                    <th class="preview-header">Sem</th>
-                                    <th class="preview-header">Date</th>
-                                    <th class="preview-header">Arr M</th>
-                                    <th class="preview-header">Dep M</th>
-                                    <th class="preview-header">Pau M</th>
-                                    <th class="preview-header">Tot M</th>
-                                    <th class="preview-header">Arr S</th>
-                                    <th class="preview-header">Dep S</th>
-                                    <th class="preview-header">Pau S</th>
-                                    <th class="preview-header">Tot S</th>
-                                    <th class="preview-header">Total</th>
-                                </tr>
-                            </thead>
-                            <tbody id="employee-history-body" class="bg-white">
-                                <!-- Populated by JS -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-            </div>
-        </div>
-
-        <!-- 2. ADMIN INTERFACE (Unchanged) -->
-        <div id="view-admin" class="view-content hidden">
-             <!-- NEW: Month Picker for Preview & Export -->
-            <div class="mb-6 bg-white p-4 rounded-lg border border-gray-200 shadow-sm flex items-center justify-between">
-                <div>
-                    <label class="block text-sm font-bold text-gray-700 mb-1">Mois à visualiser / exporter :</label>
-                    <input type="month" id="admin-month-picker" class="p-2 border rounded shadow-sm focus:ring-blue-500 focus:border-blue-500 text-gray-700 font-medium" onchange="renderMonthPreview()">
-                </div>
-                <div>
-                     <button onclick="exportToExcel()" class="btn-primary bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-700 flex items-center justify-center shadow">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                        </svg>
-                        Télécharger Excel
-                    </button>
-                </div>
-            </div>
-
-             <!-- Manual Correction Tool -->
-             <div class="mb-10 p-6 bg-white rounded-lg shadow-sm border border-orange-200">
-                <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-xl font-bold text-gray-800 flex items-center text-orange-700">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                        </svg>
-                        Corrections & Ajout Manuel
-                    </h3>
-                    <button onclick="openManualPunchModal(null)" class="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded text-sm font-medium flex items-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                        </svg>
-                        Nouvelle Entrée
-                    </button>
-                </div>
-                <div class="flex flex-col md:flex-row gap-4 mb-4 bg-orange-50 p-4 rounded-lg">
-                    <div class="flex-1">
-                        <label class="block text-xs font-bold text-gray-500 mb-1">Employé</label>
-                        <select id="admin-correction-employee" class="w-full p-2 border rounded focus:ring-orange-500 focus:border-orange-500" onchange="loadCorrectionData()">
-                            <option value="">-- Tous les employés --</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-gray-500 mb-1">Date à corriger</label>
-                        <input type="date" id="admin-correction-date" class="p-2 border rounded focus:ring-orange-500 focus:border-orange-500" onchange="loadCorrectionData()">
-                    </div>
-                </div>
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Employé</th>
-                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Arrivée</th>
-                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Départ</th>
-                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Pause</th>
-                                <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="correction-table-body" class="bg-white divide-y divide-gray-200"></tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- Add Employee Form -->
-            <div class="p-6 bg-gray-50 rounded-lg border mb-8">
-                <h3 class="text-xl font-medium mb-4 text-gray-700">Ajouter un Nouvel Employé</h3>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <input id="new-employee-name" type="text" placeholder="Nom de l'employé" class="p-3 border rounded-lg focus:ring-blue-500 focus:border-blue-500">
-                    <input id="new-employee-code" type="text" maxlength="4" placeholder="Code (4 chiffres)" class="p-3 border rounded-lg focus:ring-blue-500 focus:border-blue-500" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 4)">
-                    <button onclick="addEmployee()" class="btn-primary bg-green-600 text-white font-medium py-3 rounded-lg hover:bg-green-700">Ajouter</button>
-                </div>
-                <p id="admin-message" class="mt-2 text-sm text-red-600 h-5"></p>
-            </div>
-
-            <!-- Employee List -->
-            <h3 class="text-xl font-semibold mb-4 text-gray-700 border-b pb-2">Liste des Employés</h3>
-            <div id="employee-list-container" class="overflow-x-auto mb-8">
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-50"><tr><th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nom</th><th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Code</th><th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th></tr></thead>
-                    <tbody id="employee-table-body" class="bg-white divide-y divide-gray-200"></tbody>
-                </table>
-            </div>
-
-            <!-- PREVIEW EXCEL TABLE -->
-            <div class="mt-10 mb-10">
-                <h3 class="text-xl font-semibold mb-4 text-gray-700 border-b pb-2 flex items-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                    Aperçu Tableau Comptable
-                </h3>
-                
-                <div id="preview-records-container" class="overflow-x-auto max-h-[600px] border border-gray-300 rounded-lg shadow-inner bg-gray-50">
-                    <table class="min-w-full border-collapse">
-                        <thead class="sticky top-0 z-10 shadow-sm">
-                            <tr>
-                                <th class="preview-header">Sem</th>
-                                <th class="preview-header">Date</th>
-                                <th class="preview-header">Arr M</th>
-                                <th class="preview-header">Dep M</th>
-                                <th class="preview-header">Pau M</th>
-                                <th class="preview-header">Tot M</th>
-                                <th class="preview-header">Arr S</th>
-                                <th class="preview-header">Dep S</th>
-                                <th class="preview-header">Pau S</th>
-                                <th class="preview-header">Tot S</th>
-                                <th class="preview-header">Total</th>
-                            </tr>
-                        </thead>
-                        <tbody id="preview-table-body" class="bg-white">
-                            <tr><td colspan="11" class="text-center py-8 text-gray-500 italic">Chargement des données...</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-
-                <div class="mt-4 flex justify-end">
-                    <button onclick="resetAllPunches()" class="text-red-600 hover:text-red-800 text-sm font-medium flex items-center border border-red-200 bg-red-50 hover:bg-red-100 px-3 py-2 rounded shadow-sm transition-colors"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>Réinitialiser tout l'historique</button>
-                </div>
-            </div>
-
-            <!-- Admin Settings -->
-            <div class="mt-12 p-6 bg-gray-100 rounded-lg border border-gray-200">
-                <h3 class="text-xl font-semibold mb-4 text-gray-700 flex items-center"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>Paramètres Administrateur</h3>
-                <div class="flex items-center space-x-4">
-                    <div class="flex-grow max-w-xs">
-                        <label class="block text-xs font-bold text-gray-500 mb-1">Code d'accès Admin</label>
-                        <input id="setting-admin-code" type="text" maxlength="8" class="w-full p-2 border rounded shadow-sm focus:ring-blue-500 focus:border-blue-500" placeholder="Ex: 1976">
-                    </div>
-                    <div class="mt-5">
-                        <button onclick="saveNewAdminCode()" class="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 font-medium text-sm transition-colors">Enregistrer le nouveau code</button>
-                    </div>
-                </div>
-                <p id="settings-message" class="mt-2 text-sm h-5"></p>
-            </div>
+            <p id="loader-hint" style="color: #9ca3af; font-size: 0.8rem; margin-top: 20px; max-width: 300px;">
+                Initialisation des composants...
+            </p>
         </div>
     </div>
 
-    <!-- NEW: Modal for Manual Time Entry with SCROLL WHEEL -->
-    <div id="manual-time-modal" class="fixed inset-0 bg-black bg-opacity-60 hidden items-center justify-center z-50 backdrop-blur-sm">
-        <div class="bg-white p-6 rounded-xl shadow-2xl max-w-sm w-full transform transition-all scale-100 flex flex-col h-auto max-h-screen overflow-y-auto">
-            <h3 id="manual-time-title" class="text-xl font-bold mb-6 text-gray-800 text-center">Confirmation Horaire</h3>
-            
-            <div class="mb-4">
-                <label class="block text-sm font-bold text-gray-600 mb-2">Date</label>
-                <input type="date" id="manual-punch-date" class="w-full p-4 border-2 border-gray-200 rounded-lg text-center text-lg focus:border-blue-500 focus:ring-blue-500 outline-none transition-colors">
-            </div>
-
-            <!-- iOS STYLE SCROLL PICKER -->
-            <div class="mb-6">
-                <label class="block text-sm font-bold text-gray-600 mb-2">Heure</label>
-                <div class="wheel-container">
-                    <div class="wheel-highlight"></div>
-                    <div class="flex justify-center h-full relative z-10">
-                        <!-- Hour Wheel -->
-                        <div class="w-20 wheel-column no-scrollbar" id="hour-wheel">
-                            <!-- Populated by JS -->
-                        </div>
-                        <div class="flex items-center justify-center font-bold text-2xl text-gray-400 mx-2 z-10 pt-[2px]">:</div>
-                        <!-- Minute Wheel -->
-                        <div class="w-20 wheel-column no-scrollbar" id="minute-wheel">
-                            <!-- Populated by JS -->
-                        </div>
-                    </div>
-                </div>
-                <button onclick="setManualToNow()" class="w-full py-3 mt-2 text-xs font-bold text-blue-500 uppercase tracking-wide hover:bg-blue-50 rounded transition-colors">Remettre à maintenant</button>
-            </div>
-            
-            <!-- REMOVED BREAK INPUT FROM HERE, MOVED TO RED MODAL -->
-
-            <div class="flex space-x-3 mt-2">
-                <button onclick="closeManualTimeModal()" class="flex-1 py-4 border border-gray-300 rounded-lg text-gray-600 font-medium hover:bg-gray-50 transition-colors">Annuler</button>
-                <button onclick="confirmManualPunch()" class="flex-1 py-4 bg-blue-600 text-white rounded-lg font-bold shadow-md hover:bg-blue-700 transition-colors">Valider</button>
-            </div>
-        </div>
-    </div>
-    
-    <!-- NEW: REDESIGNED BREAK SELECTION MODAL (Cleaner White) -->
-    <div id="break-selection-modal" class="fixed inset-0 bg-black bg-opacity-70 hidden items-center justify-center z-50 backdrop-blur-sm">
-        <div class="bg-white p-8 rounded-xl shadow-2xl max-w-sm w-full transform transition-all scale-100 flex flex-col animate-bounce-in">
-            <h3 class="text-xl font-bold mb-2 text-center text-gray-800">Temps de Pause ?</h3>
-            <p class="text-center text-gray-500 mb-6 text-sm">Entrez la durée de votre pause en minutes</p>
-            
-            <div class="flex items-center justify-center mb-8 select-none">
-                <button onclick="adjustBreakRed(-5)" class="p-4 bg-gray-100 rounded-l-lg hover:bg-gray-200 border border-gray-200 font-bold text-gray-600 w-16 text-xl transition-colors">-</button>
-                <input type="number" id="red-punch-break" value="0" min="0" class="w-24 p-4 bg-white text-gray-800 border-y border-gray-200 text-center text-3xl font-bold focus:outline-none focus:border-blue-500">
-                <button onclick="adjustBreakRed(5)" class="p-4 bg-gray-100 rounded-r-lg hover:bg-gray-200 border border-gray-200 font-bold text-gray-600 w-16 text-xl transition-colors">+</button>
-            </div>
-
-            <div class="flex space-x-3">
-                <button onclick="document.getElementById('break-selection-modal').classList.add('hidden'); document.getElementById('break-selection-modal').classList.remove('flex');" class="flex-1 py-4 border border-gray-300 rounded-lg text-gray-600 font-medium hover:bg-gray-50 transition-colors">Retour</button>
-                <button onclick="confirmBreak()" class="flex-1 py-4 bg-blue-600 text-white rounded-lg font-bold shadow-lg hover:bg-blue-700 transition-colors">Valider</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- NEW: Punch Success Modal -->
-    <div id="punch-success-modal" class="fixed inset-0 bg-black bg-opacity-70 hidden items-center justify-center z-50 backdrop-blur-md">
-        <div class="bg-white p-8 rounded-2xl shadow-2xl max-w-sm w-full text-center relative overflow-hidden transform transition-all scale-105">
-            <div class="mx-auto flex items-center justify-center h-20 w-20 rounded-full bg-green-100 mb-6">
-                <svg class="h-10 w-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
-                </svg>
-            </div>
-            <h3 class="text-2xl font-bold text-gray-900 mb-2">Succès !</h3>
-            <p id="punch-success-message" class="text-lg text-gray-600 font-medium mb-6">Message de confirmation</p>
-            
-            <button onclick="undoLastPunch()" class="w-full py-3 mb-4 bg-red-50 text-red-600 border border-red-100 rounded-lg font-bold text-sm hover:bg-red-100 flex items-center justify-center transition-colors">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-                Oups, je me suis trompé (Annuler)
-            </button>
-
-            <div class="w-full bg-gray-200 rounded-full h-1.5 mb-1"><div id="punch-progress-bar" class="bg-green-600 h-1.5 rounded-full" style="width: 100%"></div></div>
-            <p class="text-xs text-gray-400">Fermeture automatique...</p>
-        </div>
-    </div>
-
-    <!-- Modals (Admin Login, Manual Correction) remain the same... -->
-    <!-- (Included in previous files, kept for functionality but collapsed here) -->
-    <div id="manual-correction-modal" class="fixed inset-0 bg-black bg-opacity-60 hidden items-center justify-center z-50 backdrop-blur-sm"><div class="bg-white p-6 rounded-2xl shadow-2xl max-w-md w-full"><h3 class="text-xl font-bold mb-4 text-gray-800" id="correction-modal-title">Modifier / Ajouter</h3><input type="hidden" id="edit-punch-id"><div class="space-y-4"><div><label class="block text-sm font-medium text-gray-700">Employé</label><select id="edit-punch-employee" class="mt-1 block w-full p-2 border rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 bg-gray-50"></select></div><div><label class="block text-sm font-medium text-gray-700">Date</label><input type="date" id="edit-punch-date" class="mt-1 block w-full p-2 border rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"></div><div class="grid grid-cols-2 gap-4"><div><label class="block text-sm font-medium text-gray-700">Heure Arrivée</label><input type="time" id="edit-punch-in" class="mt-1 block w-full p-2 border rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"></div><div><label class="block text-sm font-medium text-gray-700">Heure Départ</label><input type="time" id="edit-punch-out" class="mt-1 block w-full p-2 border rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"></div></div><div><label class="block text-sm font-medium text-gray-700">Pause (minutes)</label><input type="number" id="edit-punch-break" min="0" class="mt-1 block w-full p-2 border rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"></div></div><div class="mt-6 flex justify-end space-x-3"><button onclick="document.getElementById('manual-correction-modal').classList.add('hidden')" class="px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200">Annuler</button><button onclick="saveManualPunch()" class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700">Enregistrer</button></div></div></div>
-    <div id="admin-login-modal" class="fixed inset-0 bg-black bg-opacity-60 hidden items-center justify-center z-50 backdrop-blur-sm"><div class="bg-white p-6 rounded-2xl shadow-2xl max-w-sm w-full transform transition-all scale-100 flex flex-col h-auto max-h-screen overflow-y-auto" id="admin-modal-content"><div class="text-center mb-4"><div class="mx-auto bg-gray-100 w-12 h-12 rounded-full flex items-center justify-center mb-2"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg></div><h3 class="text-xl font-bold text-gray-800">Accès Admin</h3></div><input id="admin-login-input" type="password" maxlength="8" readonly class="w-full p-3 border-2 border-gray-300 rounded-lg text-2xl text-center focus:border-blue-500 focus:outline-none mb-4 tracking-widest bg-white" placeholder="••••"><div class="numpad-grid select-none mb-4"><div onclick="typeNum('admin-login-input', '1')" class="numpad-btn">1</div><div onclick="typeNum('admin-login-input', '2')" class="numpad-btn">2</div><div onclick="typeNum('admin-login-input', '3')" class="numpad-btn">3</div><div onclick="typeNum('admin-login-input', '4')" class="numpad-btn">4</div><div onclick="typeNum('admin-login-input', '5')" class="numpad-btn">5</div><div onclick="typeNum('admin-login-input', '6')" class="numpad-btn">6</div><div onclick="typeNum('admin-login-input', '7')" class="numpad-btn">7</div><div onclick="typeNum('admin-login-input', '8')" class="numpad-btn">8</div><div onclick="typeNum('admin-login-input', '9')" class="numpad-btn">9</div><div onclick="clearNum('admin-login-input')" class="numpad-btn clear-btn">C</div><div onclick="typeNum('admin-login-input', '0')" class="numpad-btn">0</div><div onclick="verifyAdminCode()" class="numpad-btn action-btn">OK</div></div><button onclick="closeAdminModal()" class="w-full text-gray-500 font-medium py-2 hover:text-gray-700 border rounded-lg">Annuler</button><p id="admin-login-error" class="text-center mt-2 text-sm font-medium text-red-500 h-5"></p></div></div>
-    
-    <div id="toast-notification">Notification</div>
-
-    <script type="module">
-        // ... (Imports and Config remain the same) ...
-        const { initializeApp, getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, getFirestore, doc, addDoc, setDoc, updateDoc, onSnapshot, collection, query, where, limit, getDocs, deleteDoc, orderBy, serverTimestamp, getDoc, Timestamp } = window.firebase;
-
-        let config = {};
-        try { config = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}'); } catch(e) {}
-        if (Object.keys(config).length === 0) { config = { apiKey: "AIzaSyAxG6D6yQWSUR3K2JORaXajA5QaCDp376A", authDomain: "pointage-5b928.firebaseapp.com", projectId: "pointage-5b928", storageBucket: "pointage-5b928.firebasestorage.app", messagingSenderId: "604304798014", appId: "1:604304798014:web:ac29f9638934bfdedbbc6f" }; }
-        const firebaseConfig = config;
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'pointage-app';
-
-        let app, db, auth, userId = null;
-        let employees = []; 
-        let punches = []; 
-        let isAuthReady = false;
-        let currentAdminCode = "1976"; 
-        let currentEmployee = null; // Store currently logged in employee for the dashboard
-        let lastCreatedPunchId = null; // Store ID for "Undo" feature
-        
-        const getColRef = (colName) => collection(db, 'artifacts', appId, 'public', 'data', colName);
-        const getDocRef = (colName, docId) => doc(db, 'artifacts', appId, 'public', 'data', colName, docId);
-
-        const formatter = new Intl.DateTimeFormat('fr-FR', {
-            year: 'numeric', month: '2-digit', day: '2-digit',
-            hour: '2-digit', minute: '2-digit', second: '2-digit',
-            hour12: false
-        });
-
-        // Helper pour avoir la date format YYYY-MM-DD locale (pour les input date)
-        function getLocalDateInputValue(d) {
-            const year = d.getFullYear();
-            const month = String(d.getMonth() + 1).padStart(2, '0');
-            const day = String(d.getDate()).padStart(2, '0');
-            return `${year}-${month}-${day}`;
-        }
-
-        window.showToast = (message) => {
-            const toast = document.getElementById("toast-notification");
-            toast.textContent = message;
-            toast.className = "show";
-            setTimeout(function(){ toast.className = toast.className.replace("show", ""); }, 3000);
-        }
-        window.typeNum = (inputId, num) => {
-            const input = document.getElementById(inputId);
-            if (input) {
-                if (input.value.length < input.maxLength) {
-                    input.value += num;
-                    input.dispatchEvent(new Event('input'));
-                }
+    <!-- Script de secours -->
+    <script>
+        setTimeout(function() {
+            if (!window.React) {
+                document.getElementById('loader-spinner').style.display = 'none';
+                document.getElementById('loader-text').style.display = 'none';
+                document.getElementById('loader-hint').style.display = 'none';
+                document.getElementById('offline-error').style.display = 'block';
             }
-        };
-        window.clearNum = (inputId) => { const input = document.getElementById(inputId); if(input) input.value = ''; };
+        }, 8000);
+    </script>
 
-        function formatDuration(ms) {
-            if (ms === undefined || ms === null) return 'N/A';
-            const sign = ms < 0 ? "-" : "";
-            const absMs = Math.abs(ms);
-            const totalSeconds = Math.floor(absMs / 1000);
-            const hours = Math.floor(totalSeconds / 3600);
-            const minutes = Math.floor((totalSeconds % 3600) / 60);
-            const seconds = totalSeconds % 60;
-            return sign + [hours, minutes, seconds].map(val => String(val).padStart(2, '0')).join(':');
-        }
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
 
-        window.showSuccessModal = (message, punchId) => {
-            const modal = document.getElementById('punch-success-modal');
-            const msgEl = document.getElementById('punch-success-message');
-            const bar = document.getElementById('punch-progress-bar');
-            msgEl.textContent = message;
-            lastCreatedPunchId = punchId; // Store for Undo
-            
-            bar.classList.remove('progress-bar');
-            void bar.offsetWidth; 
-            bar.classList.add('progress-bar');
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
-            
-            // Auto close timer
-            if (window.successModalTimer) clearTimeout(window.successModalTimer);
-            window.successModalTimer = setTimeout(() => { 
-                modal.classList.add('hidden'); 
-                modal.classList.remove('flex'); 
-            }, 5000);
-        }
-        
-        // FIXED: Undo Function Logic
-        window.undoLastPunch = async () => {
-            if (!lastCreatedPunchId) {
-                console.error("No last punch ID to undo");
-                return;
-            }
-            if (!confirm("Voulez-vous vraiment annuler ce pointage ?")) return;
-            
-            try {
-                const docRef = getDocRef('punches', lastCreatedPunchId);
-                const docSnap = await getDoc(docRef);
-                
-                if (docSnap.exists()) {
-                    const data = docSnap.data();
-                    
-                    // Logic to distinguish between undoing an IN or OUT punch
-                    // If punchOutTime exists, it means we just clocked OUT. We should clear it to stay clocked IN.
-                    if (data.punchOutTime) {
-                        await updateDoc(docRef, { punchOutTime: null, breakDuration: 0 });
-                        showToast("Dépointage annulé. Vous êtes toujours pointé.");
-                    } else {
-                        // If only punchInTime exists, we just clocked IN. Delete the whole record.
-                        await deleteDoc(docRef);
-                        showToast("Pointage annulé.");
-                    }
-                } else {
-                    showToast("Erreur: Pointage introuvable.");
-                }
-                
-                // Force Close modal immediately
-                if (window.successModalTimer) clearTimeout(window.successModalTimer);
-                document.getElementById('punch-success-modal').classList.add('hidden');
-                document.getElementById('punch-success-modal').classList.remove('flex');
-                
-                // If user is still "logged in", refresh dashboard state
-                if (currentEmployee) {
-                    verifyCodeAndShowMenu(); 
-                } else {
-                    resetToCodeEntry();
-                }
-                
-            } catch (e) {
-                console.error("Undo error", e);
-                alert("Erreur lors de l'annulation: " + e.message);
-            }
-        };
-
-        // --- INIT ---
-        window.onload = async () => {
-            // Populate Scroll Wheels
-            populateWheels();
-
-            try {
-                if (!firebaseConfig || Object.keys(firebaseConfig).length === 0) {
-                      document.getElementById('connection-status').textContent = "⚠️ CONFIGURATION MANQUANTE";
-                      return;
-                }
-                app = initializeApp(firebaseConfig);
-                db = getFirestore(app);
-                auth = getAuth(app);
-                document.getElementById('connection-status').textContent = "Connexion...";
-                document.getElementById('connection-status').className = "font-bold text-blue-500";
-
-                const initAuth = async () => {
-                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                        await signInWithCustomToken(auth, __initial_auth_token);
-                    } else {
-                        await signInAnonymously(auth);
-                    }
-                };
-                await initAuth();
-
-                onAuthStateChanged(auth, async (user) => {
-                    if (user) {
-                        userId = user.uid;
-                        isAuthReady = true;
-                        document.getElementById('connection-status').textContent = "Connecté (Cloud Public)";
-                        document.getElementById('connection-status').className = "font-bold text-green-600";
-                        startDataListeners();
-                        fetchAdminCode(); 
-                    } else {
-                         document.getElementById('connection-status').textContent = "Déconnecté";
-                    }
+        // --- HELPER INDEXEDDB POUR BROUILLONS ROBUSTES ---
+        // Permet de stocker des images volumineuses sans limite de 5Mo comme localStorage
+        const SimpleIDB = {
+            dbName: 'SoChrisDrafts',
+            storeName: 'drafts',
+            version: 1,
+            init: function() {
+                return new Promise((resolve, reject) => {
+                    const request = indexedDB.open(this.dbName, this.version);
+                    request.onupgradeneeded = (event) => {
+                        const db = event.target.result;
+                        if (!db.objectStoreNames.contains(this.storeName)) {
+                            db.createObjectStore(this.storeName);
+                        }
+                    };
+                    request.onsuccess = (event) => resolve(event.target.result);
+                    request.onerror = (event) => reject(event.target.error);
                 });
-                
-                document.getElementById('admin-correction-date').valueAsDate = new Date();
-                const today = new Date();
-                const yyyy = today.getFullYear();
-                const mm = String(today.getMonth() + 1).padStart(2, '0');
-                document.getElementById('admin-month-picker').value = `${yyyy}-${mm}`;
-
-            } catch (error) {
-                console.error("Erreur Firebase:", error);
-                document.getElementById('connection-status').textContent = "Erreur de Connexion";
-                handleFirebaseError(error);
+            },
+            save: async function(key, value) {
+                try {
+                    const db = await this.init();
+                    return new Promise((resolve, reject) => {
+                        const tx = db.transaction(this.storeName, 'readwrite');
+                        const store = tx.objectStore(this.storeName);
+                        store.put(value, key);
+                        tx.oncomplete = () => resolve();
+                        tx.onerror = () => reject();
+                    });
+                } catch(e) { console.error("IDB Save Error", e); }
+            },
+            get: async function(key) {
+                try {
+                    const db = await this.init();
+                    return new Promise((resolve, reject) => {
+                        const tx = db.transaction(this.storeName, 'readonly');
+                        const store = tx.objectStore(this.storeName);
+                        const req = store.get(key);
+                        req.onsuccess = () => resolve(req.result);
+                        req.onerror = () => reject();
+                    });
+                } catch(e) { return null; }
+            },
+            delete: async function(key) {
+                try {
+                    const db = await this.init();
+                    const tx = db.transaction(this.storeName, 'readwrite');
+                    tx.objectStore(this.storeName).delete(key);
+                } catch(e) {}
             }
         };
 
-        // ... (Logo functions remain the same) ...
-        function resizeAndCompressImage(file, maxWidth, quality, callback) {
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
-            reader.onload = function(event) {
+        const compressImage = (base64Str, maxWidth = 800, quality = 0.6) => {
+            return new Promise((resolve) => {
                 const img = new Image();
-                img.src = event.target.result;
-                img.onload = function() {
+                img.src = base64Str;
+                img.onload = () => {
                     const canvas = document.createElement('canvas');
-                    let width = img.width;
-                    let height = img.height;
-                    if (width > maxWidth) {
-                        height = Math.round((height * maxWidth) / width);
-                        width = maxWidth;
-                    }
-                    canvas.width = width;
-                    canvas.height = height;
+                    let width = img.width; let height = img.height;
+                    if (width > height) { if (width > maxWidth) { height *= maxWidth / width; width = maxWidth; } } 
+                    else { if (height > maxWidth) { width *= maxWidth / height; height = maxWidth; } }
+                    canvas.width = width; canvas.height = height;
                     const ctx = canvas.getContext('2d');
                     ctx.drawImage(img, 0, 0, width, height);
-                    // Use PNG to preserve transparency
-                    const dataUrl = canvas.toDataURL('image/png');
-                    callback(dataUrl);
+                    resolve(canvas.toDataURL('image/jpeg', quality));
                 };
-            };
-        }
-
-        window.handleLogoUpload = (input) => {
-            const file = input.files[0];
-            if (!file) return;
-            document.getElementById('logo-loading').classList.remove('hidden');
-            resizeAndCompressImage(file, 400, 0.7, async (compressedBase64) => {
-                 try {
-                    await setDoc(getDocRef('settings', 'branding'), { logoBase64: compressedBase64, updatedAt: serverTimestamp() });
-                    showToast("Nouveau logo partagé enregistré !");
-                } catch(e) { console.error("Erreur logo:", e); alert("Erreur: " + e.message); } 
-                finally { document.getElementById('logo-loading').classList.add('hidden'); }
+                img.onerror = (err) => resolve(base64Str);
             });
         };
 
-        async function fetchAdminCode() {
-            try {
-                const docRef = getDocRef('settings', 'admin_config');
-                const docSnap = await getDoc(docRef);
-                if (docSnap.exists()) currentAdminCode = docSnap.data().code;
-                else await setDoc(docRef, { code: "1976" });
-                document.getElementById('setting-admin-code').value = currentAdminCode;
-            } catch (e) { console.log("Utilisation du code défaut.", e); }
-        }
-
-        function updateAppIcons(base64Image) {
-            if (!base64Image) return;
-            const linkIcon = document.getElementById('dynamic-favicon');
-            if (linkIcon) linkIcon.href = base64Image;
-            const linkApple = document.getElementById('dynamic-apple-icon');
-            if (linkApple) linkApple.href = base64Image;
-            
-            const manifest = { 
-                "name": "Pointage", 
-                "short_name": "Pointage", 
-                "start_url": window.location.href, // Dynamic URL
-                "display": "standalone", 
-                "background_color": "#ffffff", 
-                "theme_color": "#2563eb", 
-                "icons": [ 
-                    { "src": base64Image, "sizes": "192x192", "type": "image/png" }, 
-                    { "src": base64Image, "sizes": "512x512", "type": "image/png" } 
-                ] 
-            };
-            
-            // Encode manifest in Data URI to bypass Blob restrictions on some browsers
-            const stringManifest = JSON.stringify(manifest);
-            const manifestDataUri = 'data:application/manifest+json;charset=utf-8,' + encodeURIComponent(stringManifest);
-            
-            const linkManifest = document.getElementById('dynamic-manifest');
-            if (linkManifest) linkManifest.setAttribute('href', manifestDataUri);
-        }
-
-        function startDataListeners() {
-            if (!isAuthReady) return;
-            
-            // LISTEN TO LOGO UPDATES
-            onSnapshot(getDocRef('settings', 'branding'), (doc) => {
-                if(doc.exists() && doc.data().logoBase64) {
-                    const logoImg = document.getElementById('app-logo');
-                    const fallback = document.getElementById('fallback-logo-icon');
-                    logoImg.src = doc.data().logoBase64;
-                    
-                    // FORCE VISIBILITY: In case previous error hid it
-                    logoImg.style.display = 'block'; 
-                    logoImg.classList.remove('hidden');
-                    
-                    fallback.classList.add('hidden');
-                    updateAppIcons(doc.data().logoBase64);
-                }
-            });
-
-            onSnapshot(getColRef('employees'), (snapshot) => {
-                employees = [];
-                const empSelect = document.getElementById('admin-correction-employee');
-                const editEmpSelect = document.getElementById('edit-punch-employee');
-                const currentVal = empSelect.value;
-                const currentEditVal = editEmpSelect.value;
-                empSelect.innerHTML = '<option value="">-- Tous les employés --</option>';
-                editEmpSelect.innerHTML = '';
-                snapshot.forEach(doc => {
-                    const data = { id: doc.id, ...doc.data() };
-                    employees.push(data);
-                    const opt = document.createElement('option'); opt.value = data.code; opt.textContent = data.name; empSelect.appendChild(opt);
-                    const opt2 = document.createElement('option'); opt2.value = data.code; opt2.textContent = data.name; editEmpSelect.appendChild(opt2);
+        const useSharedCollection = (restaurantId, category, sortField = 'createdAt') => {
+            const [data, setData] = useState([]);
+            useEffect(() => {
+                if (!window.db || !restaurantId) return;
+                let q = window.appId === 'epack-prod-data' ? window.collection(window.db, 'haccp_data', restaurantId, category) : window.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'haccp_items');
+                
+                const unsubscribe = window.onSnapshot(q, (snapshot) => {
+                    let items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    if (window.appId !== 'epack-prod-data') { items = items.filter(item => item.restaurantId === restaurantId && item.category === category); }
+                    items.sort((a, b) => {
+                        if (a.order !== undefined && b.order !== undefined) return a.order - b.order;
+                        return (b[sortField] || 0) - (a[sortField] || 0);
+                    });
+                    setData(items);
+                }, (error) => {
+                    console.warn("Sync (hors ligne?):", error.message);
                 });
-                if(currentVal) empSelect.value = currentVal;
-                if(currentEditVal) editEmpSelect.value = currentEditVal;
-                renderEmployeeTable();
-                loadCorrectionData();
-                renderMonthPreview(); // Update preview when employees change
-            }, (error) => handleFirebaseError(error));
+                return () => unsubscribe();
+            }, [restaurantId, category]);
 
-            const q = query(getColRef('punches'), orderBy('punchInTime', 'desc'));
-            onSnapshot(q, (snapshot) => {
-                punches = [];
-                snapshot.forEach(doc => { punches.push({ id: doc.id, ...doc.data() }); });
-                // We no longer render simple punch table, we render preview table
-                loadCorrectionData();
-                renderMonthPreview(); // Update preview when punches change
-            }, (error) => handleFirebaseError(error));
-        }
+            const addItem = async (item) => {
+                if (!restaurantId) return;
+                let itemToSave = { ...item };
+                const isOffline = !navigator.onLine;
 
-        function handleFirebaseError(error) { console.error("Erreur détectée:", error); }
-
-        // --- EXCEL EXPORT & PREVIEW LOGIC ---
-        const getWeekNumber = (d) => { d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())); d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay()||7)); var yearStart = new Date(Date.UTC(d.getUTCFullYear(),0,1)); return Math.ceil((((d - yearStart) / 86400000) + 1)/7); };
-        
-        // NEW: Shared function to generate table HTML for a list of employees
-        // Used by Admin Preview AND Employee Preview
-        function renderTableHTML(targetBodyId, employeeList, year, month) {
-            const tbody = document.getElementById(targetBodyId);
-            tbody.innerHTML = '';
-
-            if (employeeList.length === 0) {
-                 tbody.innerHTML = '<tr><td colspan="11" class="text-center py-8 text-gray-500 italic">Aucune donnée à afficher.</td></tr>';
-                 return;
-            }
-
-            const daysInMonth = new Date(year, month, 0).getDate();
-
-            employeeList.forEach(emp => {
-                // Header for Employee (Only if admin view, or if we want to show name)
-                if(targetBodyId === 'preview-table-body') {
-                     const empHeaderRow = document.createElement('tr');
-                     empHeaderRow.innerHTML = `<td colspan="11" class="bg-gray-100 font-bold text-gray-800 p-2 text-left border-b border-t border-gray-300 pl-4 mt-4">${emp.name} (${emp.code})</td>`;
-                     tbody.appendChild(empHeaderRow);
-                }
-
-                let currentWeekNum = null; 
-                let weeklyTotalMs = 0;
-
-                const pushWeekSummary = (weekNum) => {
-                     const totalStr = formatDuration(weeklyTotalMs);
-                     const row = document.createElement('tr');
-                     row.innerHTML = `<td class="preview-week-row">TOT SEM ${weekNum}</td><td colspan="8"></td><td class="preview-week-row">TOT HEBDO</td><td class="preview-week-row">${totalStr}</td>`;
-                     tbody.appendChild(row);
-                };
-
-                for (let d = 1; d <= daysInMonth; d++) {
-                    const dateObj = new Date(year, month - 1, d);
-                    const weekNum = getWeekNumber(dateObj);
-                    const dateStr = dateObj.toLocaleDateString('fr-FR', {weekday: 'short', day: '2-digit', month: '2-digit'});
-
-                    if (currentWeekNum !== null && weekNum !== currentWeekNum) {
-                        pushWeekSummary(currentWeekNum);
-                        weeklyTotalMs = 0;
-                    }
-                    currentWeekNum = weekNum;
-
-                    const dayKey = `${year}-${String(month).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-                    const dayPunches = punches.filter(p => { 
-                        if (p.employeeCode !== emp.code || !p.punchInTime) return false;
-                        const pDate = p.punchInTime.toDate();
-                        
-                        // LOGIC FOR NIGHT SHIFT GROUPING IN TABLE
-                        // If hour < 3, count it as previous day for display
-                        const displayDate = new Date(pDate);
-                        if (displayDate.getHours() < 3) {
-                            displayDate.setDate(displayDate.getDate() - 1);
+                if (item.rawFile) {
+                    if (isOffline) {
+                        console.log("Hors-ligne détecté: Sauvegarde locale de l'image (Optimisée)");
+                        if (item.photo && item.photo.startsWith('data:')) { 
+                            const compressed = await compressImage(item.photo, 1200, 0.8); 
+                            itemToSave.photo = compressed; 
                         }
-                        
-                        const pKey = `${displayDate.getFullYear()}-${String(displayDate.getMonth()+1).padStart(2,'0')}-${String(displayDate.getDate()).padStart(2,'0')}`;
-                        return pKey === dayKey; 
+                        delete itemToSave.rawFile;
+                    } else {
+                        try {
+                            const fileName = `${restaurantId}/${category}/${Date.now()}_${Math.random().toString(36).substr(2, 9)}.jpg`;
+                            const storageRef = window.ref(window.storage, fileName);
+                            // Timeout upload 10s pour éviter bloquage
+                            const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 10000));
+                            await Promise.race([window.uploadBytes(storageRef, item.rawFile), timeoutPromise]);
+                            const url = await window.getDownloadURL(storageRef);
+                            itemToSave.photo = url; delete itemToSave.rawFile;
+                        } catch (e) {
+                            console.log("Upload échoué, repli local base64", e);
+                            // Fallback Base64 si upload échoue (ex: connexion instable)
+                            if (item.photo && item.photo.startsWith('data:')) { 
+                                const compressed = await compressImage(item.photo, 1200, 0.8); 
+                                itemToSave.photo = compressed; 
+                                delete itemToSave.rawFile; 
+                            } 
+                            else { delete itemToSave.photo; delete itemToSave.rawFile; }
+                        }
+                    }
+                }
+                if (itemToSave.order === undefined) itemToSave.order = Date.now();
+                try {
+                    // Écriture Firestore (mise en file d'attente auto si hors ligne)
+                    if (window.appId === 'epack-prod-data') await window.addDoc(window.collection(window.db, 'haccp_data', restaurantId, category), { createdAt: Date.now(), ...itemToSave });
+                    else await window.addDoc(window.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'haccp_items'), { restaurantId, category, createdAt: Date.now(), ...itemToSave });
+                } catch (e) { alert("Erreur sauvegarde: " + e.message); }
+            };
+
+            const deleteItem = async (id) => {
+                try {
+                    if (window.appId === 'epack-prod-data') await window.deleteDoc(window.doc(window.db, 'haccp_data', restaurantId, category, id));
+                    else await window.deleteDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'haccp_items', id));
+                } catch (e) { console.error("Delete error", e); }
+            };
+
+            const updateItem = async (id, newData) => {
+                try {
+                    if (window.appId === 'epack-prod-data') await window.updateDoc(window.doc(window.db, 'haccp_data', restaurantId, category, id), newData);
+                    else await window.updateDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'haccp_items', id), newData);
+                } catch (e) { console.error("Update error", e); }
+            }
+            return { data, addItem, deleteItem, updateItem };
+        };
+
+        const useSharedLogs = (restaurantId, logCategory) => {
+            const [logs, setLogs] = useState({});
+            useEffect(() => {
+                if (!window.db || !restaurantId) return;
+                let q = window.appId === 'epack-prod-data' ? window.collection(window.db, 'haccp_logs', restaurantId, logCategory) : window.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'haccp_logs');
+                const unsubscribe = window.onSnapshot(q, (snapshot) => {
+                    const loadedLogs = {};
+                    snapshot.docs.forEach(doc => {
+                        const d = doc.data();
+                        if (window.appId === 'epack-prod-data') loadedLogs[doc.id] = d.data;
+                        else if (d.restaurantId === restaurantId && d.category === logCategory) loadedLogs[d.date] = d.data;
                     });
-                    
-                    dayPunches.sort((a,b) => a.punchInTime.toMillis() - b.punchInTime.toMillis());
+                    setLogs(loadedLogs);
+                });
+                return () => unsubscribe();
+            }, [restaurantId, logCategory]);
 
-                    let arrM = "", depM = "", pauseM = "", totM = "", arrS = "", depS = "", pauseS = "", totS = "", totalDailyStr = "00:00:00"; 
-                    let duration1 = 0, duration2 = 0;
-
-                    if (dayPunches.length > 0) {
-                        const p1 = dayPunches[0]; 
-                        const p1In = p1.punchInTime.toDate(); 
-                        const p1Out = p1.punchOutTime ? p1.punchOutTime.toDate() : null; 
-                        const p1Break = p1.breakDuration || 0;
-                        arrM = p1In.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}); 
-                        depM = p1Out ? p1Out.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '<span class="text-red-500 text-xs">...</span>'; 
-                        pauseM = p1Break > 0 ? p1Break : "";
-                        if(p1Out) { duration1 = Math.max(0, (p1Out.getTime() - p1In.getTime()) - (p1Break * 60000)); totM = formatDuration(duration1); }
-
-                        if (dayPunches.length > 1) {
-                            const p2 = dayPunches[1]; 
-                            const p2In = p2.punchInTime.toDate(); 
-                            const p2Out = p2.punchOutTime ? p2.punchOutTime.toDate() : null; 
-                            const p2Break = p2.breakDuration || 0;
-                            arrS = p2In.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}); 
-                            depS = p2Out ? p2Out.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '<span class="text-red-500 text-xs">...</span>'; 
-                            pauseS = p2Break > 0 ? p2Break : "";
-                            if(p2Out) { duration2 = Math.max(0, (p2Out.getTime() - p2In.getTime()) - (p2Break * 60000)); totS = formatDuration(duration2); }
-                        }
-                        totalDailyStr = formatDuration(duration1 + duration2); 
-                        weeklyTotalMs += (duration1 + duration2);
-                    }
-
-                    const tr = document.createElement('tr');
-                    tr.className = d % 2 === 0 ? "bg-gray-50 hover:bg-yellow-50" : "bg-white hover:bg-yellow-50";
-                    tr.innerHTML = `
-                        <td class="preview-cell">${weekNum}</td>
-                        <td class="preview-cell font-medium">${dateStr}</td>
-                        <td class="preview-cell">${arrM}</td>
-                        <td class="preview-cell">${depM}</td>
-                        <td class="preview-cell text-xs text-gray-400">${pauseM}</td>
-                        <td class="preview-cell font-bold">${totM}</td>
-                        <td class="preview-cell">${arrS}</td>
-                        <td class="preview-cell">${depS}</td>
-                        <td class="preview-cell text-xs text-gray-400">${pauseS}</td>
-                        <td class="preview-cell font-bold">${totS}</td>
-                        <td class="preview-cell font-bold text-blue-800">${totalDailyStr !== "00:00:00" ? totalDailyStr : ""}</td>
-                    `;
-                    tbody.appendChild(tr);
+            const updateLog = async (dateStr, dataToMerge) => {
+                const existingData = logs[dateStr] || {};
+                const newData = { ...existingData, ...dataToMerge };
+                if (window.appId === 'epack-prod-data') await window.setDoc(window.doc(window.db, 'haccp_logs', restaurantId, logCategory, dateStr), { data: newData }, { merge: true });
+                else {
+                    const docId = `${restaurantId}_${logCategory}_${dateStr}`.replace(/[^a-zA-Z0-9]/g, '_');
+                    await window.setDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'haccp_logs', docId), { restaurantId, category: logCategory, date: dateStr, data: newData }, { merge: true });
                 }
-                if (currentWeekNum !== null) { pushWeekSummary(currentWeekNum); }
-             });
-        }
+            };
+            return { logs, updateLog };
+        };
 
-        window.exportToExcel = () => {
-            const monthPicker = document.getElementById('admin-month-picker');
-            const selectedMonthVal = monthPicker.value;
-            if (!selectedMonthVal) { alert("Veuillez sélectionner un mois."); return; }
-            if (employees.length === 0 && punches.length === 0) { alert('Aucune donnée.'); return; }
-            const [selYear, selMonth] = selectedMonthVal.split('-').map(Number);
-            const daysInMonth = new Date(selYear, selMonth, 0).getDate();
-            const wb = XLSX.utils.book_new();
-            const headerStyle = { font: { bold: true, color: { rgb: "000000" } }, fill: { fgColor: { rgb: "FFC000" } }, alignment: { horizontal: "center" }, border: { top: {style:'thin'}, bottom: {style:'thin'}, left: {style:'thin'}, right: {style:'thin'} } };
-            const cellStyle = { alignment: { horizontal: "center" }, border: { top: {style:'thin'}, bottom: {style:'thin'}, left: {style:'thin'}, right: {style:'thin'} } };
-            const totalRowStyle = { font: { bold: true }, fill: { fgColor: { rgb: "FFF2CC" } }, alignment: { horizontal: "center" }, border: { top: {style:'thin'}, bottom: {style:'thin'}, left: {style:'thin'}, right: {style:'thin'} } };
-            const weekSummaryStyle = { font: { bold: true, color: { rgb: "FF0000" } }, fill: { fgColor: { rgb: "FFFF00" } }, alignment: { horizontal: "center" }, border: { top: {style:'medium'}, bottom: {style:'medium'}, left: {style:'medium'}, right: {style:'medium'} } };
-            
-            employees.forEach(emp => {
-                const rows = [];
-                rows.push([{v: 'N° Semaine', s: headerStyle},{v: 'Date', s: headerStyle},{v: 'Arrivée M', s: headerStyle},{v: 'Départ M', s: headerStyle},{v: 'Pause M', s: headerStyle},{v: 'Total M', s: headerStyle},{v: 'Arrivée S', s: headerStyle},{v: 'Départ S', s: headerStyle},{v: 'Pause S', s: headerStyle},{v: 'Total S', s: headerStyle},{v: 'Total Jour', s: headerStyle}]);
-                let currentWeekNum = null; let weeklyTotalMs = 0;
-                
-                const pushWeekSummary = (weekNum) => {
-                     const totalHours = weeklyTotalMs / (1000 * 60 * 60); let h_norm = 0, h_10 = 0, h_20 = 0, h_50 = 0; let remainder = totalHours;
-                     if (remainder <= 35) { h_norm = remainder; remainder = 0; } else { h_norm = 35; remainder -= 35; }
-                     if (remainder > 0) { const chunk = Math.min(remainder, 4); h_10 = chunk; remainder -= chunk; }
-                     if (remainder > 0) { const chunk = Math.min(remainder, 4); h_20 = chunk; remainder -= chunk; }
-                     if (remainder > 0) { h_50 = remainder; }
-                     const totalStr = formatDuration(weeklyTotalMs);
-                     rows.push([{v: `TOTAL SEMAINE ${weekNum}`, s: weekSummaryStyle},{v: '', s: weekSummaryStyle},{v: '', s: weekSummaryStyle},{v: '', s: weekSummaryStyle},{v: '', s: weekSummaryStyle},{v: '', s: weekSummaryStyle},{v: '', s: weekSummaryStyle},{v: '', s: weekSummaryStyle},{v: '', s: weekSummaryStyle},{v: 'TOTAL HEBDO:', s: weekSummaryStyle},{v: totalStr, s: weekSummaryStyle}]);
-                     rows.push([{v: 'Détail HS (HCR):', s: totalRowStyle},{v: `Normales: ${Number(h_norm.toFixed(2))}h`, s: totalRowStyle},{v: `HS 10%: ${Number(h_10.toFixed(2))}h`, s: totalRowStyle},{v: '', s: totalRowStyle},{v: `HS 20%: ${Number(h_20.toFixed(2))}h`, s: totalRowStyle},{v: '', s: totalRowStyle},{v: `HS 50%: ${Number(h_50.toFixed(2))}h`, s: totalRowStyle},{v: '', s: totalRowStyle},{v: '', s: totalRowStyle},{v: '', s: totalRowStyle},{v: '', s: totalRowStyle}]);
-                     rows.push([null]); 
+        const Icon = ({ name, className }) => {
+            const icons = {
+                ScanBarcode: <><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></>,
+                Thermometer: <path d="M14 4v10.54a4 4 0 1 1-4 0V4a2 2 0 0 1 4 0Z" />,
+                ClipboardCheck: <><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M15 2H9a1 1 0 0 0-1 1v2a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V3a1 1 0 0 0-1-1Z"/><path d="m9 14 2 2 4-4"/></>,
+                Camera: <><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></>,
+                ChevronRight: <path d="m9 18 6-6-6-6"/>,
+                ChevronLeft: <path d="m15 18-6-6 6-6"/>,
+                Trash2: <><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></>,
+                CheckCircle: <><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></>,
+                Menu: <><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></>,
+                Save: <><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></>,
+                Plus: <><path d="M5 12h14"/><path d="M12 5v14"/></>,
+                Calendar: <><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></>,
+                Search: <><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></>,
+                X: <><path d="M18 6 6 18"/><path d="m6 6 12 12"/></>,
+                Aperture: <><circle cx="12" cy="12" r="10"/><line x1="14.31" x2="20.05" y1="8" y2="17.94"/><line x1="9.69" x2="21.17" y1="8" y2="8"/><line x1="7.38" x2="13.12" y1="12" y2="2.06"/><line x1="9.69" x2="3.95" y1="16" y2="6.06"/><line x1="14.31" x2="2.83" y1="16" y2="16"/><line x1="16.62" x2="10.88" y1="12" y2="21.94"/></>,
+                ZoomIn: <><circle cx="11" cy="11" r="8"/><line x1="21" x2="16.65" y1="21" y2="16.65"/><line x1="11" x2="11" y1="8" y2="14"/><line x1="8" x2="14" y1="11" y2="11"/></>,
+                ZoomOut: <><circle cx="11" cy="11" r="8"/><line x1="21" x2="16.65" y1="21" y2="16.65"/><line x1="8" x2="14" y1="11" y2="11"/></>,
+                Delete: <path d="M21 4H8l-7 8 7 8h13a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zM18 13l-2.5-2.5L18 8"/>,
+                Download: <><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></>,
+                RotateCcw: <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>,
+                Wifi: <><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></>,
+                LogOut: <><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></>,
+                Lock: <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />,
+                Snowflake: <path d="M2 12h20M12 2v20M20 20 4 4m16 0L4 20M4.93 19.07l4.24-7.07m5.66 0l4.24 7.07M4.93 4.93l4.24 7.07m5.66 0l4.24-7.07"/>,
+                Truck: <path d="M10 17h4V5H2v12h3m10 0h3l4-4V8h-7v9zm-9 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm11 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/>,
+                ArrowUp: <path d="M12 19V5M5 12l7-7 7 7"/>,
+                ArrowDown: <path d="M12 5v14M5 12l7 7 7-7"/>,
+                ClipboardList: <><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/></>,
+                WifiOff: <line x1="1" y1="1" x2="23" y2="23"></line>,
+                Smartphone: <><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></>
+            };
+            return (
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                    {icons[name] || <circle cx="12" cy="12" r="10" />}
+                    {name === 'WifiOff' && <><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/><line x1="2" y1="2" x2="22" y2="22"/></>}
+                    {name === 'Lock' && <path d="M7 11V7a5 5 0 0 1 10 0v4" />}
+                </svg>
+            );
+        };
+
+        const Card = ({ children, className = "" }) => ( <div className={`bg-white rounded-xl shadow-sm border border-green-100 p-6 ${className}`}>{children}</div> );
+        const Button = ({ children, onClick, variant = "primary", className = "", type="button", disabled=false }) => {
+            const style = `px-6 py-3 rounded-lg font-medium transition-all duration-200 flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50 ${ variant === "primary" ? "bg-green-600 text-white hover:bg-green-700 shadow-md shadow-green-200" : variant === "secondary" ? "bg-white text-green-700 border-2 border-green-600 hover:bg-green-50" : variant === "danger" ? "bg-red-500 text-white hover:bg-red-600 shadow-md" : "bg-transparent text-gray-600 hover:bg-gray-100" } ${className}`;
+            return <button type={type} onClick={onClick} disabled={disabled} className={style}>{children}</button>;
+        };
+        const Input = ({ label, ...props }) => ( <div className="mb-4"><label className="block text-sm font-semibold text-gray-700 mb-1">{label}</label><input className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none" {...props} /></div> );
+
+        const AutocompleteInput = ({ label, value, onChange, options = [], placeholder, required=false }) => {
+            const [suggestions, setSuggestions] = useState([]);
+            const [show, setShow] = useState(false);
+            const wrapperRef = useRef(null);
+            useEffect(() => { const handleClickOutside = (event) => { if (wrapperRef.current && !wrapperRef.current.contains(event.target)) setShow(false); }; document.addEventListener("mousedown", handleClickOutside); return () => document.removeEventListener("mousedown", handleClickOutside); }, []);
+            const handleChange = (e) => { const val = e.target.value; onChange(e); if (val.length > 0) { const uniqueOptions = [...new Set(options)]; const filtered = uniqueOptions.filter(opt => opt && opt.toLowerCase().includes(val.toLowerCase()) && opt !== val).slice(0, 5); setSuggestions(filtered); setShow(true); } else { setShow(false); } };
+            const handleSelect = (val) => { onChange({ target: { value: val } }); setShow(false); };
+            const handleFocus = () => { if (value && value.length > 0) { const uniqueOptions = [...new Set(options)]; const filtered = uniqueOptions.filter(opt => opt && opt.toLowerCase().includes(value.toLowerCase()) && opt !== value).slice(0, 5); if(filtered.length > 0) { setSuggestions(filtered); setShow(true); } } };
+            return ( <div className="mb-4 relative" ref={wrapperRef}> {label && <label className="block text-sm font-semibold text-gray-700 mb-1">{label}</label>} <input className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none" value={value} onChange={handleChange} onFocus={handleFocus} placeholder={placeholder} required={required} autoComplete="off" /> {show && suggestions.length > 0 && (<ul className="absolute z-50 w-full bg-white border border-gray-200 rounded-lg shadow-xl mt-1 max-h-48 overflow-y-auto">{suggestions.map((s, i) => (<li key={i} className="p-3 hover:bg-green-50 cursor-pointer border-b last:border-b-0 text-gray-700 font-medium" onClick={() => handleSelect(s)}>{s}</li>))}</ul>)} </div> );
+        };
+
+        const useNetworkStatus = () => {
+            const [isOnline, setIsOnline] = useState(navigator.onLine);
+            useEffect(() => {
+                const handleOnline = () => setIsOnline(true);
+                const handleOffline = () => setIsOnline(false);
+                window.addEventListener('online', handleOnline);
+                window.addEventListener('offline', handleOffline);
+                return () => {
+                    window.removeEventListener('online', handleOnline);
+                    window.removeEventListener('offline', handleOffline);
                 };
-                
-                for (let d = 1; d <= daysInMonth; d++) {
-                    const dateObj = new Date(selYear, selMonth - 1, d); const weekNum = getWeekNumber(dateObj); const dateStr = dateObj.toLocaleDateString('fr-FR', {weekday: 'short', day: '2-digit', month: '2-digit'});
-                    if (currentWeekNum !== null && weekNum !== currentWeekNum) { pushWeekSummary(currentWeekNum); weeklyTotalMs = 0; }
-                    currentWeekNum = weekNum;
+            }, []);
+            return isOnline;
+        };
+
+        // --- MODULES ---
+        const TraceabilityModule = ({ restaurantId }) => {
+            const { data: products, addItem, deleteItem } = useSharedCollection(restaurantId, 'traceability', 'timestamp');
+            const [newProduct, setNewProduct] = useState({ name: '', batch: '', photo: null, rawFile: null });
+            const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+            const [isWebcamOpen, setIsWebcamOpen] = useState(false);
+            const [fullscreenPhoto, setFullscreenPhoto] = useState(null);
+            const [isUploading, setIsUploading] = useState(false);
+            const [zoomLevel, setZoomLevel] = useState(1);
+            const [pan, setPan] = useState({ x: 0, y: 0 });
+            const [tempPhoto, setTempPhoto] = useState(null);
+            const [exportModalOpen, setExportModalOpen] = useState(false);
+            const [exportMonth, setExportMonth] = useState(new Date().toISOString().slice(0, 7));
+            const [isZipping, setIsZipping] = useState(false);
+            const [hasAutoCleaned, setHasAutoCleaned] = useState(false);
+            const videoRef = useRef(null);
+            const canvasRef = useRef(null);
+            const fileInputRef = useRef(null);
+            const nativeCameraInputRef = useRef(null);
+            const touchStartDist = useRef(null);
+            const startZoom = useRef(1);
+            const panStart = useRef(null);
+            const startPan = useRef({ x: 0, y: 0 });
+            const productHistory = products.map(p => p.name);
+
+            useEffect(() => { if (fullscreenPhoto) { setZoomLevel(1); setPan({x:0, y:0}); } }, [fullscreenPhoto]);
+            useEffect(() => { if (products.length > 0 && !hasAutoCleaned) { const timer = setTimeout(async () => { const sixMonthsAgo = Date.now() - (180 * 24 * 60 * 60 * 1000); const oldItems = products.filter(p => { const itemDate = p.createdAt || (p.sortDate ? new Date(p.sortDate).getTime() : null); return itemDate && itemDate < sixMonthsAgo; }); if (oldItems.length > 0) { for (const item of oldItems) { try { await deleteItem(item.id); } catch (e) { console.warn("Erreur suppression auto", e); } } } setHasAutoCleaned(true); }, 5000); return () => clearTimeout(timer); } }, [products, hasAutoCleaned]);
+
+            // --- NOUVEAUTÉ : RESTAURATION VIA INDEXEDDB + LOCALSTORAGE ---
+            useEffect(() => {
+                const loadDraft = async () => {
+                    const savedDraft = localStorage.getItem('draft_traceability_meta');
+                    const savedImage = await SimpleIDB.get('draft_traceability_photo');
                     
-                    const dayKey = `${selYear}-${String(selMonth).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-                    const dayPunches = punches.filter(p => { 
-                        if (p.employeeCode !== emp.code || !p.punchInTime) return false;
-                        const pDate = p.punchInTime.toDate(); 
-                        
-                        // LOGIC FOR NIGHT SHIFT GROUPING IN EXCEL
-                        const displayDate = new Date(pDate);
-                        if (displayDate.getHours() < 3) {
-                             displayDate.setDate(displayDate.getDate() - 1);
-                        }
-                        
-                        const pKey = `${displayDate.getFullYear()}-${String(displayDate.getMonth()+1).padStart(2,'0')}-${String(displayDate.getDate()).padStart(2,'0')}`; 
-                        return pKey === dayKey; 
-                    });
-                    dayPunches.sort((a,b) => a.punchInTime.toMillis() - b.punchInTime.toMillis());
-                    
-                    let arrM = "", depM = "", pauseM = "", totM = "", arrS = "", depS = "", pauseS = "", totS = "", totalDailyStr = "00:00:00"; let duration1 = 0, duration2 = 0;
-                    if (dayPunches.length > 0) {
-                        const p1 = dayPunches[0]; const p1In = p1.punchInTime.toDate(); const p1Out = p1.punchOutTime ? p1.punchOutTime.toDate() : null; const p1Break = p1.breakDuration || 0;
-                        arrM = p1In.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}); depM = p1Out ? p1Out.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : "En cours"; pauseM = p1Break > 0 ? p1Break : "";
-                        if(p1Out) { duration1 = Math.max(0, (p1Out.getTime() - p1In.getTime()) - (p1Break * 60000)); totM = formatDuration(duration1); }
-                        
-                        if (dayPunches.length > 1) {
-                            const p2 = dayPunches[1]; const p2In = p2.punchInTime.toDate(); const p2Out = p2.punchOutTime ? p2.punchOutTime.toDate() : null; const p2Break = p2.breakDuration || 0;
-                            arrS = p2In.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}); 
-                            depS = p2Out ? p2Out.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : "En cours"; 
-                            pauseS = p2Break > 0 ? p2Break : "";
-                            if(p2Out) { duration2 = Math.max(0, (p2Out.getTime() - p2In.getTime()) - (p2Break * 60000)); totS = formatDuration(duration2); }
-                        }
-                        totalDailyStr = formatDuration(duration1 + duration2); weeklyTotalMs += (duration1 + duration2);
+                    if (savedDraft) {
+                        try { 
+                            const parsed = JSON.parse(savedDraft);
+                            if (savedImage) parsed.photo = savedImage; // Hydrate image from IDB
+                            setNewProduct(parsed); 
+                        } catch (e) { console.error("Erreur lecture brouillon", e); }
                     }
-                    rows.push([{v: weekNum, s: cellStyle},{v: dateStr, s: cellStyle},{v: arrM, s: cellStyle},{v: depM, s: cellStyle},{v: pauseM, s: cellStyle},{v: totM, s: { ...cellStyle, font: {bold: true} }},{v: arrS, s: cellStyle},{v: depS, s: cellStyle},{v: pauseS, s: cellStyle},{v: totS, s: { ...cellStyle, font: {bold: true} }},{v: totalDailyStr, s: { ...cellStyle, font: {bold: true} }}]);
+                };
+                loadDraft();
+            }, []);
+
+            // Sauvegarde texte uniquement dans LocalStorage
+            useEffect(() => {
+                if (newProduct.name || newProduct.batch) {
+                    const meta = { ...newProduct, photo: null, rawFile: null }; // Don't save image to LS
+                    try { localStorage.setItem('draft_traceability_meta', JSON.stringify(meta)); } catch (e) {}
                 }
-                if (currentWeekNum !== null) { pushWeekSummary(currentWeekNum); }
-                const ws = XLSX.utils.aoa_to_sheet(rows); ws['!cols'] = [{wch:12}, {wch:22}, {wch:13}, {wch:13}, {wch:10}, {wch:13}, {wch:13}, {wch:13}, {wch:10}, {wch:13}, {wch:15}]; XLSX.utils.book_append_sheet(wb, ws, emp.name.replace(/[*?\/\[\]]/g, '').slice(0, 25));
-            });
-            XLSX.writeFile(wb, `Pointage_HCR_${selectedMonthVal}.xlsx`);
+            }, [newProduct.name, newProduct.batch]);
+
+            const handleCameraClick = () => { if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) { nativeCameraInputRef.current?.click(); } else { startWebcam(); } };
+            
+            // OPTIMISATION IMAGE : Save directly to IDB immediately
+            const handleNativeCameraCapture = async (e) => { 
+                const file = e.target.files[0]; 
+                if (file) { 
+                    const reader = new FileReader(); 
+                    reader.onload = async (event) => { 
+                        // Compression
+                        const compressed = await compressImage(event.target.result, 1000, 0.7);
+                        // Save immediately to IDB to survive reload
+                        await SimpleIDB.save('draft_traceability_photo', compressed);
+                        // Update state
+                        setNewProduct(p => ({ ...p, photo: compressed, rawFile: file })); 
+                    }; 
+                    reader.readAsDataURL(file); 
+                } 
+            };
+
+            const startWebcam = async () => { setTempPhoto(null); setIsWebcamOpen(true); try { const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } }); setTimeout(() => { if (videoRef.current) videoRef.current.srcObject = stream; }, 100); } catch (e) { alert("Impossible d'accéder à la webcam."); setIsWebcamOpen(false); } };
+            const captureWebcam = () => { if (videoRef.current && canvasRef.current) { const v = videoRef.current; const c = canvasRef.current; c.width = v.videoWidth; c.height = v.videoHeight; c.getContext('2d').drawImage(v, 0, 0); c.toBlob((blob) => { const previewUrl = c.toDataURL('image/jpeg', 0.8); setTempPhoto({ preview: previewUrl, file: blob }); }, 'image/jpeg', 0.95); v.pause(); } };
+            const retakePhoto = () => { setTempPhoto(null); if (videoRef.current) videoRef.current.play(); };
+            
+            const confirmPhoto = async () => { 
+                if (tempPhoto) { 
+                    const compressed = await compressImage(tempPhoto.preview, 1000, 0.7);
+                    await SimpleIDB.save('draft_traceability_photo', compressed);
+                    setNewProduct(p => ({ ...p, photo: compressed, rawFile: tempPhoto.file })); 
+                } 
+                if(videoRef.current?.srcObject) videoRef.current.srcObject.getTracks().forEach(t => t.stop()); 
+                setIsWebcamOpen(false); setTempPhoto(null); 
+            };
+
+            const handleSubmit = async (e) => { 
+                e.preventDefault(); 
+                setIsUploading(true); 
+                try { 
+                    await addItem({ ...newProduct, sortDate: new Date().toISOString().split('T')[0] });
+                    // Nettoyage après succès
+                    localStorage.removeItem('draft_traceability_meta');
+                    await SimpleIDB.delete('draft_traceability_photo');
+                } catch (error) { console.error(error); } finally { 
+                    setIsUploading(false); 
+                    setNewProduct({ name: '', batch: '', photo: null, rawFile: null }); 
+                } 
+            };
+            const filtered = products.filter(p => p.sortDate === selectedDate);
+            const changeDate = (d) => { const date = new Date(selectedDate); date.setDate(date.getDate() + d); setSelectedDate(date.toISOString().split('T')[0]); };
+            const downloadPhotos = async () => { setIsZipping(true); try { const zip = new JSZip(); const folder = zip.folder(`Photos_${exportMonth}`); const itemsToExport = products.filter(p => p.sortDate && p.sortDate.startsWith(exportMonth) && p.photo); if (itemsToExport.length === 0) { alert("Aucune photo trouvée pour ce mois."); setIsZipping(false); return; } let count = 0; for (const item of itemsToExport) { try { let blob = await (await fetch(item.photo)).blob(); const safeName = (item.name || 'produit').replace(/[^a-z0-9]/gi, '_'); const filename = `${item.sortDate}_${safeName}_${item.id.substr(0,4)}.jpg`; folder.file(filename, blob); count++; } catch (e) { console.error("Erreur téléchargement image", item, e); } } if (count > 0) { const content = await zip.generateAsync({ type: "blob" }); saveAs(content, `Traceabilite_${restaurantId}_${exportMonth}.zip`); setExportModalOpen(false); } else { alert("Erreur: Impossible de récupérer les images."); } } catch (e) { alert("Erreur ZIP: " + e.message); } finally { setIsZipping(false); } };
+            const onTouchStart = (e) => { if (e.touches.length === 2) { touchStartDist.current = Math.hypot(e.touches[0].pageX - e.touches[1].pageX, e.touches[0].pageY - e.touches[1].pageY); startZoom.current = zoomLevel; } else if (e.touches.length === 1 && zoomLevel > 1) { panStart.current = { x: e.touches[0].pageX, y: e.touches[0].pageY }; startPan.current = { ...pan }; } };
+            const onTouchMove = (e) => { if (e.touches.length === 2 && touchStartDist.current) { const dist = Math.hypot(e.touches[0].pageX - e.touches[1].pageX, e.touches[0].pageY - e.touches[1].pageY); setZoomLevel(Math.min(Math.max(0.5, startZoom.current * (dist / touchStartDist.current)), 5)); e.stopPropagation(); } else if (e.touches.length === 1 && panStart.current && zoomLevel > 1) { setPan({ x: startPan.current.x + (e.touches[0].pageX - panStart.current.x), y: startPan.current.y + (e.touches[0].pageY - panStart.current.y) }); e.stopPropagation(); } };
+            const onTouchEnd = () => { touchStartDist.current = null; panStart.current = null; };
+
+            return (
+                <div className="space-y-6 fade-in-element pb-24">
+                    <div className="flex justify-between items-center"><h2 className="text-2xl font-bold text-green-800 flex items-center gap-2"><Icon name="ScanBarcode" className="w-8 h-8"/> Traçabilité</h2><button onClick={() => setExportModalOpen(true)} className="px-4 py-2 bg-green-100 text-green-700 rounded-lg font-bold flex items-center gap-2 hover:bg-green-200 transition-colors"><Icon name="Download" className="w-5 h-5"/> Exporter</button></div>
+                    <div className="grid lg:grid-cols-12 gap-6">
+                        <div className="lg:col-span-4">
+                            <Card className="border-2 border-green-100">
+                                <form onSubmit={handleSubmit}>
+                                    <div className="mb-4">
+                                        {isUploading ? (
+                                            <div className="w-full h-56 bg-gray-50 rounded-xl flex flex-col items-center justify-center text-green-600 animate-pulse border-2 border-green-200">
+                                                <Icon name="Wifi" className="mb-2 animate-bounce"/>Envoi vers le Cloud...
+                                            </div>
+                                        ) : newProduct.photo ? (
+                                            <div onClick={() => setNewProduct({...newProduct, photo: null, rawFile: null})} className="relative cursor-pointer group h-56 w-full bg-gray-100 rounded-xl overflow-hidden border border-green-200 flex items-center justify-center">
+                                                <img src={newProduct.photo} className="h-full w-full object-contain" />
+                                                <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 rounded-xl text-white font-bold transition-all">
+                                                    <Icon name="Trash2" className="mr-2"/> Retirer
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <div className="space-y-3">
+                                                <button type="button" onClick={handleCameraClick} className="w-full h-56 bg-green-50 text-green-700 rounded-xl border-2 border-dashed border-green-300 flex flex-col items-center justify-center hover:bg-green-100 transition-colors">
+                                                    <Icon name="Aperture" className="w-12 h-12 mb-4"/> 
+                                                    <span className="font-bold text-lg">Scanner / Photo</span>
+                                                </button>
+                                                <div onClick={() => fileInputRef.current?.click()} className="text-center text-sm text-gray-400 underline cursor-pointer pb-2">Importer fichier</div>
+                                                <input type="file" ref={fileInputRef} onChange={handleNativeCameraCapture} accept="image/*" className="hidden"/><input type="file" ref={nativeCameraInputRef} onChange={handleNativeCameraCapture} accept="image/*" capture="environment" className="hidden"/>
+                                            </div>
+                                        )}
+                                    </div>
+                                    <AutocompleteInput label="Produit" value={newProduct.name} onChange={e => setNewProduct({...newProduct, name: e.target.value})} options={productHistory} required />
+                                    <Input label="Lot / DLC" value={newProduct.batch} onChange={e => setNewProduct({...newProduct, batch: e.target.value})} />
+                                    <Button type="submit" className="w-full" disabled={!newProduct.name || !newProduct.photo || isUploading}>{isUploading ? "Enregistrement..." : "Enregistrer (Cloud)"}</Button>
+                                </form>
+                            </Card>
+                        </div>
+                        <div className="lg:col-span-8">
+                             <div className="bg-white p-4 rounded-xl border flex justify-between items-center mb-4"><div className="flex items-center gap-2"><button onClick={() => changeDate(-1)}><Icon name="ChevronLeft" className="w-6 h-6"/></button><div className="flex items-center gap-2 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200"><Icon name="Calendar" className="w-5 h-5 text-green-600"/><input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} className="bg-transparent font-bold text-gray-700 outline-none" /></div><button onClick={() => changeDate(1)}><Icon name="ChevronRight" className="w-6 h-6"/></button></div><span className="text-sm text-gray-500">{filtered.length} produit(s)</span></div>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                {filtered.length === 0 && <div className="col-span-full text-center py-10 text-gray-400">Rien ce jour.</div>}
+                                {filtered.map(item => (<div key={item.id} className="bg-white rounded-lg border p-3 flex justify-between items-start"><div className="flex gap-3 w-full" onClick={() => setFullscreenPhoto(item.photo)}><img src={item.photo} className="w-20 h-20 object-cover rounded-lg bg-gray-100 cursor-zoom-in" /><div><p className="font-bold">{item.name}</p><p className="text-sm text-green-600">{item.batch}</p></div></div><button onClick={() => deleteItem(item.id)} className="text-gray-300 hover:text-red-500"><Icon name="Trash2"/></button></div>))}
+                            </div>
+                        </div>
+                    </div>
+                    {exportModalOpen && (<div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => !isZipping && setExportModalOpen(false)}><div className="bg-white p-6 rounded-2xl w-full max-w-sm shadow-2xl" onClick={e => e.stopPropagation()}><h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2"><Icon name="Download" className="text-green-600"/> Exporter Photos</h3><p className="text-gray-600 mb-4">Choisissez le mois à télécharger (ZIP) :</p><input type="month" value={exportMonth} onChange={(e) => setExportMonth(e.target.value)} className="w-full p-3 border border-gray-300 rounded-lg mb-6 text-lg" disabled={isZipping} /><div className="flex gap-3"><Button onClick={downloadPhotos} className="flex-1" disabled={isZipping}>{isZipping ? "Création ZIP..." : "Télécharger"}</Button><Button variant="ghost" onClick={() => setExportModalOpen(false)} disabled={isZipping}>Annuler</Button></div></div></div>)}
+                    {isWebcamOpen && (<div className="fixed inset-0 z-[100] bg-black flex flex-col"><div className="relative flex-1 w-full h-full overflow-hidden"><video ref={videoRef} autoPlay playsInline className={`absolute inset-0 w-full h-full object-cover ${tempPhoto ? 'hidden' : ''}`}></video>{tempPhoto && <img src={tempPhoto.preview} className="absolute inset-0 w-full h-full object-cover" />}{!tempPhoto ? (<><div className="absolute inset-0 flex items-center justify-center pointer-events-none"><div className="w-[80%] h-[60%] border-2 border-green-500/50 rounded-2xl relative"><div className="scan-line"></div></div></div><div className="absolute top-0 w-full p-4 flex justify-between items-center z-20 bg-gradient-to-b from-black/60 to-transparent"><span className="text-white font-bold tracking-wide drop-shadow-md">Scanner</span><button onClick={() => { if(videoRef.current?.srcObject) videoRef.current.srcObject.getTracks().forEach(t=>t.stop()); setIsWebcamOpen(false); }} className="p-3 bg-black/40 rounded-full text-white backdrop-blur-md border border-white/20"><Icon name="X" className="w-6 h-6"/></button></div><div className="absolute bottom-8 w-full flex justify-center z-20"><button onClick={captureWebcam} className="w-20 h-20 bg-white rounded-full border-4 border-gray-200/50 shadow-2xl active:scale-95 transition-transform flex items-center justify-center"><div className="w-16 h-16 bg-white rounded-full border-2 border-black"></div></button></div></>) : (<div className="absolute bottom-8 w-full flex justify-center gap-6 z-20 px-8"><button onClick={retakePhoto} className="flex-1 py-4 bg-red-500/90 backdrop-blur-md text-white rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg active:scale-95 border border-red-400"><Icon name="RotateCcw" className="w-6 h-6"/> Reprendre</button><button onClick={confirmPhoto} className="flex-1 py-4 bg-green-500 text-white rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg active:scale-95"><Icon name="CheckCircle" className="w-6 h-6"/> Valider</button></div>)}</div><canvas ref={canvasRef} className="hidden"></canvas></div>)}
+                    {fullscreenPhoto && (<div className="fixed inset-0 z-[100] bg-black flex items-center justify-center overflow-hidden touch-none" onClick={() => setFullscreenPhoto(null)} onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}><div className="absolute bottom-10 z-50 flex gap-4 pointer-events-auto" onClick={e => e.stopPropagation()}><button className="p-4 bg-white/20 backdrop-blur rounded-full text-white border border-white/30 active:scale-95" onClick={() => setZoomLevel(z => Math.max(0.5, z - 0.5))}><Icon name="ZoomOut"/></button><div className="px-4 py-2 bg-black/50 backdrop-blur rounded-full text-white font-mono flex items-center">{Math.round(zoomLevel * 100)}%</div><button className="p-4 bg-white/20 backdrop-blur rounded-full text-white border border-white/30 active:scale-95" onClick={() => setZoomLevel(z => Math.min(3, z + 0.5))}><Icon name="ZoomIn"/></button></div><button className="absolute top-4 right-4 p-3 bg-black/40 backdrop-blur rounded-full text-white border border-white/20 z-50 pointer-events-auto" onClick={() => setFullscreenPhoto(null)}><Icon name="X"/></button><div className="w-full h-full flex items-center justify-center overflow-hidden"><img src={fullscreenPhoto} style={{ transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoomLevel})`, transition: (touchStartDist.current || panStart.current) ? 'none' : 'transform 0.2s ease-out' }} className="max-h-screen max-w-full object-contain pointer-events-auto" onClick={e => e.stopPropagation()} /></div></div>)}
+                </div>
+            );
         };
 
-        // --- PREVIEW RENDER FUNCTION (ADMIN) ---
-        window.renderMonthPreview = () => {
-             const monthPicker = document.getElementById('admin-month-picker');
-             const selectedMonthVal = monthPicker.value;
-
-             if (!selectedMonthVal) return;
-             const [selYear, selMonth] = selectedMonthVal.split('-').map(Number);
-             
-             // Use generic function for Admin preview (all employees)
-             renderTableHTML('preview-table-body', employees, selYear, selMonth);
+        const TemperatureModule = ({ restaurantId }) => {
+            const { data: equipments, addItem: addEquip, deleteItem: removeEquip, updateItem: updateEquip } = useSharedCollection(restaurantId, 'equipments');
+            const { logs: temps, updateLog } = useSharedLogs(restaurantId, 'temperatures');
+            const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+            const [showAdd, setShowAdd] = useState(false);
+            const [newEquip, setNewEquip] = useState("");
+            const [picker, setPicker] = useState({ open: false, id: null, name: '', period: '' });
+            const [tempInput, setTempInput] = useState(''); 
+            const [isSaved, setIsSaved] = useState(false);
+            const [exportModalOpen, setExportModalOpen] = useState(false);
+            const [exportMonth, setExportMonth] = useState(new Date().toISOString().slice(0, 7));
+            const equipHistory = equipments.map(e => e.name);
+            const changeDate = (d) => { const date = new Date(selectedDate); date.setDate(date.getDate() + d); setSelectedDate(date.toISOString().split('T')[0]); setIsSaved(false); };
+            const handleNumClick = (n) => setTempInput(prev => prev + n);
+            const handleDot = () => setTempInput(prev => prev.includes('.') ? prev : prev + '.');
+            const handleClear = () => setTempInput('');
+            const handleBackspace = () => setTempInput(prev => prev.slice(0, -1));
+            const handleValidate = () => { updateLog(selectedDate, { [picker.name]: { ...(temps[selectedDate]?.[picker.name]||{}), [picker.period]: tempInput } }); setPicker({...picker, open: false}); setTempInput(''); setIsSaved(false); };
+            const openPad = (equipId, equipName, period) => { setPicker({ open: true, id: equipId, name: equipName, period: period }); setTempInput(temps[selectedDate]?.[equipName]?.[period] || ''); };
+            const getVal = (name, p) => temps[selectedDate]?.[name]?.[p] || '';
+            const handleSaveDay = () => { setIsSaved(true); setTimeout(() => setIsSaved(false), 2000); };
+            const KeypadButton = ({ label, onClick, className = "" }) => (<button onClick={onClick} className={`h-16 text-xl font-bold rounded-xl active-press transition-colors shadow-sm border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 ${className}`}>{label}</button>);
+            const moveEquip = async (index, direction) => {
+                if ((direction === -1 && index === 0) || (direction === 1 && index === equipments.length - 1)) return;
+                const itemA = equipments[index]; const itemB = equipments[index + direction];
+                const orderA = itemA.order || 0; const orderB = itemB.order || 0;
+                await updateEquip(itemA.id, { order: orderB }); await updateEquip(itemB.id, { order: orderA });
+            };
+            const generateExcel = () => {
+                const [year, month] = exportMonth.split('-'); const daysInMonth = new Date(year, month, 0).getDate();
+                let tableHTML = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="UTF-8"></head><body><h2 style="color:#166534; font-family:Arial;">Relevé de Températures - ${month}/${year}</h2><table border="1" style="border-collapse:collapse; font-family:Arial; width:100%;"><thead><tr style="background-color:#4ade80; color:white;"><th style="padding:10px;">Date</th><th style="padding:10px;">Matin (°C)</th><th style="padding:10px;">Soir (°C)</th></tr></thead><tbody>`;
+                equipments.forEach(eq => { tableHTML += `<tr><td colspan="3" style="background-color:#dcfce7; color:#166534; font-weight:bold; font-size:14px; padding:10px; text-align:left; border-top: 2px solid #166534;">Équipement : ${eq.name.toUpperCase()}</td></tr>`; let hasData = false; for(let i=1; i<=daysInMonth; i++) { const day = i.toString().padStart(2, '0'); const dateStr = `${year}-${month}-${day}`; const dayData = temps[dateStr] || {}; const m = dayData[eq.name]?.matin || ''; const s = dayData[eq.name]?.soir || ''; if (m || s) { hasData = true; tableHTML += `<tr><td style="padding:5px; text-align:center;">${day}/${month}/${year}</td><td style="padding:5px; text-align:center; ${m && (parseFloat(m) > 5 || parseFloat(m) < -25) ? 'color:red; font-weight:bold;' : ''}">${m}</td><td style="padding:5px; text-align:center; ${s && (parseFloat(s) > 5 || parseFloat(s) < -25) ? 'color:red; font-weight:bold;' : ''}">${s}</td></tr>`; } } if (!hasData) tableHTML += `<tr><td colspan="3" style="padding:5px; color:gray; font-style:italic; text-align:center;">Aucune donnée pour ce mois</td></tr>`; tableHTML += `<tr><td colspan="3" style="height:20px; border:none;"></td></tr>`; });
+                tableHTML += `</tbody></table></body></html>`; const blob = new Blob([tableHTML], { type: 'application/vnd.ms-excel' }); const url = window.URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `Releve_Temperatures_${month}_${year}.xls`; a.click(); setExportModalOpen(false);
+            };
+            return (
+                <div className="space-y-6 fade-in-element pb-32">
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4"><h2 className="text-2xl font-bold text-green-800 flex items-center gap-2"><Icon name="Thermometer" className="w-8 h-8"/> Températures</h2><div className="flex gap-2 w-full sm:w-auto"><button onClick={() => setExportModalOpen(true)} className="flex-1 sm:flex-none px-4 py-2 bg-green-100 text-green-700 rounded-lg font-bold flex items-center justify-center gap-2 hover:bg-green-200 transition-colors whitespace-nowrap"><Icon name="Download" className="w-5 h-5"/> Exporter</button><div className="flex items-center gap-4 bg-white p-2 rounded-lg border ml-auto"><button onClick={() => changeDate(-1)}><Icon name="ChevronLeft"/></button><div className="flex items-center gap-2 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200"><Icon name="Calendar" className="w-5 h-5 text-green-600"/><input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} className="bg-transparent font-bold text-gray-700 outline-none w-32" /></div><button onClick={() => changeDate(1)}><Icon name="ChevronRight"/></button></div></div></div>
+                    <div className="grid gap-4">
+                         {showAdd ? ( <Card className="bg-green-50 border-dashed border-2 border-green-300"><div className="flex gap-2"><AutocompleteInput placeholder="Nom de l'équipement..." value={newEquip} onChange={e=>setNewEquip(e.target.value)} options={equipHistory} /><Button onClick={() => { if(newEquip) { addEquip({name: newEquip}); setNewEquip(""); setShowAdd(false); } }}>OK</Button><Button variant="ghost" onClick={() => setShowAdd(false)}>X</Button></div></Card> ) : <button onClick={() => setShowAdd(true)} className="w-full py-4 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 font-bold hover:bg-green-50 flex items-center justify-center gap-2"><Icon name="Plus" className="w-5 h-5"/> Ajouter équipement</button>}
+                        {equipments.map((eq, idx) => ( <Card key={eq.id} className="flex flex-col md:flex-row items-center gap-4 border-l-4 border-l-green-500 relative"><div className="w-full md:w-1/3 flex justify-between items-center"><div className="flex items-center gap-3"><div className="flex flex-col gap-1"><button onClick={() => moveEquip(idx, -1)} className="p-1 text-gray-300 hover:text-green-600 disabled:opacity-30" disabled={idx===0}><Icon name="ArrowUp" className="w-5 h-5"/></button><button onClick={() => moveEquip(idx, 1)} className="p-1 text-gray-300 hover:text-green-600 disabled:opacity-30" disabled={idx===equipments.length-1}><Icon name="ArrowDown" className="w-5 h-5"/></button></div><div className="font-bold text-lg">{eq.name}</div></div><button onClick={() => removeEquip(eq.id)} className="text-red-300 hover:text-red-500"><Icon name="Trash2" className="w-4 h-4"/></button></div><div className="flex gap-4 flex-1 w-full">{['matin', 'soir'].map(p => (<div key={p} className="flex-1"><label className="text-xs uppercase text-gray-400 font-bold">{p}</label><button onClick={() => openPad(eq.id, eq.name, p)} className={`w-full p-3 rounded-lg border-2 font-bold flex justify-between items-center ${getVal(eq.name, p) ? 'bg-green-50 border-green-500 text-green-700' : 'bg-gray-50'}`}>{getVal(eq.name, p) ? getVal(eq.name, p) + '°C' : '--'} <Icon name="ChevronRight" className="w-4 h-4 rotate-90 opacity-50"/></button></div>))}</div></Card> ))}
+                    </div>
+                    <div className="fixed bottom-24 md:bottom-6 right-6 z-30"><button onClick={handleSaveDay} className={`flex items-center gap-3 px-8 py-4 rounded-full font-bold text-lg shadow-xl transition-all transform hover:scale-105 active:scale-95 ${isSaved ? 'bg-green-500 text-white' : 'bg-green-600 text-white hover:bg-green-700'}`}>{isSaved ? <Icon name="CheckCircle" className="w-6 h-6"/> : <Icon name="Save" className="w-6 h-6"/>}{isSaved ? 'Enregistré !' : 'Enregistrer'}</button></div>
+                    {picker.open && (<div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 fade-in-element" onClick={() => setPicker({...picker, open: false})}><div className="bg-white w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden flex flex-col" onClick={e => e.stopPropagation()}><div className="p-4 bg-green-600 text-white flex justify-between items-center"><h3 className="font-bold text-lg">{picker.name} <span className="text-sm font-normal opacity-80">({picker.period})</span></h3><button onClick={() => setPicker({...picker, open: false})}><Icon name="X" className="w-6 h-6"/></button></div><div className="p-4 bg-gray-50 border-b flex items-center justify-between"><div className="text-3xl font-bold text-gray-800 tracking-widest h-10 min-w-[100px]">{tempInput || <span className="text-gray-300">--</span>} <span className="text-sm text-gray-400">°C</span></div><button onClick={handleBackspace} className="text-gray-400 hover:text-red-500 p-2"><Icon name="Delete" className="w-6 h-6"/></button></div><div className="p-4 bg-gray-100 grid grid-cols-3 gap-3">{[7, 8, 9, 4, 5, 6, 1, 2, 3].map(n => (<KeypadButton key={n} label={n} onClick={() => handleNumClick(n.toString())} />))}<KeypadButton label="-" onClick={() => !tempInput.includes('-') && setTempInput(prev => '-' + prev)} className="text-blue-600 bg-blue-50 border-blue-100" /><KeypadButton label="0" onClick={() => handleNumClick('0')} /><KeypadButton label="." onClick={handleDot} className="text-blue-600 bg-blue-50 border-blue-100" /><KeypadButton label="C" onClick={handleClear} className="bg-red-50 text-red-600 border-red-100" /><button onClick={handleValidate} className="col-span-2 h-16 bg-green-600 text-white rounded-xl font-bold text-lg shadow-md active:scale-95 transition-transform flex items-center justify-center gap-2"><Icon name="CheckCircle" className="w-6 h-6"/> Valider</button></div></div></div>)}
+                    {exportModalOpen && (<div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setExportModalOpen(false)}><div className="bg-white p-6 rounded-2xl w-full max-w-sm shadow-2xl" onClick={e => e.stopPropagation()}><h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2"><Icon name="Download" className="text-green-600"/> Exporter vers Excel</h3><p className="text-gray-600 mb-4">Choisissez le mois à exporter :</p><input type="month" value={exportMonth} onChange={(e) => setExportMonth(e.target.value)} className="w-full p-3 border border-gray-300 rounded-lg mb-6 text-lg" /><div className="flex gap-3"><Button onClick={generateExcel} className="flex-1">Télécharger</Button><Button variant="ghost" onClick={() => setExportModalOpen(false)}>Annuler</Button></div></div></div>)}
+                </div>
+            );
         };
 
-        // --- GENERAL LOGIC ---
-        window.loadCorrectionData = () => {
-            const empCode = document.getElementById('admin-correction-employee').value; const dateVal = document.getElementById('admin-correction-date').value; const tbody = document.getElementById('correction-table-body'); tbody.innerHTML = '';
-            if (!dateVal) return; const targetDateStr = new Date(dateVal).toDateString();
-            const filteredPunches = punches.filter(p => { if (!p.punchInTime) return false; const pDate = p.punchInTime.toDate(); return pDate.toDateString() === targetDateStr && (empCode ? p.employeeCode === empCode : true); });
-            if (filteredPunches.length === 0) { tbody.innerHTML = '<tr><td colspan="5" class="px-4 py-2 text-sm text-gray-500 text-center italic">Aucun pointage ce jour.</td></tr>'; return; }
-            filteredPunches.forEach(p => { const tr = document.createElement('tr'); const pi = p.punchInTime.toDate(); const po = p.punchOutTime ? p.punchOutTime.toDate() : null; tr.innerHTML = `<td class="px-4 py-2 text-sm text-gray-900">${p.employeeName}</td><td class="px-4 py-2 text-sm text-gray-500">${pi.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</td><td class="px-4 py-2 text-sm text-gray-500">${po?po.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}):'<span class="text-red-500">En cours</span>'}</td><td class="px-4 py-2 text-sm text-gray-500">${p.breakDuration||0} min</td><td class="px-4 py-2 text-right text-sm font-medium"><button onclick="openManualPunchModal('${p.id}')" class="text-indigo-600 hover:text-indigo-900 mr-2">Modifier</button><button onclick="deletePunch('${p.id}')" class="text-red-600 hover:text-red-900">Supprimer</button></td>`; tbody.appendChild(tr); });
-        };
+        const MonitoringModule = ({ restaurantId }) => {
+            const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+            
+            // --- 1. Refroidissement / Congélation ---
+            const { data: coolings, addItem: addCooling, deleteItem: removeCooling } = useSharedCollection(restaurantId, 'cooling_logs', 'startTime');
+            const [newCooling, setNewCooling] = useState({ type: 'Refroidissement', start: '', end: '', product: '', tempIn: '', tempOut: '' });
+            const filteredCoolings = coolings.filter(c => c.sortDate === selectedDate);
+            const coolingHistory = coolings.map(c => c.product);
+            
+            // --- 2. Livraison ---
+            const { data: deliveries, addItem: addDelivery, deleteItem: removeDelivery } = useSharedCollection(restaurantId, 'delivery_logs', 'timestamp');
+            const [newDelivery, setNewDelivery] = useState({ supplier: '', product: '', batch: '', dlc: '', temp: '', compliant: 'Oui', comment: '', photo: null });
+            const filteredDeliveries = deliveries.filter(d => d.sortDate === selectedDate);
+            const deliveryCameraRef = useRef(null);
+            const supplierHistory = deliveries.map(d => d.supplier);
+            const deliveryProductHistory = deliveries.map(d => d.product);
 
-        window.deletePunch = async (id) => { if(!id) return; if(confirm("Supprimer ?")) try{ await deleteDoc(getDocRef('punches', id)); showToast("Supprimé !"); }catch(e){console.error(e);} };
-        window.openManualPunchModal = (punchId) => {
-            const modal = document.getElementById('manual-correction-modal'); const title = document.getElementById('correction-modal-title'); const empSelect = document.getElementById('edit-punch-employee'); const dateInput = document.getElementById('edit-punch-date'); const inInput = document.getElementById('edit-punch-in'); const outInput = document.getElementById('edit-punch-out'); const breakInput = document.getElementById('edit-punch-break'); const idInput = document.getElementById('edit-punch-id');
-            let punchData = punchId ? punches.find(p => p.id === punchId) : null;
-            if (punchData) { title.textContent = "Modifier le pointage"; idInput.value = punchData.id; empSelect.value = punchData.employeeCode; empSelect.disabled = true; const pi = new Date(punchData.punchInTime.seconds * 1000); dateInput.value = getLocalDateInputValue(pi); inInput.value = pi.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', hour12: false}); if (punchData.punchOutTime) { const po = new Date(punchData.punchOutTime.seconds * 1000); outInput.value = po.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', hour12: false}); } else outInput.value = ''; breakInput.value = punchData.breakDuration || 0; } 
-            else { title.textContent = "Ajouter un pointage manuel"; idInput.value = ""; empSelect.disabled = false; empSelect.value = document.getElementById('admin-correction-employee').value || (employees.length > 0 ? employees[0].code : ""); dateInput.value = document.getElementById('admin-correction-date').value || getLocalDateInputValue(new Date()); inInput.value = "09:00"; outInput.value = "17:00"; breakInput.value = 0; }
-            modal.classList.remove('hidden'); modal.classList.add('flex');
-        };
-        window.saveManualPunch = async () => {
-            const id = document.getElementById('edit-punch-id').value; const empCode = document.getElementById('edit-punch-employee').value; const dateStr = document.getElementById('edit-punch-date').value; const inStr = document.getElementById('edit-punch-in').value; const outStr = document.getElementById('edit-punch-out').value; const breakVal = parseInt(document.getElementById('edit-punch-break').value) || 0;
-            if (!empCode || !dateStr || !inStr) { alert("Champs requis manquants."); return; }
-            const empObj = employees.find(e => e.code === empCode); 
-            
-            // FIX: Manual Date Construction to avoid UTC offset
-            const [y, mo, d] = dateStr.split('-').map(Number);
-            const [h, mi] = inStr.split(':').map(Number);
-            const punchInDate = new Date(y, mo - 1, d, h, mi);
-            
-            let punchOutDate = null;
-            if (outStr) {
-                const [hOut, mOut] = outStr.split(':').map(Number);
-                punchOutDate = new Date(y, mo - 1, d, hOut, mOut);
-                if (punchOutDate < punchInDate) punchOutDate.setDate(punchOutDate.getDate() + 1);
-            }
+            // --- 3. Nettoyage ---
+            const { data: zones, addItem: addZone, deleteItem: removeZone } = useSharedCollection(restaurantId, 'cleaning');
+            const { logs, updateLog } = useSharedLogs(restaurantId, 'cleaning_logs');
+            const [showAddZone, setShowAddZone] = useState(false);
+            const [newZone, setNewZone] = useState({ name: "", freq: "Journalier" });
+            const cleaningTaskHistory = zones.map(z => z.name);
 
-            const data = { employeeCode: empCode, employeeName: empObj.name, punchInTime: Timestamp.fromDate(punchInDate), punchOutTime: punchOutDate ? Timestamp.fromDate(punchOutDate) : null, breakDuration: breakVal };
-            try { if (id) await updateDoc(getDocRef('punches', id), data); else await addDoc(getColRef('punches'), data); showToast("Enregistré !"); document.getElementById('manual-correction-modal').classList.add('hidden'); document.getElementById('manual-correction-modal').classList.remove('flex'); } catch (e) { alert("Erreur: " + e.message); }
-        };
+            // --- WEBCAM LOGIC (Shared/Duplicated for Delivery) ---
+            const [isWebcamOpen, setIsWebcamOpen] = useState(false);
+            const [tempPhoto, setTempPhoto] = useState(null);
+            const videoRef = useRef(null);
+            const canvasRef = useRef(null);
 
-        window.requestAdminAccess = () => { document.getElementById('admin-login-modal').classList.remove('hidden'); document.getElementById('admin-login-modal').classList.add('flex'); document.getElementById('admin-login-input').value=''; };
-        window.closeAdminModal = () => { document.getElementById('admin-login-modal').classList.add('hidden'); document.getElementById('admin-login-modal').classList.remove('flex'); };
-        window.verifyAdminCode = () => { if(document.getElementById('admin-login-input').value === currentAdminCode) { closeAdminModal(); showView('admin'); loadCorrectionData(); } else { document.getElementById('admin-login-error').textContent="Erreur!"; }};
-        window.saveNewAdminCode = async () => { try { await setDoc(getDocRef('settings', 'admin_config'), {code: document.getElementById('setting-admin-code').value}); currentAdminCode=document.getElementById('setting-admin-code').value; document.getElementById('settings-message').textContent="OK"; } catch(e){} };
-        window.resetAllPunches = async () => { if (!confirm("SUPPRIMER TOUT L'HISTORIQUE ?")) return; const c = prompt("Code Admin:"); if (c !== currentAdminCode) return alert("Code faux"); try { const s = await getDocs(query(getColRef('punches'))); await Promise.all(s.docs.map(d=>deleteDoc(d.ref))); showToast("Reset OK"); } catch(e){ alert(e.message); } };
+            // --- BROUILLON LIVRAISON VIA INDEXEDDB + LS ---
+            useEffect(() => {
+                const loadDraft = async () => {
+                    const savedDraft = localStorage.getItem('draft_delivery_meta');
+                    const savedImage = await SimpleIDB.get('draft_delivery_photo');
+                    
+                    if (savedDraft) {
+                        try { 
+                            const parsed = JSON.parse(savedDraft);
+                            if (savedImage) parsed.photo = savedImage;
+                            setNewDelivery(parsed); 
+                        } catch (e) { console.error("Erreur lecture brouillon livraison", e); }
+                    }
+                };
+                loadDraft();
+            }, []);
 
-        const views = { punch: document.getElementById('view-punch'), admin: document.getElementById('view-admin') };
-        const tabs = { punch: document.getElementById('tab-punch'), admin: document.getElementById('tab-admin') };
-        window.showView = (name) => { Object.keys(views).forEach(k => { views[k].classList.toggle('hidden', k!==name); const t = tabs[k]; const a = t.getAttribute('data-active-class').split(' '); const i = t.getAttribute('data-inactive-class').split(' '); t.classList.remove(...(k===name?i:a)); t.classList.add(...(k===name?a:i)); }); };
-        showView('punch');
-
-        let currentPunchMode = null; let currentManualEmployee = null; let currentManualPunchDoc = null;
-        let selectedHour = "00"; let selectedMinute = "00";
-        // TEMP Storage for Date/Time before Break selection
-        let tempPunchDate = null;
-
-        // --- NEW: SCROLL WHEEL LOGIC ---
-        function populateWheels() {
-            const hWheel = document.getElementById('hour-wheel');
-            const mWheel = document.getElementById('minute-wheel');
-            
-            // REMOVED EXTRA PADDING DIVS HERE
-            // Padding items are handled by CSS padding-top/bottom 60px on the container
-            
-            let hHTML = ''; 
-            for(let i=0; i<24; i++) {
-                hHTML += `<div class="wheel-item" data-val="${String(i).padStart(2,'0')}">${String(i).padStart(2,'0')}</div>`;
-            }
-            
-            let mHTML = '';
-            for(let i=0; i<60; i++) {
-                mHTML += `<div class="wheel-item" data-val="${String(i).padStart(2,'0')}">${String(i).padStart(2,'0')}</div>`;
-            }
-            
-            hWheel.innerHTML = hHTML;
-            mWheel.innerHTML = mHTML;
-            
-            // Add Scroll Listeners to update state
-            hWheel.addEventListener('scroll', () => handleScroll(hWheel, 'h'));
-            mWheel.addEventListener('scroll', () => handleScroll(mWheel, 'm'));
-        }
-        
-        function handleScroll(el, type) {
-            // Calculate center item
-            const itemHeight = 40;
-            // The container has 60px padding top, so center is scrollTop
-            const index = Math.round(el.scrollTop / itemHeight);
-            
-            const val = String(index).padStart(2, '0');
-            
-            // Limit bounds
-            if (type === 'h') {
-                if(index >= 0 && index < 24) selectedHour = val;
-            } else {
-                if(index >= 0 && index < 60) selectedMinute = val;
-            }
-            
-            // Highlight styling logic (optional, for opacity change)
-            Array.from(el.children).forEach((child, i) => {
-                if (child.classList.contains('wheel-item') && child.dataset.val) {
-                   // REMOVED -1 offset because pad divs are gone
-                   if (i === index) { 
-                       child.style.color = '#1d4ed8'; // blue-700
-                       child.style.transform = 'scale(1.1)';
-                   } else {
-                       child.style.color = '#94a3b8'; // gray-400
-                       child.style.transform = 'scale(1)';
-                   }
+            useEffect(() => {
+                if (newDelivery.supplier || newDelivery.product) {
+                    const meta = { ...newDelivery, photo: null, rawFile: null };
+                    try { localStorage.setItem('draft_delivery_meta', JSON.stringify(meta)); } catch (e) {}
                 }
-            });
-        }
-        
-        function scrollToTime(h, m) {
-            const hWheel = document.getElementById('hour-wheel');
-            const mWheel = document.getElementById('minute-wheel');
-            const itemHeight = 40;
-            
-            hWheel.scrollTop = parseInt(h) * itemHeight;
-            mWheel.scrollTop = parseInt(m) * itemHeight;
-            
-            selectedHour = h;
-            selectedMinute = m;
-        }
+            }, [newDelivery.supplier, newDelivery.product, newDelivery.batch]); // Check specific fields to avoid loop with photo
 
-        // --- NEW LOGIN FLOW ---
-        window.verifyCodeAndShowMenu = () => {
-            const code = document.getElementById('employee-code').value;
-            const messageElement = document.getElementById('punch-message');
-            messageElement.textContent = "";
+            const startWebcam = async () => { setTempPhoto(null); setIsWebcamOpen(true); try { const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } }); setTimeout(() => { if (videoRef.current) videoRef.current.srcObject = stream; }, 100); } catch (e) { alert("Impossible d'accéder à la webcam."); setIsWebcamOpen(false); } };
+            const captureWebcam = () => { if (videoRef.current && canvasRef.current) { const v = videoRef.current; const c = canvasRef.current; c.width = v.videoWidth; c.height = v.videoHeight; c.getContext('2d').drawImage(v, 0, 0); c.toBlob((blob) => { const previewUrl = c.toDataURL('image/jpeg', 0.8); setTempPhoto({ preview: previewUrl, file: blob }); }, 'image/jpeg', 0.95); v.pause(); } };
+            const retakePhoto = () => { setTempPhoto(null); if (videoRef.current) videoRef.current.play(); };
             
-            if(code.length !== 4) return;
+            const confirmPhoto = async () => { 
+                if (tempPhoto) { 
+                    const compressed = await compressImage(tempPhoto.preview, 1000, 0.7);
+                    await SimpleIDB.save('draft_delivery_photo', compressed);
+                    setNewDelivery({...newDelivery, photo: compressed, rawFile: tempPhoto.file}); 
+                } 
+                if(videoRef.current?.srcObject) videoRef.current.srcObject.getTracks().forEach(t => t.stop()); 
+                setIsWebcamOpen(false); setTempPhoto(null); 
+            };
             
-            const emp = employees.find(e => e.code === code);
-            
-            if(!emp) { 
-                messageElement.textContent = "Code inconnu"; 
-                messageElement.className = "text-center mt-4 text-sm font-medium h-6 text-red-600"; 
-                return; 
-            }
-            
-            // Valid Employee
-            currentEmployee = emp;
-            
-            // Reset UI for Dashboard
-            document.getElementById('dashboard-welcome').textContent = `Bonjour ${emp.name}`;
-            
-            // Check status to update Punch Button Text (In or Out)
-            updatePunchButtonStatus(emp.code);
-            
-            // Switch Step
-            document.getElementById('step-login').classList.add('hidden');
-            document.getElementById('step-dashboard').classList.remove('hidden');
+            // Smart Camera Trigger for Delivery
+            const handleDeliveryCameraClick = () => { 
+                if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) { 
+                    deliveryCameraRef.current?.click(); 
+                } else { 
+                    startWebcam(); 
+                } 
+            };
+
+            const changeDate = (d) => { const date = new Date(selectedDate); date.setDate(date.getDate() + d); setSelectedDate(date.toISOString().split('T')[0]); };
+
+            const submitCooling = async (e) => {
+                e.preventDefault();
+                await addCooling({ ...newCooling, sortDate: selectedDate, timestamp: Date.now() });
+                setNewCooling({ type: 'Refroidissement', start: '', end: '', product: '', tempIn: '', tempOut: '' });
+            };
+
+            const handleDeliveryPhoto = async (e) => {
+                const file = e.target.files[0];
+                if(file) {
+                    const reader = new FileReader();
+                    reader.onload = async (ev) => {
+                        const compressed = await compressImage(ev.target.result, 1000, 0.7);
+                        await SimpleIDB.save('draft_delivery_photo', compressed);
+                        setNewDelivery({...newDelivery, photo: compressed, rawFile: file});
+                    };
+                    reader.readAsDataURL(file);
+                }
+            };
+
+            const submitDelivery = async (e) => {
+                e.preventDefault();
+                await addDelivery({ ...newDelivery, sortDate: selectedDate, timestamp: Date.now() });
+                // Clean up IDB and LS
+                localStorage.removeItem('draft_delivery_meta');
+                await SimpleIDB.delete('draft_delivery_photo');
+                setNewDelivery({ supplier: '', product: '', batch: '', dlc: '', temp: '', compliant: 'Oui', comment: '', photo: null });
+            };
+
+            const toggleZone = (id) => updateLog(selectedDate, { [id]: !(logs[selectedDate]?.[id]) });
+            const isDone = (id) => logs[selectedDate]?.[id];
+            const cleanProgress = zones.length === 0 ? 0 : Math.round((zones.filter(z => isDone(z.id)).length / zones.length) * 100);
+
+            return (
+                <div className="space-y-8 fade-in-element pb-24">
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4"><h2 className="text-2xl font-bold text-green-800 flex items-center gap-2"><Icon name="ClipboardList" className="w-8 h-8"/> Suivi & Hygiène</h2><div className="flex items-center gap-4 bg-white p-2 rounded-lg border ml-auto w-full sm:w-auto justify-between sm:justify-start"><button onClick={() => changeDate(-1)}><Icon name="ChevronLeft"/></button><div className="flex items-center gap-2 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200"><Icon name="Calendar" className="w-5 h-5 text-green-600"/><input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} className="bg-transparent font-bold text-gray-700 outline-none w-32" /></div><button onClick={() => changeDate(1)}><Icon name="ChevronRight"/></button></div></div>
+
+                    {/* 1. Suivi des Denrées (Refroidissement / Congélation) */}
+                    <Card className="border-l-4 border-l-blue-500">
+                        <h3 className="text-xl font-bold text-blue-800 mb-4 flex items-center gap-2"><Icon name="Snowflake" className="w-6 h-6"/> Refroidissement / Congélation</h3>
+                        <form onSubmit={submitCooling} className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 bg-blue-50 p-4 rounded-xl">
+                            <div className="flex gap-2 col-span-full">
+                                <label className={`flex-1 p-2 text-center rounded-lg cursor-pointer border font-bold ${newCooling.type === 'Refroidissement' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-600'}`}><input type="radio" className="hidden" name="type" checked={newCooling.type==='Refroidissement'} onChange={()=>setNewCooling({...newCooling, type:'Refroidissement'})} /> Refroidissement</label>
+                                <label className={`flex-1 p-2 text-center rounded-lg cursor-pointer border font-bold ${newCooling.type === 'Congélation' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-600'}`}><input type="radio" className="hidden" name="type" checked={newCooling.type==='Congélation'} onChange={()=>setNewCooling({...newCooling, type:'Congélation'})} /> Congélation</label>
+                            </div>
+                            <div className="col-span-full"><AutocompleteInput placeholder="Produit..." value={newCooling.product} onChange={e=>setNewCooling({...newCooling, product:e.target.value})} options={coolingHistory} required/></div>
+                            {/* MODIFICATION 1 : CHAMPS TEMPÉRATURES */}
+                            <div className="flex gap-2">
+                                <div className="flex-1"><label className="text-xs font-bold text-gray-500 ml-1">T° Départ</label><input type="number" placeholder="°C" className="w-full p-3 rounded-lg border" value={newCooling.tempIn} onChange={e=>setNewCooling({...newCooling, tempIn:e.target.value})} /></div>
+                                <div className="flex-1"><label className="text-xs font-bold text-gray-500 ml-1">T° Fin</label><input type="number" placeholder="°C" className="w-full p-3 rounded-lg border" value={newCooling.tempOut} onChange={e=>setNewCooling({...newCooling, tempOut:e.target.value})} /></div>
+                            </div>
+                            <div className="flex gap-2">
+                                <div className="flex-1"><label className="text-xs font-bold text-gray-500 ml-1">Heure Début</label><input type="time" className="w-full p-3 rounded-lg border" value={newCooling.start} onChange={e=>setNewCooling({...newCooling, start:e.target.value})} required /></div>
+                                <div className="flex-1"><label className="text-xs font-bold text-gray-500 ml-1">Heure Fin</label><input type="time" className="w-full p-3 rounded-lg border" value={newCooling.end} onChange={e=>setNewCooling({...newCooling, end:e.target.value})} /></div>
+                            </div>
+                            <Button type="submit" className="col-span-full bg-blue-600 hover:bg-blue-700 text-white">Ajouter cycle</Button>
+                        </form>
+                        <div className="space-y-2">
+                            {filteredCoolings.map(c => (<div key={c.id} className="flex justify-between items-center bg-gray-50 p-3 rounded-lg border"><div><div className="font-bold text-gray-800">{c.product} <span className="text-xs font-normal text-blue-600 bg-blue-100 px-2 py-0.5 rounded-full">{c.type}</span></div><div className="text-sm text-gray-500">{c.start} ➝ {c.end || 'En cours'} {c.tempIn && c.tempOut && <span className="ml-2 font-mono text-xs bg-gray-200 px-1 rounded">({c.tempIn}°C ➝ {c.tempOut}°C)</span>}</div></div><button onClick={() => removeCooling(c.id)} className="text-red-300 hover:text-red-500"><Icon name="Trash2"/></button></div>))}
+                            {filteredCoolings.length === 0 && <p className="text-center text-gray-400 italic text-sm">Aucun cycle enregistré ce jour.</p>}
+                        </div>
+                    </Card>
+
+                    {/* 2. Réception Marchandises */}
+                    <Card className="border-l-4 border-l-orange-500">
+                        <h3 className="text-xl font-bold text-orange-800 mb-4 flex items-center gap-2"><Icon name="Truck" className="w-6 h-6"/> Réception Marchandises</h3>
+                        <form onSubmit={submitDelivery} className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6 bg-orange-50 p-4 rounded-xl">
+                            <AutocompleteInput placeholder="Fournisseur" value={newDelivery.supplier} onChange={e=>setNewDelivery({...newDelivery, supplier:e.target.value})} options={supplierHistory} required/>
+                            <AutocompleteInput placeholder="Produit" value={newDelivery.product} onChange={e=>setNewDelivery({...newDelivery, product:e.target.value})} options={deliveryProductHistory} required/>
+                            <div className="flex gap-2"><input placeholder="N° Lot" className="p-2 rounded border flex-1" value={newDelivery.batch} onChange={e=>setNewDelivery({...newDelivery, batch:e.target.value})} /><input placeholder="T°C" type="number" className="p-2 rounded border w-24" value={newDelivery.temp} onChange={e=>setNewDelivery({...newDelivery, temp:e.target.value})} /></div>
+                            <div className="flex gap-2">
+                                <select className={`p-2 rounded border flex-1 font-bold ${newDelivery.compliant==='Non'?'bg-red-50 text-red-600 border-red-300':'bg-white'}`} value={newDelivery.compliant} onChange={e=>setNewDelivery({...newDelivery, compliant:e.target.value})}><option value="Oui">Conforme</option><option value="Non">Non Conforme</option></select>
+                                {/* MODIFICATION 2: Bouton Camera Smart */}
+                                <input type="file" ref={deliveryCameraRef} onChange={handleDeliveryPhoto} accept="image/*" capture="environment" className="hidden"/>
+                                <button type="button" onClick={handleDeliveryCameraClick} className={`flex-1 border rounded flex items-center justify-center gap-2 font-medium ${newDelivery.photo ? 'bg-green-100 text-green-700 border-green-300' : 'bg-white text-gray-500 border-gray-300 hover:bg-gray-50'}`}><Icon name="Camera" className="w-5 h-5"/> {newDelivery.photo ? 'Photo OK' : 'Photo'}</button>
+                            </div>
+                            {newDelivery.compliant === 'Non' && ( <textarea placeholder="Motif de non-conformité..." className="col-span-full p-3 rounded-lg border border-red-200 bg-red-50 text-red-700 placeholder-red-300 focus:ring-2 focus:ring-red-500 outline-none" rows="2" value={newDelivery.comment} onChange={e => setNewDelivery({...newDelivery, comment: e.target.value})} required /> )}
+                            <Button type="submit" className="col-span-full bg-orange-600 hover:bg-orange-700 text-white">Valider réception</Button>
+                        </form>
+                        <div className="space-y-2">
+                            {filteredDeliveries.map(d => ( <div key={d.id} className={`flex justify-between items-start bg-white p-3 rounded-lg border shadow-sm ${d.compliant === 'Non' ? 'border-l-4 border-l-red-500' : ''}`}><div className="flex gap-3">{d.photo && <img src={d.photo} className="w-12 h-12 object-cover rounded bg-gray-200" />}<div><div className="font-bold text-gray-800">{d.product} <span className="text-xs text-gray-500">({d.supplier})</span></div><div className="text-sm text-gray-600">Lot: {d.batch} • {d.temp}°C • <span className={d.compliant==='Oui'?'text-green-600 font-bold':'text-red-600 font-bold'}>{d.compliant==='Oui'?'Conforme':'Non Conforme'}</span></div>{d.comment && <div className="text-xs text-red-500 mt-1 italic">⚠️ {d.comment}</div>}</div></div><button onClick={() => removeDelivery(d.id)} className="text-gray-300 hover:text-red-500"><Icon name="Trash2"/></button></div> ))}
+                            {filteredDeliveries.length === 0 && <p className="text-center text-gray-400 italic text-sm">Aucune livraison scannée ce jour.</p>}
+                        </div>
+                    </Card>
+
+                    {/* 3. Nettoyage (En bas) */}
+                    <div className="border-t pt-8">
+                        <div className="flex justify-between items-end mb-4"><h3 className="text-xl font-bold text-gray-700 flex items-center gap-2"><Icon name="ClipboardCheck" className="w-6 h-6"/> Plan de Nettoyage</h3><span className="text-2xl font-bold text-green-600">{cleanProgress}%</span></div>
+                        <div className="w-full bg-gray-200 rounded-full h-2 mb-6"><div className="bg-green-600 h-2 rounded-full transition-all duration-500" style={{width: `${cleanProgress}%`}}></div></div>
+                        <div className="grid gap-3">
+                            {zones.map(z => ( <div key={z.id} onClick={() => toggleZone(z.id)} className={`p-4 rounded-xl border cursor-pointer flex justify-between items-center transition-all ${isDone(z.id) ? 'bg-green-600 text-white border-green-700 shadow-md transform scale-[1.02]' : 'bg-white border-gray-200'}`}><div><h4 className="font-bold text-lg">{z.name}</h4><span className={`text-xs px-2 py-0.5 rounded-full ${isDone(z.id) ? 'bg-green-500 text-green-50' : 'bg-gray-100 text-gray-500'}`}>{z.freq}</span></div><div className="flex gap-4 items-center"><div className={`w-8 h-8 rounded-full flex items-center justify-center ${isDone(z.id) ? 'bg-white text-green-600' : 'bg-gray-100 text-gray-300'}`}><Icon name="CheckCircle" /></div><button onClick={(e) => { e.stopPropagation(); removeZone(z.id); }} className="p-2 hover:bg-white/20 rounded-full"><Icon name="Trash2" className="w-5 h-5"/></button></div></div> ))}
+                            {showAddZone ? ( <Card className="bg-green-50 border-dashed border-2 border-green-300"><div className="flex flex-col gap-2"><AutocompleteInput placeholder="Nom de la tâche..." value={newZone.name} onChange={e=>setNewZone({...newZone, name: e.target.value})} options={cleaningTaskHistory} /><div className="flex gap-2"><select className="p-2 rounded border border-gray-300 bg-white flex-1" value={newZone.freq} onChange={e=>setNewZone({...newZone, freq: e.target.value})}><option value="Journalier">Journalier</option><option value="Hebdomadaire">Hebdomadaire</option><option value="Mensuel">Mensuel</option></select><Button className="flex-1" onClick={() => { if(newZone.name) { addZone(newZone); setNewZone({name:"", freq:"Journalier"}); setShowAddZone(false); } }}>Ajouter</Button></div><Button variant="ghost" onClick={() => setShowAddZone(false)} className="w-full text-sm py-1">Annuler</Button></div></Card> ) : <button onClick={() => setShowAddZone(true)} className="w-full py-4 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 font-bold hover:bg-green-50">+ Nouvelle tâche</button>}
+                        </div>
+                    </div>
+
+                    {/* WEBCAM OVERLAY FOR DELIVERY */}
+                    {isWebcamOpen && (<div className="fixed inset-0 z-[100] bg-black flex flex-col"><div className="relative flex-1 w-full h-full overflow-hidden"><video ref={videoRef} autoPlay playsInline className={`absolute inset-0 w-full h-full object-cover ${tempPhoto ? 'hidden' : ''}`}></video>{tempPhoto && <img src={tempPhoto.preview} className="absolute inset-0 w-full h-full object-cover" />}{!tempPhoto ? (<><div className="absolute inset-0 flex items-center justify-center pointer-events-none"><div className="w-[80%] h-[60%] border-2 border-green-500/50 rounded-2xl relative"><div className="scan-line"></div></div></div><div className="absolute top-0 w-full p-4 flex justify-between items-center z-20 bg-gradient-to-b from-black/60 to-transparent"><span className="text-white font-bold tracking-wide drop-shadow-md">Scanner</span><button onClick={() => { if(videoRef.current?.srcObject) videoRef.current.srcObject.getTracks().forEach(t=>t.stop()); setIsWebcamOpen(false); }} className="p-3 bg-black/40 rounded-full text-white backdrop-blur-md border border-white/20"><Icon name="X" className="w-6 h-6"/></button></div><div className="absolute bottom-8 w-full flex justify-center z-20"><button onClick={captureWebcam} className="w-20 h-20 bg-white rounded-full border-4 border-gray-200/50 shadow-2xl active:scale-95 transition-transform flex items-center justify-center"><div className="w-16 h-16 bg-white rounded-full border-2 border-black"></div></button></div></>) : (<div className="absolute bottom-8 w-full flex justify-center gap-6 z-20 px-8"><button onClick={retakePhoto} className="flex-1 py-4 bg-red-500/90 backdrop-blur-md text-white rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg active:scale-95 border border-red-400"><Icon name="RotateCcw" className="w-6 h-6"/> Reprendre</button><button onClick={confirmPhoto} className="flex-1 py-4 bg-green-500 text-white rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg active:scale-95"><Icon name="CheckCircle" className="w-6 h-6"/> Valider</button></div>)}</div><canvas ref={canvasRef} className="hidden"></canvas></div>)}
+                </div>
+            );
         };
 
-        // Helper to update button text based on status
-        async function updatePunchButtonStatus(code) {
-             const btnText = document.getElementById('btn-punch-text');
-             const btnSub = document.getElementById('btn-punch-sub');
-             const btnIcon = document.getElementById('btn-punch-icon');
-             
-             try {
-                const s = await getDocs(query(getColRef('punches'), where('employeeCode', '==', code)));
-                const active = s.docs.filter(d => d.data().punchOutTime === null)[0];
+        const PinScreen = ({ onLogin, isLoading }) => {
+            const [code, setCode] = useState(""); const [error, setError] = useState(false);
+            const handleNum = (num) => { if (code.length < 6 && !isLoading) { const newCode = code + num; setCode(newCode); setError(false); if (newCode.length === 6) { onLogin(newCode); } } };
+            const handleBackspace = () => setCode(prev => prev.slice(0, -1));
+            return (
+                <div className="flex flex-col items-center justify-center h-full bg-green-50 p-6 fade-in-element">
+                    <div className="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-sm text-center border border-green-100">
+                        <div className="mb-6"><div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 text-green-600"><Icon name="Lock" className="w-8 h-8"/></div><h2 className="text-2xl font-bold text-gray-800">Verrouillé</h2><p className="text-gray-500 text-sm mt-1">{isLoading ? "Connexion..." : "Entrez le code de sécurité (6 chiffres)"}</p></div>
+                        <div className="flex justify-center gap-4 mb-8">{[0, 1, 2, 3, 4, 5].map(i => (<div key={i} className={`w-4 h-4 rounded-full transition-all duration-200 ${i < code.length ? (error ? 'bg-red-500' : 'bg-green-500') : 'bg-gray-200'}`}></div>))}</div>
+                        <div className="grid grid-cols-3 gap-4 mb-4">{[1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => (<button key={n} onClick={() => handleNum(n.toString())} disabled={isLoading} className="h-16 rounded-2xl bg-gray-50 text-2xl font-bold text-gray-700 active:bg-gray-200 active:scale-95 transition-all outline-none touch-manipulation disabled:opacity-50">{n}</button>))}<div className="h-16"></div><button onClick={() => handleNum('0')} disabled={isLoading} className="h-16 rounded-2xl bg-gray-50 text-2xl font-bold text-gray-700 active:bg-gray-200 active:scale-95 transition-all outline-none touch-manipulation disabled:opacity-50">0</button><button onClick={handleBackspace} disabled={isLoading} className="h-16 rounded-2xl flex items-center justify-center text-gray-400 active:bg-red-50 active:text-red-500 active:scale-95 transition-all outline-none touch-manipulation disabled:opacity-50"><Icon name="Delete" className="w-8 h-8"/></button></div>
+                        {error && <p className="text-red-500 font-bold text-sm animate-bounce">Code incorrect ou erreur connexion</p>}
+                    </div>
+                </div>
+            );
+        };
+
+        const App = () => {
+            const [user, setUser] = useState(null);
+            const [restaurantId, setRestaurantId] = useState(localStorage.getItem('haccp_restaurant_id') || 'mon-restaurant');
+            const [tab, setTab] = useState('traceability');
+            const [isLocked, setIsLocked] = useState(!localStorage.getItem('haccp_app_unlocked'));
+            const [isAuthLoading, setIsAuthLoading] = useState(true); 
+            const [isLoginLoading, setIsLoginLoading] = useState(false);
+            const [isCaching, setIsCaching] = useState(false);
+            const isOnline = useNetworkStatus();
+
+            useEffect(() => {
+                const loader = document.getElementById('static-loader');
+                if (loader) loader.style.display = 'none';
+
+                let unsubscribe;
+                const startAuth = async () => {
+                    unsubscribe = window.onAuthStateChanged(window.auth, (u) => {
+                        if (u) {
+                            console.log("Session active (User ID: " + u.uid + ")");
+                            setUser(u);
+                            setIsAuthLoading(false);
+                        } else {
+                            console.log("Connexion anonyme...");
+                            const doLogin = async () => {
+                                try {
+                                    if (window.initialAuthToken) { 
+                                        await window.signInWithCustomToken(window.auth, window.initialAuthToken); 
+                                    } else { 
+                                        await window.signInAnonymously(window.auth); 
+                                    }
+                                } catch (e) {
+                                    console.error("Auth Error:", e);
+                                    setIsAuthLoading(false);
+                                }
+                            };
+                            doLogin();
+                        }
+                    });
+                };
+                startAuth();
+                return () => { if(unsubscribe) unsubscribe(); };
+            }, []);
+
+            useEffect(() => { localStorage.setItem('haccp_restaurant_id', restaurantId); }, [restaurantId]);
+            const handleLogin = async (code) => { if (code === '030613') { localStorage.setItem('haccp_app_unlocked', 'true'); setIsLocked(false); } else { alert("Code incorrect"); } };
+            const handleLock = () => { localStorage.removeItem('haccp_app_unlocked'); setIsLocked(true); };
+            
+            // --- SYNC MANUELLE & CACHE ASSETS ---
+            const handleInstallCache = async () => {
+                setIsCaching(true);
                 
-                if (active) {
-                    btnText.textContent = "Dépointer (Départ)";
-                    btnSub.textContent = "Vous êtes actuellement présent";
-                    btnIcon.classList.remove('bg-gray-100', 'text-gray-600');
-                    btnIcon.classList.add('bg-orange-100', 'text-orange-600');
-                } else {
-                    btnText.textContent = "Pointer (Arrivée)";
-                    btnSub.textContent = "Vous n'êtes pas encore pointé";
-                    btnIcon.classList.remove('bg-orange-100', 'text-orange-600');
-                    btnIcon.classList.add('bg-green-100', 'text-green-600');
+                try {
+                    // 1. Demande de persistance stockage
+                    if (navigator.storage && navigator.storage.persist) {
+                        await navigator.storage.persist();
+                    }
+
+                    // 2. Fetch manuel des librairies pour forcer le cache HTTP
+                    const urlsToCache = [
+                        "https://cdn.tailwindcss.com",
+                        "https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js",
+                        "https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js",
+                        "https://unpkg.com/@babel/standalone/babel.min.js",
+                        "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js",
+                        "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js",
+                        "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js",
+                        "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js",
+                        "https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js",
+                        "https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"
+                    ];
+
+                    await Promise.all(urlsToCache.map(url => fetch(url, { mode: 'no-cors' })));
+
+                    // 3. Force le chargement des données Firestore
+                    const collectionsToWarm = ['traceability', 'equipments', 'cleaning'];
+                    for (const colName of collectionsToWarm) {
+                        let q = window.appId === 'epack-prod-data' 
+                            ? window.query(window.collection(window.db, 'haccp_data', restaurantId, colName), window.limit(100))
+                            : window.query(window.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'haccp_items'), window.where('restaurantId', '==', restaurantId), window.where('category', '==', colName), window.limit(100));
+                        await window.getDocs(q);
+                    }
+
+                    alert("✅ Données synchronisées et cache mis à jour !\n\nVous pouvez maintenant passer en mode avion ou couper le Wi-Fi, l'application restera fonctionnelle tant que vous ne videz pas le cache du navigateur.");
+                } catch (e) {
+                    alert("⚠️ Erreur de synchronisation : " + e.message);
+                    console.error(e);
+                } finally {
+                    setIsCaching(false);
                 }
-             } catch(e) {
-                 console.error(e);
-             }
-        }
+            };
 
-        window.onMenuPunch = () => {
-             // Reuse existing punch logic, but triggered from menu
-             if (!currentEmployee) return;
-             handlePunchLogic(currentEmployee);
-        };
-
-        window.onMenuHistory = () => {
-            if (!currentEmployee) return;
-            // Switch to History View
-            document.getElementById('step-dashboard').classList.add('hidden');
-            document.getElementById('step-history').classList.remove('hidden');
+            if (isAuthLoading) return <div className="flex items-center justify-center h-full text-green-700 font-bold animate-pulse">Chargement de vos données...</div>;
+            if (isLocked) { return <PinScreen onLogin={handleLogin} isLoading={isLoginLoading} />; }
             
-            // Render Table
-            const today = new Date();
-            renderTableHTML('employee-history-body', [currentEmployee], today.getFullYear(), today.getMonth() + 1);
+            const MenuBtn = ({ id, label, icon }) => ( <button onClick={() => setTab(id)} className={`w-full flex items-center gap-4 px-4 py-4 rounded-xl transition-all ${tab === id ? 'bg-green-600 text-white shadow-lg' : 'text-gray-600 hover:bg-green-50'}`}><Icon name={icon} className="w-6 h-6"/> <span className="font-semibold text-lg hidden lg:inline">{label}</span><span className="lg:hidden"><Icon name={icon} className="w-8 h-8"/></span></button> );
+
+            return (
+                <div className="flex h-[100dvh] bg-green-50/50 w-full overflow-hidden flex-col md:flex-row fade-in-element">
+                    <div className="md:w-72 bg-white border-r border-gray-200 z-50 flex flex-col md:h-full shadow-xl order-2 md:order-1">
+                        <div className="p-6 border-b hidden md:flex justify-start items-center gap-2"><h1 className="text-2xl font-extrabold text-green-700">eHygiène<span className="text-green-400">.</span></h1></div>
+                        <div className="p-4 bg-green-50 border-b hidden md:block"><p className="text-xs text-green-600 font-bold uppercase tracking-wider">Restaurant</p><p className="font-bold text-gray-800 truncate">{restaurantId}</p></div>
+                        <nav className="p-2 space-y-2 flex-1 overflow-y-auto hidden md:block">
+                            <MenuBtn id="traceability" label="Traçabilité" icon="ScanBarcode"/>
+                            <MenuBtn id="temperature" label="Températures" icon="Thermometer"/>
+                            <MenuBtn id="tracking" label="Suivi & Hygiène" icon="ClipboardList"/>
+                            
+                            <div className="pt-4 mt-4 border-t px-2">
+                                <button onClick={handleInstallCache} disabled={isCaching || !isOnline} className="w-full py-3 px-3 text-sm bg-orange-50 text-orange-700 hover:bg-orange-100 rounded-lg flex items-center gap-2 border border-orange-200 font-semibold disabled:opacity-50">
+                                    <Icon name="Smartphone" className="w-5 h-5"/> {isCaching ? "Synchronisation..." : "Synchroniser (Hors-Ligne)"}
+                                </button>
+                                <p className="text-[10px] text-gray-400 mt-2 text-center px-2">Cliquez pour mettre à jour les données hors-ligne.</p>
+                            </div>
+                        </nav>
+                        <div className="p-4 border-t hidden md:block"><button onClick={handleLock} className="w-full py-2 text-sm text-red-500 hover:bg-red-50 rounded flex items-center justify-center gap-2"><Icon name="LogOut" className="w-4 h-4"/> Verrouiller</button></div>
+                        <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 flex justify-around p-3 z-50 pb-safe">
+                            <button onClick={() => setTab('traceability')} className={`flex flex-col items-center ${tab === 'traceability' ? 'text-green-600' : 'text-green-600/50'}`}><Icon name="ScanBarcode" className="w-6 h-6"/><span className="text-xs">Traçabilité</span></button>
+                            <button onClick={() => setTab('temperature')} className={`flex flex-col items-center ${tab === 'temperature' ? 'text-green-600' : 'text-green-600/50'}`}><Icon name="Thermometer" className="w-6 h-6"/><span className="text-xs">Températures</span></button>
+                            <button onClick={() => setTab('tracking')} className={`flex flex-col items-center ${tab === 'tracking' ? 'text-green-600' : 'text-green-600/50'}`}><Icon name="ClipboardList" className="w-6 h-6"/><span className="text-xs">Suivi</span></button>
+                            <button onClick={handleInstallCache} className={`flex flex-col items-center text-orange-600/70`}><Icon name="Smartphone" className="w-6 h-6"/><span className="text-xs">Sync</span></button>
+                        </div>
+                    </div>
+                    <main className="flex-1 flex flex-col h-full overflow-hidden relative w-full order-1 md:order-2 pb-16 md:pb-0">
+                        {/* HEADER MOBILE + BADGE OFFLINE */}
+                        <div className="md:hidden bg-white p-4 border-b flex justify-between items-center relative">
+                            <h1 className="text-xl font-extrabold text-green-700">eHygiène<span className="text-green-400">.</span></h1>
+                            {!isOnline && <div className="absolute left-1/2 transform -translate-x-1/2 bg-orange-100 text-orange-600 px-3 py-1 rounded-full text-xs font-bold border border-orange-200 flex items-center gap-1 shadow-sm"><Icon name="WifiOff" className="w-3 h-3"/> Hors Ligne</div>}
+                            <button onClick={handleLock} className="text-red-500"><Icon name="LogOut" className="w-6 h-6"/></button>
+                        </div>
+                         {/* HEADER DESKTOP BADGE OFFLINE */}
+                         <div className="hidden md:flex absolute top-4 right-10 z-50">
+                            {!isOnline && <div className="offline-badge"><Icon name="WifiOff" className="w-4 h-4"/> Mode Hors Ligne</div>}
+                        </div>
+
+                        <div className="flex-1 overflow-y-auto p-4 lg:p-10 w-full">
+                            <div className="max-w-5xl mx-auto w-full">
+                                {tab === 'traceability' && <TraceabilityModule restaurantId={restaurantId} />}
+                                {tab === 'temperature' && <TemperatureModule restaurantId={restaurantId} />}
+                                {tab === 'tracking' && <MonitoringModule restaurantId={restaurantId} />}
+                            </div>
+                        </div>
+                    </main>
+                </div>
+            );
         };
 
-        window.resetToCodeEntry = () => {
-            currentEmployee = null;
-            document.getElementById('employee-code').value = '';
-            document.getElementById('step-login').classList.remove('hidden');
-            document.getElementById('step-dashboard').classList.add('hidden');
-            document.getElementById('step-history').classList.add('hidden');
-        };
-
-        // RENAMED old handlePunch to handlePunchLogic to be called by menu
-        window.handlePunchLogic = async (emp) => {
-            try {
-                const s = await getDocs(query(getColRef('punches'), where('employeeCode', '==', emp.code)));
-                const active = s.docs.filter(d=>d.data().punchOutTime===null).sort((a,b)=>b.data().punchInTime.toMillis()-a.data().punchInTime.toMillis())[0];
-                if(active) openManualTimeModal('OUT', emp, active); else openManualTimeModal('IN', emp, null);
-            } catch(e) { console.error(e); }
-        };
-        
-        // Keep generic handlePunch for backward compatibility if button remains, but we changed the button onclick
-        window.handlePunch = () => { verifyCodeAndShowMenu(); };
-
-        window.openManualTimeModal = (mode, employee, punchDoc) => {
-            currentPunchMode = mode; currentManualEmployee = employee; currentManualPunchDoc = punchDoc;
-            const modal = document.getElementById('manual-time-modal');
-            const title = document.getElementById('manual-time-title');
-            const dateInput = document.getElementById('manual-punch-date');
-            const now = new Date();
-            
-            // --- NIGHT SHIFT LOGIC (Default Date) ---
-            // If it is between 00:00 and 03:00, default date is Yesterday
-            const effectiveDate = new Date(now);
-            if (now.getHours() < 3) {
-                effectiveDate.setDate(effectiveDate.getDate() - 1);
-            }
-            
-            // FIX: Use local date string instead of UTC-based toISOString
-            dateInput.value = getLocalDateInputValue(effectiveDate);
-            
-            // Scroll wheels to now (Real time)
-            const h = String(now.getHours()).padStart(2, '0');
-            const m = String(now.getMinutes()).padStart(2, '0');
-            // We need a small timeout to let modal render before scrolling
-            setTimeout(() => scrollToTime(h, m), 50);
-
-            if (mode === 'IN') { title.textContent = `Bonjour ${employee.name} (Arrivée)`; }
-            else { title.textContent = `Au revoir ${employee.name} (Départ)`; }
-            
-            modal.classList.remove('hidden'); modal.classList.add('flex');
-        };
-
-        window.closeManualTimeModal = () => { document.getElementById('manual-time-modal').classList.add('hidden'); document.getElementById('manual-time-modal').classList.remove('flex'); currentPunchMode = null; };
-        
-        window.adjustBreakRed = (amount) => { const input = document.getElementById('red-punch-break'); let val = parseInt(input.value) || 0; val = Math.max(0, val + amount); input.value = val; };
-        
-        window.setManualToNow = () => { 
-            const now = new Date(); 
-            // NIGHT SHIFT LOGIC (Button)
-            const effectiveDate = new Date(now);
-            if (now.getHours() < 3) {
-                effectiveDate.setDate(effectiveDate.getDate() - 1);
-            }
-            // FIX: Use local date
-            document.getElementById('manual-punch-date').value = getLocalDateInputValue(effectiveDate);
-            scrollToTime(String(now.getHours()).padStart(2,'0'), String(now.getMinutes()).padStart(2,'0')); 
-        };
-
-        window.confirmManualPunch = async () => {
-            if (!currentManualEmployee) return;
-            const dateStr = document.getElementById('manual-punch-date').value;
-            // Get time from global vars updated by scroll
-            const timeStr = `${selectedHour}:${selectedMinute}`;
-            if (!dateStr) { alert("Date requise."); return; }
-            
-            // FIX: Manual construction of Date to avoid UTC shift issues
-            const [y, mo, d] = dateStr.split('-').map(Number);
-            const [h, mi] = timeStr.split(':').map(Number);
-            const dateTime = new Date(y, mo - 1, d, h, mi);
-            
-            // --- NIGHT SHIFT LOGIC (Timestamp Construction) ---
-            // If the user selected "Yesterday" (because h<3), but the Time is < 3am, 
-            // we need to add 1 day to the physical timestamp so it matches reality.
-            // Example: Today is Tuesday 01:00. DatePicker defaults to Monday. TimePicker is 01:00.
-            // dateTime becomes Monday 01:00. This is 24h ago.
-            // We want the timestamp to be Tuesday 01:00 (Reality).
-            if (h < 3) {
-                 dateTime.setDate(dateTime.getDate() + 1);
-            }
-
-            // TEMP SAVE for OUT
-            tempPunchDate = dateTime;
-
-            try {
-                if (currentPunchMode === 'IN') { 
-                    // Direct Save for IN
-                    const docRef = await addDoc(getColRef('punches'), { employeeCode: currentManualEmployee.code, employeeName: currentManualEmployee.name, punchInTime: Timestamp.fromDate(dateTime), punchOutTime: null, breakDuration: 0 }); 
-                    closeManualTimeModal();
-                    resetToCodeEntry();
-                    showSuccessModal(`Bonjour ${currentManualEmployee.name} ! Pointage enregistré.`, docRef.id); 
-                }
-                else if (currentPunchMode === 'OUT' && currentManualPunchDoc) { 
-                    // NEW FLOW: Close time modal, Open break modal
-                    closeManualTimeModal();
-                    openBreakModal();
-                }
-                
-            } catch (e) { console.error("Erreur pointage manuel:", e); alert("Erreur: " + e.message); }
-        };
-
-        // NEW: Open Red Break Modal
-        window.openBreakModal = () => {
-            const modal = document.getElementById('break-selection-modal');
-            // Reset value
-            document.getElementById('red-punch-break').value = 0;
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
-        };
-
-        // NEW: Confirm Break and Final Save
-        window.confirmBreak = async () => {
-            const breakDuration = parseInt(document.getElementById('red-punch-break').value) || 0;
-            const modal = document.getElementById('break-selection-modal');
-            
-            try {
-                // Perform the Update
-                await updateDoc(currentManualPunchDoc.ref, { punchOutTime: Timestamp.fromDate(tempPunchDate), breakDuration: breakDuration });
-                
-                modal.classList.add('hidden');
-                modal.classList.remove('flex');
-                
-                resetToCodeEntry();
-                showSuccessModal(`Au revoir ${currentManualEmployee.name} ! Dépointage enregistré.`, currentManualPunchDoc.id);
-
-            } catch(e) {
-                 console.error("Erreur break save:", e); 
-                 alert("Erreur: " + e.message); 
-            }
-        };
-
-        // DEPRECATED displayEmployeeStatus - Removed logic calling this
-        async function displayEmployeeStatus(emp) { /* Empty */ }
-
-        window.addEmployee = async () => { const n=document.getElementById('new-employee-name').value, c=document.getElementById('new-employee-code').value; if(n&&c.length===4) try{ await addDoc(getColRef('employees'), {name:n, code:c}); document.getElementById('new-employee-name').value=''; document.getElementById('new-employee-code').value=''; }catch(e){} };
-        window.deleteEmployee = async (id, name) => { if(confirm(`Del ${name}?`)) await deleteDoc(getDocRef('employees', id)); };
-        function renderEmployeeTable() { const b = document.getElementById('employee-table-body'); b.innerHTML=''; employees.forEach(e=>{ b.innerHTML+=`<tr class="hover:bg-gray-50"><td class="px-6 py-3">${e.name}</td><td class="px-6 py-3">${e.code}</td><td class="px-6 py-3"><button onclick="deleteEmployee('${e.id}','${e.name}')" class="text-red-600">Supprimer</button></td></tr>`; }); }
-        
-        // OLD renderPunchTable - not used for main display anymore, logic moved to preview
-        function renderPunchTable() { /* kept empty or remove */ }
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
     </script>
 </body>
 </html>
