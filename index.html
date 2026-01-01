@@ -29,7 +29,6 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#16a34a">
     <meta name="mobile-web-app-capable" content="yes">
-    <!-- Empêche le zoom sur input focus sur iOS -->
     <meta name="format-detection" content="telephone=no">
 
     <script>
@@ -48,7 +47,6 @@
                     const appleIcon = document.getElementById('dynamic-apple-icon');
                     if (appleIcon) appleIcon.href = pngUrl;
                     
-                    // Manifeste PWA complet pour installation Homescreen
                     const manifest = { 
                         "name": "eHygiène So'Chris", 
                         "short_name": "So'Chris", 
@@ -94,7 +92,6 @@
         let initialAuthToken = null;
 
         try {
-            // Configuration dynamique pour l'environnement Canvas/Web
             if (typeof __firebase_config !== 'undefined') {
                 firebaseConfig = JSON.parse(__firebase_config);
                 appId = __app_id;
@@ -103,7 +100,6 @@
                 throw new Error("Env variables missing");
             }
         } catch (e) {
-            // Configuration de secours (Fallback Production)
             console.log("Mode Secours (Fallback)");
             firebaseConfig = { apiKey: "AIzaSyCoMV_kNz-eI1JlLp33h0iJ4MZR7NnoI-w", authDomain: "epack-hygiene-99e64.firebaseapp.com", projectId: "epack-hygiene-99e64", storageBucket: "epack-hygiene-99e64.firebasestorage.app", messagingSenderId: "917463324646", appId: "1:917463324646:web:14856a7207be0353aca827" };
             appId = 'epack-prod-data'; 
@@ -115,7 +111,6 @@
         const storage = getStorage(app); 
 
         // --- 3. PERSISTANCE INDEXEDDB CRITIQUE ---
-        // C'est ce bloc qui permet à l'app de fonctionner sans réseau après fermeture
         try {
             enableIndexedDbPersistence(db).catch((err) => {
                 if (err.code == 'failed-precondition') {
@@ -149,7 +144,6 @@
         .offline-badge { background-color: #f97316; color: white; padding: 4px 12px; border-radius: 9999px; font-weight: bold; font-size: 0.8rem; box-shadow: 0 2px 4px rgba(0,0,0,0.2); animation: pulse 2s infinite; display: flex; align-items: center; gap: 6px; }
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.8; } 100% { opacity: 1; } }
         
-        /* Loader Statique */
         #static-loader { position: fixed; inset: 0; background: #f0fdf4; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; font-family: sans-serif; text-align: center; padding: 20px; transition: opacity 0.5s; }
         .loader-spinner { width: 40px; height: 40px; border: 4px solid #dcfce7; border-top: 4px solid #16a34a; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
@@ -158,7 +152,7 @@
 </head>
 <body class="bg-green-50 text-gray-900 h-screen w-screen overflow-hidden select-none font-sans">
     
-    <!-- LOADER (Déplacé hors de root pour éviter l'effacement par React) -->
+    <!-- LOADER (Hors de root pour éviter l'écrasement) -->
     <div id="static-loader">
         <div class="loader-spinner" id="loader-spinner"></div>
         <h2 style="color: #166534; font-weight: bold; font-size: 1.25rem; margin-bottom: 10px;">eHygiène So'Chris</h2>
@@ -166,7 +160,7 @@
         
         <div id="offline-error">
             <h3 style="font-weight: bold; margin-bottom: 5px;">Installation Requise</h3>
-            <p style="font-size: 0.9rem; margin-bottom: 10px;">Le premier démarrage nécessite une connexion Internet pour télécharger l'application.</p>
+            <p style="font-size: 0.9rem; margin-bottom: 10px;">Le premier démarrage nécessite une connexion Internet.</p>
             <button onclick="window.location.reload()" style="margin-top: 15px; padding: 10px 20px; background: #16a34a; color: white; border: none; border-radius: 5px; font-weight: bold;">Réessayer</button>
         </div>
         
@@ -184,7 +178,7 @@
                 document.getElementById('loader-text').style.display = 'none';
                 document.getElementById('offline-error').style.display = 'block';
             }
-        }, 10000); // 10 secondes timeout
+        }, 10000); 
     </script>
 
     <script type="text/babel">
@@ -282,29 +276,35 @@
             const addItem = async (item) => {
                 if (!restaurantId) return;
                 let itemToSave = { ...item };
-                const isOffline = !navigator.onLine;
+                const isOffline = !navigator.onLine; // DÉTECTION STRICTE DU RÉSEAU
 
-                // Gestion intelligente des fichiers hors-ligne
+                // GESTION INTELLIGENTE DES FICHIERS HORS-LIGNE (QUEUE SYNC)
                 if (item.rawFile) {
                     if (isOffline) {
+                        // 1. MODE HORS-LIGNE : On stocke l'image EN BASE64 dans le document Firestore
+                        // Cela force Firestore à garder le document en "Pending Write" (File d'attente)
+                        // L'upload se fera automatiquement quand le réseau reviendra.
+                        // On compresse + fort pour ne pas dépasser la limite de 1MB par doc.
                         if (item.photo && item.photo.startsWith('data:')) { 
-                            const compressed = await compressImage(item.photo, 1200, 0.8); 
+                            const compressed = await compressImage(item.photo, 800, 0.6); // Compression agressive
                             itemToSave.photo = compressed; 
                         }
-                        delete itemToSave.rawFile;
+                        delete itemToSave.rawFile; // On ne garde pas le fichier Raw Blob (non-serialisable)
                     } else {
+                        // 2. MODE EN LIGNE : On upload proprement sur Storage
                         try {
                             const fileName = `${restaurantId}/${category}/${Date.now()}_${Math.random().toString(36).substr(2, 9)}.jpg`;
                             const storageRef = window.ref(window.storage, fileName);
-                            // Timeout 10s
-                            const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 10000));
+                            // Timeout de secours
+                            const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout Upload")), 8000));
                             await Promise.race([window.uploadBytes(storageRef, item.rawFile), timeoutPromise]);
                             const url = await window.getDownloadURL(storageRef);
                             itemToSave.photo = url; delete itemToSave.rawFile;
                         } catch (e) {
-                            console.log("Upload échoué (offline?), repli local", e);
+                            console.log("Upload échoué (réseau instable?), repli Local", e);
+                            // Si l'upload échoue, on fallback sur la méthode hors-ligne (Base64)
                             if (item.photo && item.photo.startsWith('data:')) { 
-                                const compressed = await compressImage(item.photo, 1200, 0.8); 
+                                const compressed = await compressImage(item.photo, 800, 0.6); 
                                 itemToSave.photo = compressed; 
                                 delete itemToSave.rawFile; 
                             } 
@@ -314,7 +314,7 @@
                 }
                 if (itemToSave.order === undefined) itemToSave.order = Date.now();
                 try {
-                    // Firebase gère automatiquement la file d'attente hors-ligne
+                    // L'écriture Firestore est asynchrone mais "optimiste" (réussite locale immédiate)
                     if (window.appId === 'epack-prod-data') await window.addDoc(window.collection(window.db, 'haccp_data', restaurantId, category), { createdAt: Date.now(), ...itemToSave });
                     else await window.addDoc(window.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'haccp_items'), { restaurantId, category, createdAt: Date.now(), ...itemToSave });
                 } catch (e) { alert("Erreur sauvegarde: " + e.message); }
@@ -932,7 +932,13 @@
                         "https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"
                     ];
 
-                    await Promise.all(urlsToCache.map(url => fetch(url, { mode: 'cors', cache: 'reload' })));
+                    // TOLÉRANCE AUX PANNES DE TÉLÉCHARGEMENT (Promise.allSettled)
+                    const results = await Promise.allSettled(urlsToCache.map(url => fetch(url, { cache: 'reload' })));
+                    
+                    const failed = results.filter(r => r.status === 'rejected');
+                    if (failed.length > 0) {
+                        console.warn("Certains fichiers n'ont pas pu être mis en cache", failed);
+                    }
 
                     const collectionsToWarm = ['traceability', 'equipments', 'cleaning'];
                     for (const colName of collectionsToWarm) {
@@ -944,7 +950,7 @@
                         } catch(e) {}
                     }
                     localStorage.setItem('app_cached_v3', 'true');
-                    alert("✅ Application téléchargée pour hors-ligne !");
+                    alert(failed.length > 0 ? `⚠️ MàJ partielle (${failed.length} erreurs). Réessayez plus tard.` : "✅ Application téléchargée pour hors-ligne !");
                 } catch (e) {
                     alert("⚠️ Erreur téléchargement : " + e.message);
                 } finally {
