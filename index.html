@@ -2,19 +2,24 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>eHygiène - So'Chris</title>
     
-    <!-- OPTIMISATION CACHE & PRELOAD -->
-    <meta http-equiv="Cache-Control" content="public, max-age=31536000">
+    <!-- SÉCURITÉ & OPTIMISATION CACHE -->
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta http-equiv="Cache-Control" content="public, max-age=31536000, immutable">
+    
+    <!-- PRÉ-CHARGEMENT DES RESSOURCES CRITIQUES (FAILSAFE) -->
     <link rel="preload" href="https://cdn.tailwindcss.com" as="script">
     <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js" as="script">
     <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js" as="script">
     <link rel="preload" href="https://unpkg.com/@babel/standalone/babel.min.js" as="script">
     <link rel="preload" href="https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js" as="script">
     <link rel="preload" href="https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js" as="script">
+    <link rel="preload" href="https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js" as="script">
+    <link rel="preload" href="https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js" as="script">
     
-    <!-- ICONS & PWA CONFIG -->
+    <!-- CONFIGURATION PWA IOS/ANDROID -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj48cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgcng9IjEyMCIgZmlsbD0iIzE2YTM0YSIvPjxwYXRoIGQ9Ik0yNTYgODBjMCAwIDE0MCAyNSAxNDAgMTQwYzAgMTAwLTgwIDE4MC0xNDAgMjEyYy02MC0zMi0xNDAtMTEyLTE0MC0yMTJjMC0xMTUgMTQwLTE0MCAxNDAtMTQweiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjMwIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48cGF0aCBkPSJNMzM2IDIwMGwtMTAwIDEwMGwtNjAtNjAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2ZmZiIgc3Ryb2tlLXdpZHRoPSIzMCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PC9zdmc+">
     <link rel="apple-touch-icon" id="dynamic-apple-icon" href="">
     <link rel="manifest" id="dynamic-manifest" href="">
@@ -24,44 +29,52 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#16a34a">
     <meta name="mobile-web-app-capable" content="yes">
+    <!-- Empêche le zoom sur input focus sur iOS -->
+    <meta name="format-detection" content="telephone=no">
 
     <script>
-        // Génération dynamique du Manifeste PWA et de l'icône Apple
+        // --- 1. GÉNÉRATION PWA ROBUSTE ---
         (function() {
-            const svgIcon = `data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj48cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgcng9IjEyMCIgZmlsbD0iIzE2YTM0YSIvPjxwYXRoIGQ9Ik0yNTYgODBjMCAwIDE0MCAyNSAxNDAgMTQwYzAgMTAwLTgwIDE4MC0xNDAgMjEyYy02MC0zMi0xNDAtMTEyLTE0MC0yMTJjMC0xMTUgMTQwLTE0MCAxNDAtMTQweiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjMwIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48cGF0aCBkPSJNMzM2IDIwMGwtMTAwIDEwMGwtNjAtNjAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2ZmZiIgc3Ryb2tlLXdpZHRoPSIzMCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PC9zdmc+`;
-            const img = new Image();
-            img.onload = function() {
-                const canvas = document.createElement('canvas');
-                canvas.width = 512; canvas.height = 512;
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(img, 0, 0, 512, 512);
-                const pngUrl = canvas.toDataURL('image/png');
-                
-                const appleIcon = document.getElementById('dynamic-apple-icon');
-                if (appleIcon) appleIcon.href = pngUrl;
-                
-                const manifest = { 
-                    "name": "eHygiène So'Chris", 
-                    "short_name": "So'Chris", 
-                    "start_url": window.location.href, // Force l'URL courante comme point de départ
-                    "display": "standalone", 
-                    "orientation": "portrait",
-                    "background_color": "#f0fdf4", 
-                    "theme_color": "#16a34a", 
-                    "scope": ".",
-                    "icons": [ { "src": pngUrl, "sizes": "512x512", "type": "image/png", "purpose": "any maskable" } ] 
+            try {
+                const svgIcon = `data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj48cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgcng9IjEyMCIgZmlsbD0iIzE2YTM0YSIvPjxwYXRoIGQ9Ik0yNTYgODBjMCAwIDE0MCAyNSAxNDAgMTQwYzAgMTAwLTgwIDE4MC0xNDAgMjEyYy02MC0zMi0xNDAtMTEyLTE0MC0yMTJjMC0xMTUgMTQwLTE0MCAxNDAtMTQweiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjMwIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48cGF0aCBkPSJNMzM2IDIwMGwtMTAwIDEwMGwtNjAtNjAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2ZmZiIgc3Ryb2tlLXdpZHRoPSIzMCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PC9zdmc+`;
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = 512; canvas.height = 512;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, 512, 512);
+                    const pngUrl = canvas.toDataURL('image/png');
+                    
+                    const appleIcon = document.getElementById('dynamic-apple-icon');
+                    if (appleIcon) appleIcon.href = pngUrl;
+                    
+                    // Manifeste PWA complet pour installation Homescreen
+                    const manifest = { 
+                        "name": "eHygiène So'Chris", 
+                        "short_name": "So'Chris", 
+                        "start_url": ".", 
+                        "display": "standalone", 
+                        "orientation": "portrait",
+                        "background_color": "#f0fdf4", 
+                        "theme_color": "#16a34a", 
+                        "scope": ".",
+                        "icons": [ 
+                            { "src": pngUrl, "sizes": "512x512", "type": "image/png", "purpose": "any maskable" },
+                            { "src": pngUrl, "sizes": "192x192", "type": "image/png" } 
+                        ] 
+                    };
+                    const stringManifest = JSON.stringify(manifest);
+                    const blob = new Blob([stringManifest], {type: 'application/json'});
+                    const manifestUrl = URL.createObjectURL(blob);
+                    const manifestLink = document.getElementById('dynamic-manifest');
+                    if (manifestLink) manifestLink.href = manifestUrl;
                 };
-                const stringManifest = JSON.stringify(manifest);
-                const blob = new Blob([stringManifest], {type: 'application/json'});
-                const manifestUrl = URL.createObjectURL(blob);
-                const manifestLink = document.getElementById('dynamic-manifest');
-                if (manifestLink) manifestLink.href = manifestUrl;
-            };
-            img.src = svgIcon;
+                img.src = svgIcon;
+            } catch(e) { console.error("PWA Init Error", e); }
         })();
     </script>
 
-    <!-- SCRIPTS MOTEUR (Chargés via CDN pour mise en cache) -->
+    <!-- CHARGEMENT ASYNCHRONE OPTIMISÉ -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
     <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
@@ -70,6 +83,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     
     <script type="module">
+        // --- 2. CONFIGURATION FIREBASE & OFFLINE PERSISTENCE ---
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc, updateDoc, query, where, setDoc, getDocs, enableIndexedDbPersistence, limit, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
@@ -80,11 +94,17 @@
         let initialAuthToken = null;
 
         try {
-            firebaseConfig = JSON.parse(__firebase_config);
-            appId = __app_id;
-            if (typeof __initial_auth_token !== 'undefined') { initialAuthToken = __initial_auth_token; }
+            // Configuration dynamique pour l'environnement Canvas/Web
+            if (typeof __firebase_config !== 'undefined') {
+                firebaseConfig = JSON.parse(__firebase_config);
+                appId = __app_id;
+                if (typeof __initial_auth_token !== 'undefined') initialAuthToken = __initial_auth_token;
+            } else {
+                throw new Error("Env variables missing");
+            }
         } catch (e) {
-            console.log("Mode Production / Secours");
+            // Configuration de secours (Fallback Production)
+            console.log("Mode Secours (Fallback)");
             firebaseConfig = { apiKey: "AIzaSyCoMV_kNz-eI1JlLp33h0iJ4MZR7NnoI-w", authDomain: "epack-hygiene-99e64.firebaseapp.com", projectId: "epack-hygiene-99e64", storageBucket: "epack-hygiene-99e64.firebasestorage.app", messagingSenderId: "917463324646", appId: "1:917463324646:web:14856a7207be0353aca827" };
             appId = 'epack-prod-data'; 
         }
@@ -94,17 +114,19 @@
         const db = getFirestore(app);
         const storage = getStorage(app); 
 
-        // --- ACTIVATION PERSISTANCE HORS LIGNE (CRITIQUE) ---
+        // --- 3. PERSISTANCE INDEXEDDB CRITIQUE ---
+        // C'est ce bloc qui permet à l'app de fonctionner sans réseau après fermeture
         try {
             enableIndexedDbPersistence(db).catch((err) => {
                 if (err.code == 'failed-precondition') {
-                    console.warn("Persistance échouée : multiples onglets ouverts.");
+                    console.warn("Persistance : onglet déjà ouvert.");
                 } else if (err.code == 'unimplemented') {
-                    console.warn("Persistance non supportée par ce navigateur.");
+                    console.warn("Persistance non supportée.");
                 }
             });
         } catch(e) { console.log("Erreur init persistence", e); }
 
+        // Exposition globale sécurisée
         window.db = db; window.auth = auth; window.storage = storage; window.appId = appId; window.initialAuthToken = initialAuthToken; 
         window.collection = collection; window.addDoc = addDoc; window.onSnapshot = onSnapshot; window.deleteDoc = deleteDoc; window.doc = doc; window.updateDoc = updateDoc; window.setDoc = setDoc;
         window.query = query; window.where = where; window.getDocs = getDocs; window.limit = limit; window.orderBy = orderBy;
@@ -115,7 +137,7 @@
     </script>
 
     <style>
-        body { -webkit-tap-highlight-color: transparent; }
+        body { -webkit-tap-highlight-color: transparent; overscroll-behavior-y: none; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         .fade-in-element { animation: fadeIn 0.3s ease-out; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
@@ -127,7 +149,7 @@
         .offline-badge { background-color: #f97316; color: white; padding: 4px 12px; border-radius: 9999px; font-weight: bold; font-size: 0.8rem; box-shadow: 0 2px 4px rgba(0,0,0,0.2); animation: pulse 2s infinite; display: flex; align-items: center; gap: 6px; }
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.8; } 100% { opacity: 1; } }
         
-        /* Loader Statique et Error Screen */
+        /* Loader Statique */
         #static-loader { position: fixed; inset: 0; background: #f0fdf4; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; font-family: sans-serif; text-align: center; padding: 20px; transition: opacity 0.5s; }
         .loader-spinner { width: 40px; height: 40px; border: 4px solid #dcfce7; border-top: 4px solid #16a34a; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
@@ -135,47 +157,40 @@
     </style>
 </head>
 <body class="bg-green-50 text-gray-900 h-screen w-screen overflow-hidden select-none font-sans">
-    <!-- LOADER INITIAL (Visible avant que React ne charge) -->
-    <div id="root" class="h-full w-full">
-        <div id="static-loader">
-            <div class="loader-spinner" id="loader-spinner"></div>
-            <h2 style="color: #166534; font-weight: bold; font-size: 1.25rem; margin-bottom: 10px;">eHygiène So'Chris</h2>
-            <p id="loader-text" style="color: #4b5563; font-size: 0.9rem;">Démarrage de l'application...</p>
-            
-            <div id="offline-error">
-                <h3 style="font-weight: bold; margin-bottom: 5px;">⚠️ Connexion Requise</h3>
-                <p style="font-size: 0.9rem; margin-bottom: 10px;">Impossible de charger les fichiers de l'application.</p>
-                <ul style="text-align: left; font-size: 0.85rem; color: #7f1d1d; list-style-type: disc; padding-left: 20px;">
-                    <li>Connectez-vous à Internet (Wi-Fi/4G).</li>
-                    <li>Rechargez la page.</li>
-                    <li>Utilisez ensuite le bouton <b>"Synchroniser"</b> dans le menu.</li>
-                </ul>
-                <button onclick="window.location.reload()" style="margin-top: 15px; padding: 10px 20px; background: #dc2626; color: white; border: none; border-radius: 5px; font-weight: bold;">Réessayer</button>
-            </div>
-
-            <p id="loader-hint" style="color: #9ca3af; font-size: 0.8rem; margin-top: 20px; max-width: 300px;">
-                Initialisation des composants...
-            </p>
+    
+    <!-- LOADER (Déplacé hors de root pour éviter l'effacement par React) -->
+    <div id="static-loader">
+        <div class="loader-spinner" id="loader-spinner"></div>
+        <h2 style="color: #166534; font-weight: bold; font-size: 1.25rem; margin-bottom: 10px;">eHygiène So'Chris</h2>
+        <p id="loader-text" style="color: #4b5563; font-size: 0.9rem;">Chargement des modules...</p>
+        
+        <div id="offline-error">
+            <h3 style="font-weight: bold; margin-bottom: 5px;">Installation Requise</h3>
+            <p style="font-size: 0.9rem; margin-bottom: 10px;">Le premier démarrage nécessite une connexion Internet pour télécharger l'application.</p>
+            <button onclick="window.location.reload()" style="margin-top: 15px; padding: 10px 20px; background: #16a34a; color: white; border: none; border-radius: 5px; font-weight: bold;">Réessayer</button>
         </div>
+        
+        <p id="cache-status" style="margin-top: 20px; color: #16a34a; font-size: 0.8rem; display:none;">Mise en cache pour hors-ligne...</p>
     </div>
 
-    <!-- Script de secours -->
+    <!-- APP ROOT -->
+    <div id="root" class="h-full w-full"></div>
+
+    <!-- SCRIPT DE SECOURS (Si CDN HS) -->
     <script>
         setTimeout(function() {
             if (!window.React) {
                 document.getElementById('loader-spinner').style.display = 'none';
                 document.getElementById('loader-text').style.display = 'none';
-                document.getElementById('loader-hint').style.display = 'none';
                 document.getElementById('offline-error').style.display = 'block';
             }
-        }, 8000);
+        }, 10000); // 10 secondes timeout
     </script>
 
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
 
-        // --- HELPER INDEXEDDB POUR BROUILLONS ROBUSTES ---
-        // Permet de stocker des images volumineuses sans limite de 5Mo comme localStorage
+        // --- 4. GESTIONNAIRE DE CACHE IDB (Images/Drafts) ---
         const SimpleIDB = {
             dbName: 'SoChrisDrafts',
             storeName: 'drafts',
@@ -259,7 +274,7 @@
                     });
                     setData(items);
                 }, (error) => {
-                    console.warn("Sync (hors ligne?):", error.message);
+                    console.warn("Mode Hors-ligne actif pour", category);
                 });
                 return () => unsubscribe();
             }, [restaurantId, category]);
@@ -269,9 +284,9 @@
                 let itemToSave = { ...item };
                 const isOffline = !navigator.onLine;
 
+                // Gestion intelligente des fichiers hors-ligne
                 if (item.rawFile) {
                     if (isOffline) {
-                        console.log("Hors-ligne détecté: Sauvegarde locale de l'image (Optimisée)");
                         if (item.photo && item.photo.startsWith('data:')) { 
                             const compressed = await compressImage(item.photo, 1200, 0.8); 
                             itemToSave.photo = compressed; 
@@ -281,14 +296,13 @@
                         try {
                             const fileName = `${restaurantId}/${category}/${Date.now()}_${Math.random().toString(36).substr(2, 9)}.jpg`;
                             const storageRef = window.ref(window.storage, fileName);
-                            // Timeout upload 10s pour éviter bloquage
+                            // Timeout 10s
                             const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 10000));
                             await Promise.race([window.uploadBytes(storageRef, item.rawFile), timeoutPromise]);
                             const url = await window.getDownloadURL(storageRef);
                             itemToSave.photo = url; delete itemToSave.rawFile;
                         } catch (e) {
-                            console.log("Upload échoué, repli local base64", e);
-                            // Fallback Base64 si upload échoue (ex: connexion instable)
+                            console.log("Upload échoué (offline?), repli local", e);
                             if (item.photo && item.photo.startsWith('data:')) { 
                                 const compressed = await compressImage(item.photo, 1200, 0.8); 
                                 itemToSave.photo = compressed; 
@@ -300,7 +314,7 @@
                 }
                 if (itemToSave.order === undefined) itemToSave.order = Date.now();
                 try {
-                    // Écriture Firestore (mise en file d'attente auto si hors ligne)
+                    // Firebase gère automatiquement la file d'attente hors-ligne
                     if (window.appId === 'epack-prod-data') await window.addDoc(window.collection(window.db, 'haccp_data', restaurantId, category), { createdAt: Date.now(), ...itemToSave });
                     else await window.addDoc(window.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'haccp_items'), { restaurantId, category, createdAt: Date.now(), ...itemToSave });
                 } catch (e) { alert("Erreur sauvegarde: " + e.message); }
@@ -342,11 +356,13 @@
             const updateLog = async (dateStr, dataToMerge) => {
                 const existingData = logs[dateStr] || {};
                 const newData = { ...existingData, ...dataToMerge };
-                if (window.appId === 'epack-prod-data') await window.setDoc(window.doc(window.db, 'haccp_logs', restaurantId, logCategory, dateStr), { data: newData }, { merge: true });
-                else {
-                    const docId = `${restaurantId}_${logCategory}_${dateStr}`.replace(/[^a-zA-Z0-9]/g, '_');
-                    await window.setDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'haccp_logs', docId), { restaurantId, category: logCategory, date: dateStr, data: newData }, { merge: true });
-                }
+                try {
+                    if (window.appId === 'epack-prod-data') await window.setDoc(window.doc(window.db, 'haccp_logs', restaurantId, logCategory, dateStr), { data: newData }, { merge: true });
+                    else {
+                        const docId = `${restaurantId}_${logCategory}_${dateStr}`.replace(/[^a-zA-Z0-9]/g, '_');
+                        await window.setDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'haccp_logs', docId), { restaurantId, category: logCategory, date: dateStr, data: newData }, { merge: true });
+                    }
+                } catch(e) { console.error("Log update error (offline safe)", e); }
             };
             return { logs, updateLog };
         };
@@ -374,7 +390,7 @@
                 Download: <><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></>,
                 RotateCcw: <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>,
                 Wifi: <><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></>,
-                LogOut: <><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></>,
+                LogOut: <><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></>,
                 Lock: <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />,
                 Snowflake: <path d="M2 12h20M12 2v20M20 20 4 4m16 0L4 20M4.93 19.07l4.24-7.07m5.66 0l4.24 7.07M4.93 4.93l4.24 7.07m5.66 0l4.24-7.07"/>,
                 Truck: <path d="M10 17h4V5H2v12h3m10 0h3l4-4V8h-7v9zm-9 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm11 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/>,
@@ -452,8 +468,7 @@
             const productHistory = products.map(p => p.name);
 
             useEffect(() => { if (fullscreenPhoto) { setZoomLevel(1); setPan({x:0, y:0}); } }, [fullscreenPhoto]);
-            useEffect(() => { if (products.length > 0 && !hasAutoCleaned) { const timer = setTimeout(async () => { const sixMonthsAgo = Date.now() - (180 * 24 * 60 * 60 * 1000); const oldItems = products.filter(p => { const itemDate = p.createdAt || (p.sortDate ? new Date(p.sortDate).getTime() : null); return itemDate && itemDate < sixMonthsAgo; }); if (oldItems.length > 0) { for (const item of oldItems) { try { await deleteItem(item.id); } catch (e) { console.warn("Erreur suppression auto", e); } } } setHasAutoCleaned(true); }, 5000); return () => clearTimeout(timer); } }, [products, hasAutoCleaned]);
-
+            
             // --- NOUVEAUTÉ : RESTAURATION VIA INDEXEDDB + LOCALSTORAGE ---
             useEffect(() => {
                 const loadDraft = async () => {
@@ -463,7 +478,7 @@
                     if (savedDraft) {
                         try { 
                             const parsed = JSON.parse(savedDraft);
-                            if (savedImage) parsed.photo = savedImage; // Hydrate image from IDB
+                            if (savedImage) parsed.photo = savedImage;
                             setNewProduct(parsed); 
                         } catch (e) { console.error("Erreur lecture brouillon", e); }
                     }
@@ -487,11 +502,8 @@
                 if (file) { 
                     const reader = new FileReader(); 
                     reader.onload = async (event) => { 
-                        // Compression
                         const compressed = await compressImage(event.target.result, 1000, 0.7);
-                        // Save immediately to IDB to survive reload
                         await SimpleIDB.save('draft_traceability_photo', compressed);
-                        // Update state
                         setNewProduct(p => ({ ...p, photo: compressed, rawFile: file })); 
                     }; 
                     reader.readAsDataURL(file); 
@@ -838,27 +850,54 @@
 
             useEffect(() => {
                 const loader = document.getElementById('static-loader');
-                if (loader) loader.style.display = 'none';
+                
+                // --- 5. AUTOMATISATION DU CACHE AU DÉMARRAGE (CRITIQUE) ---
+                // C'est ce qui télécharge tout le site dans le cache disque
+                const preloadAssets = async () => {
+                   if (navigator.onLine && !localStorage.getItem('app_cached_v3')) {
+                       // SAFE GUARDED DOM ACCESS
+                       const txtEl = document.getElementById('loader-text');
+                       if (txtEl) txtEl.innerText = "Installation hors-ligne...";
+                       
+                       const statusEl = document.getElementById('cache-status');
+                       if (statusEl) statusEl.style.display = 'block';
+
+                       try {
+                           const urls = [
+                               "https://cdn.tailwindcss.com",
+                               "https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js",
+                               "https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js",
+                               "https://unpkg.com/@babel/standalone/babel.min.js",
+                               "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js",
+                               "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js",
+                               "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js",
+                               "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js",
+                               "https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js",
+                               "https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"
+                           ];
+                           await Promise.all(urls.map(url => fetch(url, { mode: 'cors', cache: 'force-cache' })));
+                           localStorage.setItem('app_cached_v3', 'true');
+                       } catch(e) { console.warn("Cache preload partial error", e); }
+                   }
+                   if (loader) loader.style.display = 'none';
+                };
 
                 let unsubscribe;
                 const startAuth = async () => {
                     unsubscribe = window.onAuthStateChanged(window.auth, (u) => {
                         if (u) {
-                            console.log("Session active (User ID: " + u.uid + ")");
                             setUser(u);
                             setIsAuthLoading(false);
+                            preloadAssets(); // Lancement preload après auth
                         } else {
-                            console.log("Connexion anonyme...");
                             const doLogin = async () => {
                                 try {
-                                    if (window.initialAuthToken) { 
-                                        await window.signInWithCustomToken(window.auth, window.initialAuthToken); 
-                                    } else { 
-                                        await window.signInAnonymously(window.auth); 
-                                    }
+                                    if (window.initialAuthToken) await window.signInWithCustomToken(window.auth, window.initialAuthToken); 
+                                    else await window.signInAnonymously(window.auth); 
                                 } catch (e) {
-                                    console.error("Auth Error:", e);
+                                    console.error("Auth Error (Offline?):", e);
                                     setIsAuthLoading(false);
+                                    preloadAssets(); // Lancement preload même si erreur auth
                                 }
                             };
                             doLogin();
@@ -878,12 +917,8 @@
                 setIsCaching(true);
                 
                 try {
-                    // 1. Demande de persistance stockage
-                    if (navigator.storage && navigator.storage.persist) {
-                        await navigator.storage.persist();
-                    }
+                    if (navigator.storage && navigator.storage.persist) await navigator.storage.persist();
 
-                    // 2. Fetch manuel des librairies pour forcer le cache HTTP
                     const urlsToCache = [
                         "https://cdn.tailwindcss.com",
                         "https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js",
@@ -897,27 +932,27 @@
                         "https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"
                     ];
 
-                    await Promise.all(urlsToCache.map(url => fetch(url, { mode: 'no-cors' })));
+                    await Promise.all(urlsToCache.map(url => fetch(url, { mode: 'cors', cache: 'reload' })));
 
-                    // 3. Force le chargement des données Firestore
                     const collectionsToWarm = ['traceability', 'equipments', 'cleaning'];
                     for (const colName of collectionsToWarm) {
-                        let q = window.appId === 'epack-prod-data' 
-                            ? window.query(window.collection(window.db, 'haccp_data', restaurantId, colName), window.limit(100))
-                            : window.query(window.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'haccp_items'), window.where('restaurantId', '==', restaurantId), window.where('category', '==', colName), window.limit(100));
-                        await window.getDocs(q);
+                        try {
+                            let q = window.appId === 'epack-prod-data' 
+                                ? window.query(window.collection(window.db, 'haccp_data', restaurantId, colName), window.limit(50))
+                                : window.query(window.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'haccp_items'), window.where('restaurantId', '==', restaurantId), window.where('category', '==', colName), window.limit(50));
+                            await window.getDocs(q);
+                        } catch(e) {}
                     }
-
-                    alert("✅ Données synchronisées et cache mis à jour !\n\nVous pouvez maintenant passer en mode avion ou couper le Wi-Fi, l'application restera fonctionnelle tant que vous ne videz pas le cache du navigateur.");
+                    localStorage.setItem('app_cached_v3', 'true');
+                    alert("✅ Application téléchargée pour hors-ligne !");
                 } catch (e) {
-                    alert("⚠️ Erreur de synchronisation : " + e.message);
-                    console.error(e);
+                    alert("⚠️ Erreur téléchargement : " + e.message);
                 } finally {
                     setIsCaching(false);
                 }
             };
 
-            if (isAuthLoading) return <div className="flex items-center justify-center h-full text-green-700 font-bold animate-pulse">Chargement de vos données...</div>;
+            if (isAuthLoading) return null; // Le loader HTML gère l'attente
             if (isLocked) { return <PinScreen onLogin={handleLogin} isLoading={isLoginLoading} />; }
             
             const MenuBtn = ({ id, label, icon }) => ( <button onClick={() => setTab(id)} className={`w-full flex items-center gap-4 px-4 py-4 rounded-xl transition-all ${tab === id ? 'bg-green-600 text-white shadow-lg' : 'text-gray-600 hover:bg-green-50'}`}><Icon name={icon} className="w-6 h-6"/> <span className="font-semibold text-lg hidden lg:inline">{label}</span><span className="lg:hidden"><Icon name={icon} className="w-8 h-8"/></span></button> );
@@ -934,9 +969,9 @@
                             
                             <div className="pt-4 mt-4 border-t px-2">
                                 <button onClick={handleInstallCache} disabled={isCaching || !isOnline} className="w-full py-3 px-3 text-sm bg-orange-50 text-orange-700 hover:bg-orange-100 rounded-lg flex items-center gap-2 border border-orange-200 font-semibold disabled:opacity-50">
-                                    <Icon name="Smartphone" className="w-5 h-5"/> {isCaching ? "Synchronisation..." : "Synchroniser (Hors-Ligne)"}
+                                    <Icon name="Smartphone" className="w-5 h-5"/> {isCaching ? "Téléchargement..." : "Mise à jour Hors-Ligne"}
                                 </button>
-                                <p className="text-[10px] text-gray-400 mt-2 text-center px-2">Cliquez pour mettre à jour les données hors-ligne.</p>
+                                <p className="text-[10px] text-gray-400 mt-2 text-center px-2">Cliquez pour forcer la mise à jour.</p>
                             </div>
                         </nav>
                         <div className="p-4 border-t hidden md:block"><button onClick={handleLock} className="w-full py-2 text-sm text-red-500 hover:bg-red-50 rounded flex items-center justify-center gap-2"><Icon name="LogOut" className="w-4 h-4"/> Verrouiller</button></div>
@@ -944,7 +979,7 @@
                             <button onClick={() => setTab('traceability')} className={`flex flex-col items-center ${tab === 'traceability' ? 'text-green-600' : 'text-green-600/50'}`}><Icon name="ScanBarcode" className="w-6 h-6"/><span className="text-xs">Traçabilité</span></button>
                             <button onClick={() => setTab('temperature')} className={`flex flex-col items-center ${tab === 'temperature' ? 'text-green-600' : 'text-green-600/50'}`}><Icon name="Thermometer" className="w-6 h-6"/><span className="text-xs">Températures</span></button>
                             <button onClick={() => setTab('tracking')} className={`flex flex-col items-center ${tab === 'tracking' ? 'text-green-600' : 'text-green-600/50'}`}><Icon name="ClipboardList" className="w-6 h-6"/><span className="text-xs">Suivi</span></button>
-                            <button onClick={handleInstallCache} className={`flex flex-col items-center text-orange-600/70`}><Icon name="Smartphone" className="w-6 h-6"/><span className="text-xs">Sync</span></button>
+                            <button onClick={handleInstallCache} className={`flex flex-col items-center text-orange-600/70`}><Icon name="Smartphone" className="w-6 h-6"/><span className="text-xs">MàJ</span></button>
                         </div>
                     </div>
                     <main className="flex-1 flex flex-col h-full overflow-hidden relative w-full order-1 md:order-2 pb-16 md:pb-0">
