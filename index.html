@@ -9,7 +9,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta http-equiv="Cache-Control" content="public, max-age=31536000, immutable">
     
-    <!-- PRÉ-CHARGEMENT DES RESSOURCES CRITIQUES (FAILSAFE) -->
+    <!-- PRÉ-CHARGEMENT DES RESSOURCES CRITIQUES -->
     <link rel="preload" href="https://cdn.tailwindcss.com" as="script">
     <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js" as="script">
     <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js" as="script">
@@ -235,15 +235,21 @@
             }
         };
 
-        const compressImage = (base64Str, maxWidth = 800, quality = 0.6) => {
+        // --- OPTIMISATION ANTI-CRASH HAUTE QUALITÉ ---
+        // Stratégie : On autorise jusqu'à 1600px en largeur et une qualité élevée.
+        // On utilisera URL.createObjectURL pour la prévisualisation pour éviter le crash mémoire.
+        const compressImage = (base64Str, maxWidth = 1600, quality = 0.9) => {
             return new Promise((resolve) => {
                 const img = new Image();
                 img.src = base64Str;
                 img.onload = () => {
                     const canvas = document.createElement('canvas');
                     let width = img.width; let height = img.height;
+                    
+                    // Calcul du ratio pour redimensionnement intelligent
                     if (width > height) { if (width > maxWidth) { height *= maxWidth / width; width = maxWidth; } } 
                     else { if (height > maxWidth) { width *= maxWidth / height; height = maxWidth; } }
+                    
                     canvas.width = width; canvas.height = height;
                     const ctx = canvas.getContext('2d');
                     ctx.drawImage(img, 0, 0, width, height);
@@ -283,7 +289,8 @@
                         const offlineKey = `offline_hq_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
                         await SimpleIDB.save(offlineKey, item.rawFile);
                         if (item.photo && item.photo.startsWith('data:')) {
-                            const thumbnail = await compressImage(item.photo, 150, 0.5);
+                            // Thumb léger juste pour la liste, l'original est dans IDB
+                            const thumbnail = await compressImage(item.photo, 200, 0.5);
                             itemToSave.photo = thumbnail;
                         }
                         itemToSave.pendingUploadKey = offlineKey;
@@ -302,7 +309,7 @@
                             console.log("Upload échoué (réseau instable?), bascule en sauvegarde locale HQ", e);
                             const offlineKey = `offline_hq_${Date.now()}`;
                             await SimpleIDB.save(offlineKey, item.rawFile);
-                            if (item.photo) itemToSave.photo = await compressImage(item.photo, 150, 0.5);
+                            if (item.photo) itemToSave.photo = await compressImage(item.photo, 200, 0.5);
                             itemToSave.pendingUploadKey = offlineKey;
                             itemToSave.targetStoragePath = `${restaurantId}/${category}/${Date.now()}.jpg`;
                             itemToSave.syncStatus = 'pending';
@@ -542,7 +549,7 @@
         // --- MODULES ---
         const TraceabilityModule = ({ restaurantId }) => {
             const { data: products, addItem, deleteItem } = useSharedCollection(restaurantId, 'traceability', 'timestamp');
-            const [newProduct, setNewProduct] = useState({ name: '', batch: '', photo: null, rawFile: null });
+            const [newProduct, setNewProduct] = useState({ name: '', batch: '', quantity: '', photo: null, rawFile: null });
             const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
             const [isWebcamOpen, setIsWebcamOpen] = useState(false);
             const [fullscreenPhoto, setFullscreenPhoto] = useState(null);
@@ -590,26 +597,40 @@
 
             const handleCameraClick = () => { if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) { nativeCameraInputRef.current?.click(); } else { startWebcam(); } };
             
-            const handleNativeCameraCapture = async (e) => { 
+            const handleNativeCameraCapture = (e) => { 
                 const file = e.target.files[0]; 
-                if (file) { 
-                    const reader = new FileReader(); 
-                    reader.onload = async (event) => { 
-                        const compressed = await compressImage(event.target.result, 1000, 0.7);
-                        await SimpleIDB.save('draft_traceability_photo', compressed);
-                        setNewProduct(p => ({ ...p, photo: compressed, rawFile: file })); 
-                    }; 
-                    reader.readAsDataURL(file); 
+                if (file) {
+                    // METHODE CRASH-PROOF:
+                    // 1. On ne lit pas le fichier immédiatement en mémoire (FileReader = Crash)
+                    // 2. On crée juste un lien virtuel pour l'affichage (URL.createObjectURL)
+                    const previewUrl = URL.createObjectURL(file);
+                    setNewProduct(p => ({ ...p, photo: previewUrl, rawFile: file }));
+
+                    // 3. On ne lance la compression lourde que dans un second temps pour la sauvegarde brouillon
+                    // Cela laisse le temps à l'interface de s'afficher sans figer
+                    setTimeout(async () => {
+                        try {
+                            const reader = new FileReader();
+                            reader.onload = async (event) => {
+                                // Compression haute qualité pour stockage (1600px, 0.9)
+                                const compressed = await compressImage(event.target.result, 1600, 0.9);
+                                await SimpleIDB.save('draft_traceability_photo', compressed);
+                                setNewProduct(p => ({ ...p, photo: compressed, rawFile: file })); // Swap URL preview -> DataURL
+                                URL.revokeObjectURL(previewUrl); // Clean memory
+                            };
+                            reader.readAsDataURL(file);
+                        } catch (err) { console.error("Erreur compression background", err); }
+                    }, 500);
                 } 
             };
 
             const startWebcam = async () => { setTempPhoto(null); setIsWebcamOpen(true); try { const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } }); setTimeout(() => { if (videoRef.current) videoRef.current.srcObject = stream; }, 100); } catch (e) { alert("Impossible d'accéder à la webcam."); setIsWebcamOpen(false); } };
-            const captureWebcam = () => { if (videoRef.current && canvasRef.current) { const v = videoRef.current; const c = canvasRef.current; c.width = v.videoWidth; c.height = v.videoHeight; c.getContext('2d').drawImage(v, 0, 0); c.toBlob((blob) => { const previewUrl = c.toDataURL('image/jpeg', 0.8); setTempPhoto({ preview: previewUrl, file: blob }); }, 'image/jpeg', 0.95); v.pause(); } };
+            const captureWebcam = () => { if (videoRef.current && canvasRef.current) { const v = videoRef.current; const c = canvasRef.current; c.width = v.videoWidth; c.height = v.videoHeight; c.getContext('2d').drawImage(v, 0, 0); c.toBlob((blob) => { const previewUrl = c.toDataURL('image/jpeg', 0.9); setTempPhoto({ preview: previewUrl, file: blob }); }, 'image/jpeg', 0.95); v.pause(); } };
             const retakePhoto = () => { setTempPhoto(null); if (videoRef.current) videoRef.current.play(); };
             
             const confirmPhoto = async () => { 
                 if (tempPhoto) { 
-                    const compressed = await compressImage(tempPhoto.preview, 1000, 0.7);
+                    const compressed = await compressImage(tempPhoto.preview, 1600, 0.9);
                     await SimpleIDB.save('draft_traceability_photo', compressed);
                     setNewProduct(p => ({ ...p, photo: compressed, rawFile: tempPhoto.file })); 
                 } 
@@ -626,7 +647,7 @@
                     await SimpleIDB.delete('draft_traceability_photo');
                 } catch (error) { console.error(error); } finally { 
                     setIsUploading(false); 
-                    setNewProduct({ name: '', batch: '', photo: null, rawFile: null }); 
+                    setNewProduct({ name: '', batch: '', quantity: '', photo: null, rawFile: null }); 
                 } 
             };
             const filtered = products.filter(p => p.sortDate === selectedDate);
@@ -667,7 +688,9 @@
                                         )}
                                     </div>
                                     <AutocompleteInput label="Produit" value={newProduct.name} onChange={e => setNewProduct({...newProduct, name: e.target.value})} options={productHistory} required />
+                                    <Input label="Qté" type="number" value={newProduct.quantity} onChange={e => setNewProduct({...newProduct, quantity: e.target.value})} />
                                     <Input label="Lot / DLC" value={newProduct.batch} onChange={e => setNewProduct({...newProduct, batch: e.target.value})} />
+                                    
                                     <Button type="submit" className="w-full" disabled={!newProduct.name || !newProduct.photo || isUploading}>{isUploading ? "Enregistrement..." : "Enregistrer"}</Button>
                                 </form>
                             </Card>
@@ -676,7 +699,7 @@
                              <div className="bg-white p-4 rounded-xl border flex justify-between items-center mb-4"><div className="flex items-center gap-2"><button onClick={() => changeDate(-1)}><Icon name="ChevronLeft" className="w-6 h-6"/></button><div className="flex items-center gap-2 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200"><Icon name="Calendar" className="w-5 h-5 text-green-600"/><input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} className="bg-transparent font-bold text-gray-700 outline-none" /></div><button onClick={() => changeDate(1)}><Icon name="ChevronRight" className="w-6 h-6"/></button></div><span className="text-sm text-gray-500">{filtered.length} produit(s)</span></div>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 {filtered.length === 0 && <div className="col-span-full text-center py-10 text-gray-400">Rien ce jour.</div>}
-                                {filtered.map(item => (<div key={item.id} className="bg-white rounded-lg border p-3 flex justify-between items-start"><div className="flex gap-3 w-full" onClick={() => setFullscreenPhoto(item.photo)}><img src={item.photo} className={`w-20 h-20 object-cover rounded-lg bg-gray-100 cursor-zoom-in ${item.syncStatus === 'pending' ? 'opacity-50 blur-[1px]' : ''}`} /><div><p className="font-bold">{item.name}</p><p className="text-sm text-green-600">{item.batch}</p>{item.syncStatus === 'pending' && <p className="text-xs text-orange-500 font-bold flex items-center gap-1"><Icon name="WifiOff" className="w-3 h-3"/> En attente synchro...</p>}</div></div><button onClick={() => deleteItem(item.id)} className="text-gray-300 hover:text-red-500"><Icon name="Trash2"/></button></div>))}
+                                {filtered.map(item => (<div key={item.id} className="bg-white rounded-lg border p-3 flex justify-between items-start"><div className="flex gap-3 w-full" onClick={() => setFullscreenPhoto(item.photo)}><img src={item.photo} className={`w-20 h-20 object-cover rounded-lg bg-gray-100 cursor-zoom-in ${item.syncStatus === 'pending' ? 'opacity-50 blur-[1px]' : ''}`} /><div><p className="font-bold flex items-center gap-2">{item.name} {item.quantity && <span className="text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded-full font-bold">x{item.quantity}</span>}</p><p className="text-sm text-green-600">{item.batch}</p>{item.syncStatus === 'pending' && <p className="text-xs text-orange-500 font-bold flex items-center gap-1"><Icon name="WifiOff" className="w-3 h-3"/> En attente synchro...</p>}</div></div><button onClick={() => deleteItem(item.id)} className="text-gray-300 hover:text-red-500"><Icon name="Trash2"/></button></div>))}
                             </div>
                         </div>
                     </div>
@@ -790,12 +813,12 @@
             }, [newDelivery.supplier, newDelivery.product, newDelivery.batch]); // Check specific fields to avoid loop with photo
 
             const startWebcam = async () => { setTempPhoto(null); setIsWebcamOpen(true); try { const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } }); setTimeout(() => { if (videoRef.current) videoRef.current.srcObject = stream; }, 100); } catch (e) { alert("Impossible d'accéder à la webcam."); setIsWebcamOpen(false); } };
-            const captureWebcam = () => { if (videoRef.current && canvasRef.current) { const v = videoRef.current; const c = canvasRef.current; c.width = v.videoWidth; c.height = v.videoHeight; c.getContext('2d').drawImage(v, 0, 0); c.toBlob((blob) => { const previewUrl = c.toDataURL('image/jpeg', 0.8); setTempPhoto({ preview: previewUrl, file: blob }); }, 'image/jpeg', 0.95); v.pause(); } };
+            const captureWebcam = () => { if (videoRef.current && canvasRef.current) { const v = videoRef.current; const c = canvasRef.current; c.width = v.videoWidth; c.height = v.videoHeight; c.getContext('2d').drawImage(v, 0, 0); c.toBlob((blob) => { const previewUrl = c.toDataURL('image/jpeg', 0.9); setTempPhoto({ preview: previewUrl, file: blob }); }, 'image/jpeg', 0.95); v.pause(); } };
             const retakePhoto = () => { setTempPhoto(null); if (videoRef.current) videoRef.current.play(); };
             
             const confirmPhoto = async () => { 
                 if (tempPhoto) { 
-                    const compressed = await compressImage(tempPhoto.preview, 1000, 0.7);
+                    const compressed = await compressImage(tempPhoto.preview, 1600, 0.9);
                     await SimpleIDB.save('draft_delivery_photo', compressed);
                     setNewDelivery({...newDelivery, photo: compressed, rawFile: tempPhoto.file}); 
                 } 
@@ -820,16 +843,24 @@
                 setNewCooling({ type: 'Refroidissement', start: '', end: '', product: '', tempIn: '', tempOut: '' });
             };
 
-            const handleDeliveryPhoto = async (e) => {
+            const handleDeliveryPhoto = (e) => {
                 const file = e.target.files[0];
                 if(file) {
-                    const reader = new FileReader();
-                    reader.onload = async (ev) => {
-                        const compressed = await compressImage(ev.target.result, 1000, 0.7);
-                        await SimpleIDB.save('draft_delivery_photo', compressed);
-                        setNewDelivery({...newDelivery, photo: compressed, rawFile: file});
-                    };
-                    reader.readAsDataURL(file);
+                    const previewUrl = URL.createObjectURL(file);
+                    setNewDelivery(prev => ({...prev, photo: previewUrl, rawFile: file}));
+
+                    setTimeout(async () => {
+                        try {
+                            const reader = new FileReader();
+                            reader.onload = async (event) => {
+                                const compressed = await compressImage(event.target.result, 1600, 0.9);
+                                await SimpleIDB.save('draft_delivery_photo', compressed);
+                                setNewDelivery(prev => ({ ...prev, photo: compressed, rawFile: file }));
+                                URL.revokeObjectURL(previewUrl);
+                            };
+                            reader.readAsDataURL(file);
+                        } catch (err) { console.error(err); }
+                    }, 500);
                 }
             };
 
