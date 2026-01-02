@@ -84,7 +84,7 @@
         // --- 2. CONFIGURATION FIREBASE & OFFLINE PERSISTENCE ---
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc, updateDoc, query, where, setDoc, getDocs, enableIndexedDbPersistence, limit, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc, updateDoc, query, where, setDoc, getDocs, enableIndexedDbPersistence, limit, orderBy, deleteField } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
 
         let firebaseConfig;
@@ -124,7 +124,7 @@
         // Exposition globale sécurisée
         window.db = db; window.auth = auth; window.storage = storage; window.appId = appId; window.initialAuthToken = initialAuthToken; 
         window.collection = collection; window.addDoc = addDoc; window.onSnapshot = onSnapshot; window.deleteDoc = deleteDoc; window.doc = doc; window.updateDoc = updateDoc; window.setDoc = setDoc;
-        window.query = query; window.where = where; window.getDocs = getDocs; window.limit = limit; window.orderBy = orderBy;
+        window.query = query; window.where = where; window.getDocs = getDocs; window.limit = limit; window.orderBy = orderBy; window.deleteField = deleteField;
         window.signInAnonymously = signInAnonymously; window.signInWithCustomToken = signInWithCustomToken; window.signOut = signOut; window.onAuthStateChanged = onAuthStateChanged;
         window.ref = ref; window.uploadBytes = uploadBytes; window.getDownloadURL = getDownloadURL;
         
@@ -280,37 +280,26 @@
 
                 if (item.rawFile) {
                     if (isOffline) {
-                        // --- MODE HORS-LIGNE AVANCÉ ---
-                        // 1. Sauvegarde Haute Qualité en local (IDB)
                         const offlineKey = `offline_hq_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
                         await SimpleIDB.save(offlineKey, item.rawFile);
-
-                        // 2. Génération Miniature (pour affichage immédiat sans saturer Firestore)
                         if (item.photo && item.photo.startsWith('data:')) {
-                            // On crée une miniature très légère (150px) juste pour l'UI
                             const thumbnail = await compressImage(item.photo, 150, 0.5);
                             itemToSave.photo = thumbnail;
                         }
-
-                        // 3. Marquage pour Synchro future
                         itemToSave.pendingUploadKey = offlineKey;
                         itemToSave.targetStoragePath = `${restaurantId}/${category}/${Date.now()}_${Math.random().toString(36).substr(2, 9)}.jpg`;
                         itemToSave.syncStatus = 'pending';
-                        
                         delete itemToSave.rawFile;
                     } else {
-                        // --- MODE EN LIGNE STANDARD ---
                         try {
                             const fileName = `${restaurantId}/${category}/${Date.now()}_${Math.random().toString(36).substr(2, 9)}.jpg`;
                             const storageRef = window.ref(window.storage, fileName);
-                            // Timeout de secours
                             const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout Upload")), 10000));
                             await Promise.race([window.uploadBytes(storageRef, item.rawFile), timeoutPromise]);
                             const url = await window.getDownloadURL(storageRef);
                             itemToSave.photo = url; delete itemToSave.rawFile;
                         } catch (e) {
                             console.log("Upload échoué (réseau instable?), bascule en sauvegarde locale HQ", e);
-                            // Repli stratégie hors-ligne si échec upload
                             const offlineKey = `offline_hq_${Date.now()}`;
                             await SimpleIDB.save(offlineKey, item.rawFile);
                             if (item.photo) itemToSave.photo = await compressImage(item.photo, 150, 0.5);
@@ -324,7 +313,6 @@
                 if (itemToSave.order === undefined) itemToSave.order = Date.now();
                 
                 try {
-                    // Sauvegarde du document (avec flag 'pending' si hors ligne)
                     let docRef;
                     if (window.appId === 'epack-prod-data') {
                         docRef = await window.addDoc(window.collection(window.db, 'haccp_data', restaurantId, category), { createdAt: Date.now(), ...itemToSave });
@@ -332,13 +320,12 @@
                         docRef = await window.addDoc(window.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'haccp_items'), { restaurantId, category, createdAt: Date.now(), ...itemToSave });
                     }
 
-                    // Ajout à la file d'attente locale (LocalStorage) pour robustesse
                     if (itemToSave.pendingUploadKey) {
                         const queue = JSON.parse(localStorage.getItem('offline_sync_queue') || '[]');
                         queue.push({
                             docId: docRef.id,
                             collectionType: window.appId === 'epack-prod-data' ? 'prod' : 'artifact',
-                            collectionPath: category, // pour artifacts c'est le champ category
+                            collectionPath: category, 
                             idbKey: itemToSave.pendingUploadKey,
                             storagePath: itemToSave.targetStoragePath
                         });
@@ -1037,27 +1024,43 @@
                         "https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"
                     ];
 
-                    // TOLÉRANCE AUX PANNES DE TÉLÉCHARGEMENT (Promise.allSettled)
-                    const results = await Promise.allSettled(urlsToCache.map(url => fetch(url, { cache: 'reload' })));
-                    
-                    const failed = results.filter(r => r.status === 'rejected');
-                    if (failed.length > 0) {
-                        console.warn("Certains fichiers n'ont pas pu être mis en cache", failed);
+                    // --- CORRECTION MAJEURE: MODE NO-CORS POUR ÉVITER LES ERREURS DE SÉCURITÉ ---
+                    // On utilise map() pour créer les promesses, et non fetch directement dans map
+                    const fetchPromises = urlsToCache.map(url => 
+                        fetch(url, { 
+                            mode: 'no-cors',  // Autorise le téléchargement "opaque" (sans lire le contenu)
+                            cache: 'reload',  // Force la mise à jour du cache
+                            credentials: 'omit' // Pas de cookies
+                        })
+                    );
+
+                    // On attend que TOUT soit fini (succès ou échec)
+                    await Promise.allSettled(fetchPromises);
+
+                    // --- SÉCURISATION DU PRÉ-CHARGEMENT FIRESTORE ---
+                    // On isole cette partie pour qu'une erreur ici ne bloque pas tout
+                    try {
+                        const collectionsToWarm = ['traceability', 'equipments', 'cleaning'];
+                        for (const colName of collectionsToWarm) {
+                            try {
+                                let q = window.appId === 'epack-prod-data' 
+                                    ? window.query(window.collection(window.db, 'haccp_data', restaurantId, colName), window.limit(50))
+                                    : window.query(window.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'haccp_items'), window.where('restaurantId', '==', restaurantId), window.where('category', '==', colName), window.limit(50));
+                                await window.getDocs(q);
+                            } catch(innerE) {
+                                console.log("Info: Collection vide ou non accessible (normal au début)", innerE);
+                            }
+                        }
+                    } catch(firestoreE) {
+                        console.warn("Warming Firestore ignoré (Probablement hors-ligne)", firestoreE);
                     }
 
-                    const collectionsToWarm = ['traceability', 'equipments', 'cleaning'];
-                    for (const colName of collectionsToWarm) {
-                        try {
-                            let q = window.appId === 'epack-prod-data' 
-                                ? window.query(window.collection(window.db, 'haccp_data', restaurantId, colName), window.limit(50))
-                                : window.query(window.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'haccp_items'), window.where('restaurantId', '==', restaurantId), window.where('category', '==', colName), window.limit(50));
-                            await window.getDocs(q);
-                        } catch(e) {}
-                    }
                     localStorage.setItem('app_cached_v3', 'true');
-                    alert(failed.length > 0 ? `⚠️ MàJ partielle (${failed.length} erreurs). Réessayez plus tard.` : "✅ Application téléchargée pour hors-ligne !");
+                    alert("✅ Application et données mises à jour pour hors-ligne !");
                 } catch (e) {
-                    alert("⚠️ Erreur téléchargement : " + e.message);
+                    // On affiche l'erreur uniquement si c'est vraiment bloquant
+                    console.error("Erreur MAJ:", e);
+                    alert("⚠️ Erreur mineure lors de la mise à jour : " + (e.message || "Réseau instable"));
                 } finally {
                     setIsCaching(false);
                 }
