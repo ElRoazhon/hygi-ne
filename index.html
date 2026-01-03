@@ -669,16 +669,13 @@
             const filtered = products.filter(p => p.sortDate === selectedDate);
             const changeDate = (d) => { const date = new Date(selectedDate); date.setDate(date.getDate() + d); setSelectedDate(date.toISOString().split('T')[0]); };
 
-            // --- CORRECTION TÉLÉCHARGEMENT ---
+            // --- CORRECTION TÉLÉCHARGEMENT ROBUSTE (Batch + Fallback) ---
             const downloadPhotos = async () => {
                 setIsZipping(true);
                 try {
                     const zip = new JSZip();
                     const folder = zip.folder(`Photos_${exportMonth}`);
                     
-                    // On récupère TOUS les produits du mois, pas seulement ceux affichés
-                    // Note: products contient déjà tout si la collection est chargée, sinon il faut filtrer
-                    // Ici 'products' contient tout ce qui a été chargé par useSharedCollection
                     const itemsToExport = products.filter(p => p.sortDate && p.sortDate.startsWith(exportMonth) && p.photo);
 
                     if (itemsToExport.length === 0) {
@@ -690,39 +687,69 @@
                     let count = 0;
                     const errors = [];
 
-                    for (const item of itemsToExport) {
+                    // Fonction helper pour récupérer l'image coûte que coûte
+                    const getBlob = async (url) => {
+                        // 1. Si c'est déjà du Base64 local
+                        if (url.startsWith('data:')) return (await fetch(url)).blob();
+                        
+                        // 2. Si c'est une URL Cloud
                         try {
-                            let blob;
-                            // Si c'est du base64 (donnée brute)
-                            if (item.photo.startsWith('data:')) {
-                                blob = await (await fetch(item.photo)).blob();
-                            } else {
-                                // Si c'est une URL distante (Firebase Storage)
-                                // On ajoute mode: 'cors' pour tenter de contourner les restrictions
-                                const response = await fetch(item.photo, { mode: 'cors', cache: 'no-cache' });
-                                if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                                blob = await response.blob();
-                            }
-
-                            const safeName = (item.name || 'produit').replace(/[^a-z0-9]/gi, '_');
-                            const filename = `${item.sortDate}_${safeName}_${item.id.substr(0,4)}.jpg`;
-                            folder.file(filename, blob);
-                            count++;
+                            // Tentative A : Fetch Direct
+                            const res = await fetch(url, { mode: 'cors', cache: 'no-cache' });
+                            if (res.ok) return await res.blob();
+                            throw new Error("Fetch bloqué");
                         } catch (e) {
-                            console.error("Erreur téléchargement image", item.name, e);
-                            errors.push(item.name);
+                            // Tentative B : Passage par balise Image + Canvas (Contournement CORS partiel)
+                            return new Promise((resolve, reject) => {
+                                const img = new Image();
+                                img.crossOrigin = "Anonymous";
+                                img.onload = () => {
+                                    try {
+                                        const c = document.createElement('canvas');
+                                        c.width = img.width; c.height = img.height;
+                                        const ctx = c.getContext('2d');
+                                        ctx.drawImage(img, 0, 0);
+                                        c.toBlob(blob => {
+                                            if (blob) resolve(blob);
+                                            else reject(new Error("Conversion Canvas échouée"));
+                                        }, 'image/jpeg', 0.85);
+                                    } catch(err) { reject(new Error("Canvas 'tainted' (Sécurité stricte)")); }
+                                };
+                                img.onerror = () => reject(new Error("Chargement image échoué"));
+                                img.src = url + (url.includes('?') ? '&' : '?') + 't=' + new Date().getTime(); // Anti-cache
+                            });
                         }
+                    };
+
+                    // Traitement par petits paquets pour ne pas figer le navigateur
+                    const BATCH_SIZE = 5;
+                    for (let i = 0; i < itemsToExport.length; i += BATCH_SIZE) {
+                        const batch = itemsToExport.slice(i, i + BATCH_SIZE);
+                        await Promise.all(batch.map(async (item) => {
+                            try {
+                                const blob = await getBlob(item.photo);
+                                const safeName = (item.name || 'produit').replace(/[^a-z0-9]/gi, '_');
+                                const filename = `${item.sortDate}_${safeName}_${item.id.substr(0,4)}.jpg`;
+                                folder.file(filename, blob);
+                                count++;
+                            } catch (e) {
+                                console.warn("Echec export:", item.name, e);
+                                errors.push(item.name);
+                            }
+                        }));
                     }
 
                     if (count > 0) {
                         const content = await zip.generateAsync({ type: "blob" });
                         saveAs(content, `Traceabilite_${restaurantId}_${exportMonth}.zip`);
                         if (errors.length > 0) {
-                            alert(`Téléchargement terminé avec ${count} photos.\nCependant, ${errors.length} photos n'ont pas pu être récupérées (Erreur réseau/CORS).`);
+                            alert(`Téléchargement partiel : ${count} réussis.\n${errors.length} bloqués par la sécurité navigateur (CORS).`);
+                        } else {
+                            // Succès total - fermeture modale
+                            setExportModalOpen(false);
                         }
-                        setExportModalOpen(false);
                     } else {
-                        alert("Erreur critique : Impossible de récupérer les images (Blocage réseau ou fichiers manquants).");
+                        alert("Erreur Critique : Le navigateur bloque l'accès aux images distantes (CORS).\nEssayez depuis un ordinateur ou une connexion différente.");
                     }
                 } catch (e) {
                     alert("Erreur ZIP globale: " + e.message);
