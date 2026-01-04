@@ -903,6 +903,27 @@
             const filteredCoolings = coolings.filter(c => c.sortDate === selectedDate);
             const coolingHistory = coolings.map(c => c.product);
 
+            // --- 2. Livraison ---
+            const { data: deliveries, addItem: addDelivery, deleteItem: removeDelivery } = useSharedCollection(restaurantId, 'delivery_logs', 'timestamp');
+            const [newDelivery, setNewDelivery] = useState({ supplier: '', product: '', batch: '', dlc: '', temp: '', compliant: 'Oui', comment: '', photo: null });
+            const filteredDeliveries = deliveries.filter(d => d.sortDate === selectedDate);
+            const deliveryCameraRef = useRef(null);
+            const supplierHistory = deliveries.map(d => d.supplier);
+            const deliveryProductHistory = deliveries.map(d => d.product);
+
+            // --- 3. Nettoyage ---
+            const { data: zones, addItem: addZone, deleteItem: removeZone } = useSharedCollection(restaurantId, 'cleaning');
+            const { logs, updateLog } = useSharedLogs(restaurantId, 'cleaning_logs');
+            const [showAddZone, setShowAddZone] = useState(false);
+            const [newZone, setNewZone] = useState({ name: "", freq: "Journalier" });
+            const cleaningTaskHistory = zones.map(z => z.name);
+
+            // --- WEBCAM LOGIC (Shared/Duplicated for Delivery) ---
+            const [isWebcamOpen, setIsWebcamOpen] = useState(false);
+            const [tempPhoto, setTempPhoto] = useState(null);
+            const videoRef = useRef(null);
+            const canvasRef = useRef(null);
+
             // --- NOTIFICATIONS & ALERTES ---
             useEffect(() => {
                 // Demande permission notification au démarrage
@@ -938,6 +959,61 @@
                 const interval = setInterval(checkAlerts, 60000); // Check toutes les minutes
                 return () => clearInterval(interval);
             }, [coolings]);
+
+            // --- BROUILLON LIVRAISON VIA INDEXEDDB + LS ---
+            useEffect(() => {
+                const loadDraft = async () => {
+                    const savedDraft = localStorage.getItem('draft_delivery_meta');
+                    const savedImage = await SimpleIDB.get('draft_delivery_photo');
+                    
+                    if (savedDraft) {
+                        try { 
+                            const parsed = JSON.parse(savedDraft);
+                            if (savedImage) parsed.photo = savedImage;
+                            setNewDelivery(parsed); 
+                        } catch (e) { console.error("Erreur lecture brouillon livraison", e); }
+                    }
+                };
+                loadDraft();
+            }, []);
+
+            useEffect(() => {
+                if (newDelivery.supplier || newDelivery.product) {
+                    const meta = { ...newDelivery, photo: null, rawFile: null };
+                    try { localStorage.setItem('draft_delivery_meta', JSON.stringify(meta)); } catch (e) {}
+                }
+            }, [newDelivery.supplier, newDelivery.product, newDelivery.batch]); // Check specific fields to avoid loop with photo
+
+            const startWebcam = async () => { setTempPhoto(null); setIsWebcamOpen(true); try { const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } }); setTimeout(() => { if (videoRef.current) videoRef.current.srcObject = stream; }, 100); } catch (e) { alert("Impossible d'accéder à la webcam."); setIsWebcamOpen(false); } };
+            const captureWebcam = () => { if (videoRef.current && canvasRef.current) { const v = videoRef.current; const c = canvasRef.current; c.width = v.videoWidth; c.height = v.videoHeight; c.getContext('2d').drawImage(v, 0, 0); c.toBlob((blob) => { const previewUrl = c.toDataURL('image/jpeg', 0.9); setTempPhoto({ preview: previewUrl, file: blob }); }, 'image/jpeg', 0.95); v.pause(); } };
+            const retakePhoto = () => { setTempPhoto(null); if (videoRef.current) videoRef.current.play(); };
+            
+            const confirmPhoto = async () => { 
+                if (tempPhoto) { 
+                    const compressed = await compressImage(tempPhoto.preview, 1600, 0.9);
+                    await SimpleIDB.save('draft_delivery_photo', compressed);
+                    setNewDelivery({...newDelivery, photo: compressed, rawFile: tempPhoto.file}); 
+                } 
+                if(videoRef.current?.srcObject) videoRef.current.srcObject.getTracks().forEach(t => t.stop()); 
+                setIsWebcamOpen(false); setTempPhoto(null); 
+            };
+            
+            // Smart Camera Trigger for Delivery
+            const handleDeliveryCameraClick = () => { 
+                if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) { 
+                    deliveryCameraRef.current?.click(); 
+                } else { 
+                    startWebcam(); 
+                } 
+            };
+
+            const changeDate = (d) => { const date = new Date(selectedDate); date.setDate(date.getDate() + d); setSelectedDate(date.toISOString().split('T')[0]); };
+
+            const submitCooling = async (e) => {
+                e.preventDefault();
+                await addCooling({ ...newCooling, sortDate: selectedDate, timestamp: Date.now() });
+                setNewCooling({ type: 'Refroidissement', start: '', end: '', product: '', tempIn: '', tempOut: '' });
+            };
             
             // Fonction pour savoir si un cycle est en alerte (> 3h)
             const isCycleLate = (c) => {
