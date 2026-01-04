@@ -1326,8 +1326,8 @@
                            const urls = [ "https://cdn.tailwindcss.com", "https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js", "https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js", "https://unpkg.com/@babel/standalone/babel.min.js", "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js", "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js", "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js", "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js", "https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js", "https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js" ];
                            const fetchPromises = urls.map(url => fetch(url, { mode: 'cors', cache: 'force-cache' }));
                            Promise.allSettled(fetchPromises).then(() => {
-                                localStorage.setItem('app_cached_v3', 'true');
-                                console.log("Cache background terminé");
+                               localStorage.setItem('app_cached_v3', 'true');
+                               console.log("Cache background terminé");
                            });
                        } catch(e) { console.warn("Cache background error", e); }
                    }
