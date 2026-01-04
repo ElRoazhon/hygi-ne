@@ -9,6 +9,24 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta http-equiv="Cache-Control" content="public, max-age=31536000, immutable">
     
+    <!-- SÉCURITÉ DE DÉMARRAGE (Anti-blocage Mobile) -->
+    <script>
+        // Force la suppression du loader après 8s quoiqu'il arrive
+        setTimeout(function() {
+            var loader = document.getElementById('static-loader');
+            if (loader && loader.style.display !== 'none') {
+                console.warn("Safety Loader Removal");
+                loader.style.display = 'none';
+            }
+        }, 8000);
+        
+        // En cas d'erreur critique JS, on enlève le loader pour voir l'erreur
+        window.onerror = function() {
+            var loader = document.getElementById('static-loader');
+            if (loader) loader.style.display = 'none';
+        };
+    </script>
+
     <!-- PRÉ-CHARGEMENT DES RESSOURCES CRITIQUES -->
     <link rel="preload" href="https://cdn.tailwindcss.com" as="script">
     <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js" as="script">
@@ -1263,17 +1281,22 @@
 
             useEffect(() => {
                 const loader = document.getElementById('static-loader');
+                
+                // --- SÉCURITÉ MOBILE RENFORCÉE ---
+                // Force l'ouverture après 6s si l'auth traîne (ex: script bloqué)
+                const forceOpenTimer = setTimeout(() => {
+                    if(loader && loader.style.display !== 'none') {
+                        console.warn("Délai Mobile dépassé, ouverture forcée.");
+                        loader.style.display = 'none';
+                        setIsAuthLoading(false);
+                    }
+                }, 6000);
+
                 // --- 5. AUTOMATISATION DU CACHE AU DÉMARRAGE (CRITIQUE) ---
                 const preloadAssets = async () => {
-                    // MODIFICATION CRITIQUE : Suppression du blocage
-                    // On enlève le loader immédiatement pour éviter l'écran blanc infini
-                    if (loader) loader.style.display = 'none';
-
-                    // On lance le cache en tâche de fond uniquement
                    if (navigator.onLine && !localStorage.getItem('app_cached_v3')) {
                        try {
                            const urls = [ "https://cdn.tailwindcss.com", "https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js", "https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js", "https://unpkg.com/@babel/standalone/babel.min.js", "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js", "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js", "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js", "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js", "https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js", "https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js" ];
-                           // On n'attend pas la fin pour l'utilisateur
                            const fetchPromises = urls.map(url => fetch(url, { mode: 'cors', cache: 'force-cache' }));
                            Promise.allSettled(fetchPromises).then(() => {
                                 localStorage.setItem('app_cached_v3', 'true');
@@ -1282,41 +1305,53 @@
                        } catch(e) { console.warn("Cache background error", e); }
                    }
                 };
-                
-                // SAFETY : Timeout de secours si l'auth bloque plus de 5s
-                const safetyTimer = setTimeout(() => {
-                    if (loader && loader.style.display !== 'none') {
-                        console.warn("Délai dépassé, ouverture forcée.");
-                        loader.style.display = 'none';
-                        setIsAuthLoading(false); // Force l'accès
-                    }
-                }, 5000);
 
-                let unsubscribe;
-                const startAuth = async () => {
-                    unsubscribe = window.onAuthStateChanged(window.auth, (u) => {
-                        clearTimeout(safetyTimer); // On annule la sécurité si tout va bien
+                // --- SÉQUENCE D'INITIALISATION ROBUSTE ---
+                const initSequence = async () => {
+                    // 1. Attente active de Firebase (Max 3s)
+                    // Sur mobile, les modules peuvent charger APRES React
+                    let tries = 0;
+                    while(!window.auth && tries < 30) {
+                        await new Promise(r => setTimeout(r, 100));
+                        tries++;
+                    }
+
+                    if(!window.auth) {
+                        // Firebase non dispo (Offline total ou blocage CDN)
+                        console.warn("Firebase not ready. Force Offline Mode.");
+                        setIsAuthLoading(false);
+                        if(loader) loader.style.display = 'none';
+                        return;
+                    }
+
+                    // 2. Démarrage écouteur Auth
+                    const unsubscribe = window.onAuthStateChanged(window.auth, (u) => {
+                        clearTimeout(forceOpenTimer); // On annule la sécurité car on a une réponse
                         if (u) {
                             setUser(u);
                             setIsAuthLoading(false);
-                            preloadAssets(); 
+                            preloadAssets();
+                            if(loader) loader.style.display = 'none';
                         } else {
-                            const doLogin = async () => {
-                                try {
-                                    if (window.initialAuthToken) await window.signInWithCustomToken(window.auth, window.initialAuthToken); 
-                                    else await window.signInAnonymously(window.auth); 
-                                } catch (e) {
-                                    console.error("Auth Error (Offline?):", e);
-                                    setIsAuthLoading(false);
-                                    preloadAssets(); 
-                                }
-                            };
-                            doLogin();
+                            // Tentative connexion auto
+                             if (window.initialAuthToken) window.signInWithCustomToken(window.auth, window.initialAuthToken).catch(e => console.error(e));
+                             else window.signInAnonymously(window.auth).catch(e => {
+                                 console.error("Auth Fail", e);
+                                 // Si échec auth, on laisse entrer quand même (mode dégradé)
+                                 setIsAuthLoading(false); 
+                                 if(loader) loader.style.display = 'none';
+                             });
                         }
                     });
+                    return unsubscribe;
                 };
-                startAuth();
-                return () => { if(unsubscribe) unsubscribe(); clearTimeout(safetyTimer); };
+
+                const promise = initSequence();
+                
+                return () => {
+                    clearTimeout(forceOpenTimer);
+                    promise.then(unsub => unsub && unsub());
+                };
             }, []);
 
             // --- SYNC LOGO FIRESTORE ---
