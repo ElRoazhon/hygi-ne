@@ -1332,6 +1332,22 @@
                             setIsAuthLoading(false);
                             preloadAssets();
                             if(loader) loader.style.display = 'none';
+
+                            // --- OPTIMISATION : PRÉ-CHARGEMENT TRACABILITE ---
+                            // On lance une requête "fantôme" pour peupler le cache Firestore avant l'affichage
+                            try {
+                                if (window.db && restaurantId) {
+                                    // Utilisation de la même requête sûre que useSharedCollection
+                                    const q = window.query(
+                                        window.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'haccp_items'),
+                                        window.where('restaurantId', '==', restaurantId),
+                                        window.limit(50) // On limite pour aller vite
+                                    );
+                                    // On lance la requête sans attendre pour ne pas bloquer l'UI
+                                    window.getDocs(q).then(() => console.log("Warmup Traceability OK"));
+                                }
+                            } catch(e) {}
+
                         } else {
                             // Tentative connexion auto
                              if (window.initialAuthToken) window.signInWithCustomToken(window.auth, window.initialAuthToken).catch(e => console.error(e));
