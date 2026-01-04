@@ -9,22 +9,60 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta http-equiv="Cache-Control" content="public, max-age=31536000, immutable">
     
-    <!-- SÉCURITÉ DE DÉMARRAGE (Anti-blocage Mobile) -->
+    <!-- SÉCURITÉ DE DÉMARRAGE (Anti-Ecran Blanc Mobile) -->
+    <style>
+        #static-loader { position: fixed; inset: 0; background: #f0fdf4; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; font-family: sans-serif; text-align: center; padding: 20px; transition: opacity 0.5s; }
+        .loader-spinner { width: 40px; height: 40px; border: 4px solid #dcfce7; border-top: 4px solid #16a34a; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .retry-btn { margin-top: 20px; padding: 12px 24px; background: #16a34a; color: white; border: none; border-radius: 8px; font-weight: bold; font-size: 1rem; cursor: pointer; display: none; }
+    </style>
     <script>
-        // Force la suppression du loader après 8s quoiqu'il arrive
+        // 1. Capture globale des erreurs (avant même que React ne charge)
+        window.onerror = function(msg, url, line, col, error) {
+            console.error("Erreur Critique Mobile:", msg);
+            var title = document.getElementById('loader-title');
+            var txt = document.getElementById('loader-text');
+            var btn = document.getElementById('loader-retry');
+            var spinner = document.getElementById('loader-spinner');
+            
+            if (title) { title.innerText = "Erreur de chargement"; title.style.color = "#dc2626"; }
+            if (txt) { txt.innerText = "Une erreur technique est survenue sur ce mobile.\n" + msg; txt.style.color = "#7f1d1d"; }
+            if (spinner) spinner.style.display = "none";
+            if (btn) btn.style.display = "block";
+            
+            // On empêche le loader de disparaitre pour ne pas montrer un écran blanc
+            var loader = document.getElementById('static-loader');
+            if (loader) loader.style.zIndex = "100000"; 
+            return false;
+        };
+
+        // 2. Sécurité Temps Limite (8s)
         setTimeout(function() {
             var loader = document.getElementById('static-loader');
+            var root = document.getElementById('root');
+            
+            // Si le loader est toujours là
             if (loader && loader.style.display !== 'none') {
-                console.warn("Safety Loader Removal");
-                loader.style.display = 'none';
+                // Vérification : Est-ce que React a réussi à afficher quelque chose derrière ?
+                if (root && root.innerHTML.trim().length > 10) {
+                    // Oui, l'app est là, on force la disparition du loader
+                    loader.style.opacity = '0';
+                    setTimeout(function(){ loader.style.display = 'none'; }, 500);
+                } else {
+                    // Non, root est vide => C'est un écran blanc potentiel !
+                    // On transforme le loader en écran d'erreur
+                    var title = document.getElementById('loader-title');
+                    var txt = document.getElementById('loader-text');
+                    var btn = document.getElementById('loader-retry');
+                    var spinner = document.getElementById('loader-spinner');
+                    
+                    if (title) { title.innerText = "Délai dépassé"; title.style.color = "#ea580c"; }
+                    if (txt) txt.innerText = "La connexion semble lente ou instable sur ce mobile.";
+                    if (spinner) spinner.style.display = "none";
+                    if (btn) btn.style.display = "block";
+                }
             }
         }, 8000);
-        
-        // En cas d'erreur critique JS, on enlève le loader pour voir l'erreur
-        window.onerror = function() {
-            var loader = document.getElementById('static-loader');
-            if (loader) loader.style.display = 'none';
-        };
     </script>
 
     <!-- PRÉ-CHARGEMENT DES RESSOURCES CRITIQUES -->
@@ -148,41 +186,15 @@
         
         window.firebaseLoaded = true;
     </script>
-
-    <style>
-        body { -webkit-tap-highlight-color: transparent; overscroll-behavior-y: none; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        .fade-in-element { animation: fadeIn 0.3s ease-out; }
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        .active-press:active { transform: scale(0.95); background-color: #f3f4f6; }
-        @keyframes scan { 0% { top: 10%; opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { top: 90%; opacity: 0; } }
-        .scan-line { position: absolute; left: 10%; right: 10%; height: 2px; background: #4ade80; box-shadow: 0 0 10px #4ade80; animation: scan 2s linear infinite; }
-        .pb-safe { padding-bottom: env(safe-area-inset-bottom, 20px); }
-        .offline-badge { background-color: #f97316; color: white; padding: 4px 12px; border-radius: 9999px; font-weight: bold; font-size: 0.8rem; box-shadow: 0 2px 4px rgba(0,0,0,0.2); animation: pulse 2s infinite; display: flex; align-items: center; gap: 6px; }
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.8; } 100% { opacity: 1; } }
-        
-        #static-loader { position: fixed; inset: 0; background: #f0fdf4; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; font-family: sans-serif; text-align: center; padding: 20px; transition: opacity 0.5s; }
-        .loader-spinner { width: 40px; height: 40px; border: 4px solid #dcfce7; border-top: 4px solid #16a34a; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        #offline-error { display: none; color: #b91c1c; background: #fef2f2; padding: 20px; border-radius: 10px; border: 1px solid #fecaca; max-width: 90%; margin-top: 20px; }
-    </style>
 </head>
 <body class="bg-green-50 text-gray-900 h-screen w-screen overflow-hidden select-none font-sans">
     
     <!-- LOADER (Hors de root pour éviter l'écrasement) -->
     <div id="static-loader">
         <div class="loader-spinner" id="loader-spinner"></div>
-        <h2 style="color: #166534; font-weight: bold; font-size: 1.25rem; margin-bottom: 10px;">eHygiène So'Chris</h2>
+        <h2 id="loader-title" style="color: #166534; font-weight: bold; font-size: 1.25rem; margin-bottom: 10px;">eHygiène So'Chris</h2>
         <p id="loader-text" style="color: #4b5563; font-size: 0.9rem;">Chargement des modules...</p>
-        
-        <div id="offline-error">
-            <h3 style="font-weight: bold; margin-bottom: 5px;">Installation Requise</h3>
-            <p style="font-size: 0.9rem; margin-bottom: 10px;">Le premier démarrage nécessite une connexion Internet.</p>
-            <button onclick="window.location.reload()" style="margin-top: 15px; padding: 10px 20px; background: #16a34a; color: white; border: none; border-radius: 5px; font-weight: bold;">Réessayer</button>
-        </div>
-        
-        <p id="cache-status" style="margin-top: 20px; color: #16a34a; font-size: 0.8rem; display:none;">Mise en cache pour hors-ligne...</p>
+        <button id="loader-retry" class="retry-btn" onclick="window.location.reload()">Réessayer</button>
     </div>
 
     <!-- APP ROOT -->
@@ -192,14 +204,24 @@
     <script>
         setTimeout(function() {
             if (!window.React) {
-                document.getElementById('loader-spinner').style.display = 'none';
-                document.getElementById('loader-text').style.display = 'none';
-                document.getElementById('offline-error').style.display = 'block';
+                // Si React n'est pas chargé après 10s, c'est une erreur réseau grave
+                var title = document.getElementById('loader-title');
+                var txt = document.getElementById('loader-text');
+                var btn = document.getElementById('loader-retry');
+                var spinner = document.getElementById('loader-spinner');
+                
+                if (title) title.innerText = "Erreur Réseau";
+                if (txt) txt.innerText = "Impossible de charger l'application.";
+                if (spinner) spinner.style.display = 'none';
+                if (btn) btn.style.display = 'block';
             }
         }, 10000); 
     </script>
 
     <script type="text/babel">
+        // PROTECTION: Si React n'est pas chargé, on arrête tout de suite pour déclencher window.onerror
+        if (typeof React === 'undefined') { throw new Error("Bibliothèque React non chargée (Problème réseau?)"); }
+
         const { useState, useEffect, useRef } = React;
 
         // --- 4. GESTIONNAIRE DE CACHE IDB (Images Haute Qualité) ---
@@ -1287,7 +1309,12 @@
                 const forceOpenTimer = setTimeout(() => {
                     if(loader && loader.style.display !== 'none') {
                         console.warn("Délai Mobile dépassé, ouverture forcée.");
-                        loader.style.display = 'none';
+                        // On vérifie une dernière fois si React est là
+                        const root = document.getElementById('root');
+                        if (root && root.innerHTML.trim().length > 10) {
+                             loader.style.display = 'none';
+                        }
+                        // Sinon on laisse l'erreur du setTimeout global (8s) prendre le relais
                         setIsAuthLoading(false);
                     }
                 }, 6000);
@@ -1320,7 +1347,7 @@
                         // Firebase non dispo (Offline total ou blocage CDN)
                         console.warn("Firebase not ready. Force Offline Mode.");
                         setIsAuthLoading(false);
-                        if(loader) loader.style.display = 'none';
+                        // On laisse le loader gérer la transition
                         return;
                     }
 
@@ -1331,7 +1358,7 @@
                             setUser(u);
                             setIsAuthLoading(false);
                             preloadAssets();
-                            if(loader) loader.style.display = 'none';
+                            // Le loader disparaitra grâce au watcher global
 
                             // --- OPTIMISATION : PRÉ-CHARGEMENT TRACABILITE ---
                             // On lance une requête "fantôme" pour peupler le cache Firestore avant l'affichage
@@ -1355,7 +1382,6 @@
                                  console.error("Auth Fail", e);
                                  // Si échec auth, on laisse entrer quand même (mode dégradé)
                                  setIsAuthLoading(false); 
-                                 if(loader) loader.style.display = 'none';
                              });
                         }
                     });
