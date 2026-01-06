@@ -445,7 +445,6 @@
         // --- MODULES ---
         const TraceabilityModule = ({ restaurantId }) => {
             const { data: products, addItem, deleteItem } = useSharedCollection(restaurantId, 'traceability', 'timestamp');
-            // MODIF 1 : Ajout du champ quantity au state initial
             const [newProduct, setNewProduct] = useState({ name: '', quantity: '', batch: '', photo: null, rawFile: null });
             const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
             const [isWebcamOpen, setIsWebcamOpen] = useState(false);
@@ -456,7 +455,7 @@
             const [tempPhoto, setTempPhoto] = useState(null);
             const [exportModalOpen, setExportModalOpen] = useState(false);
             const [exportMonth, setExportMonth] = useState(new Date().toISOString().slice(0, 7));
-            const [isZipping, setIsZipping] = useState(false);
+            const [isGenerating, setIsGenerating] = useState(false); // Renamed from isZipping
             const [hasAutoCleaned, setHasAutoCleaned] = useState(false);
             const videoRef = useRef(null);
             const canvasRef = useRef(null);
@@ -480,7 +479,107 @@
             const handleSubmit = async (e) => { e.preventDefault(); setIsUploading(true); try { await addItem({ ...newProduct, sortDate: new Date().toISOString().split('T')[0] }); } catch (error) { console.error(error); } finally { setIsUploading(false); setNewProduct({ name: '', quantity: '', batch: '', photo: null, rawFile: null }); } };
             const filtered = products.filter(p => p.sortDate === selectedDate);
             const changeDate = (d) => { const date = new Date(selectedDate); date.setDate(date.getDate() + d); setSelectedDate(date.toISOString().split('T')[0]); };
-            const downloadPhotos = async () => { setIsZipping(true); try { const zip = new JSZip(); const folder = zip.folder(`Photos_${exportMonth}`); const itemsToExport = products.filter(p => p.sortDate && p.sortDate.startsWith(exportMonth) && p.photo); if (itemsToExport.length === 0) { alert("Aucune photo trouvée pour ce mois."); setIsZipping(false); return; } let count = 0; for (const item of itemsToExport) { try { let blob = await (await fetch(item.photo)).blob(); const safeName = (item.name || 'produit').replace(/[^a-z0-9]/gi, '_'); const filename = `${item.sortDate}_${safeName}_${item.id.substr(0,4)}.jpg`; folder.file(filename, blob); count++; } catch (e) { console.error("Erreur téléchargement image", item, e); } } if (count > 0) { const content = await zip.generateAsync({ type: "blob" }); saveAs(content, `Traceabilite_${restaurantId}_${exportMonth}.zip`); setExportModalOpen(false); } else { alert("Erreur: Impossible de récupérer les images."); } } catch (e) { alert("Erreur ZIP: " + e.message); } finally { setIsZipping(false); } };
+            
+            // --- NOUVELLE FONCTION DE GÉNÉRATION DE RAPPORT (REMPLACE LE ZIP) ---
+            const generateReport = async () => {
+                setIsGenerating(true);
+                try {
+                    const [year, month] = exportMonth.split('-');
+                    // Filtrer les produits du mois sélectionné
+                    const itemsToExport = products.filter(p => p.sortDate && p.sortDate.startsWith(exportMonth));
+                    
+                    if (itemsToExport.length === 0) {
+                        alert("Aucune donnée trouvée pour ce mois.");
+                        setIsGenerating(false);
+                        return;
+                    }
+
+                    // Trier par date (du plus ancien au plus récent pour le rapport)
+                    itemsToExport.sort((a, b) => a.sortDate.localeCompare(b.sortDate));
+
+                    // Création du contenu HTML
+                    let htmlContent = `
+                        <!DOCTYPE html>
+                        <html lang="fr">
+                        <head>
+                            <meta charset="UTF-8">
+                            <title>Rapport Traçabilité - ${month}/${year}</title>
+                            <style>
+                                body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f3f4f6; color: #1f2937; margin: 0; padding: 20px; }
+                                .container { max-width: 1000px; margin: 0 auto; background: white; padding: 40px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+                                h1 { color: #166534; text-align: center; border-bottom: 2px solid #bbf7d0; padding-bottom: 20px; margin-bottom: 30px; }
+                                .header-info { text-align: center; margin-bottom: 40px; color: #4b5563; font-style: italic; }
+                                .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
+                                .card { border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden; break-inside: avoid; page-break-inside: avoid; background: #fff; }
+                                .card img { width: 100%; height: 200px; object-fit: cover; border-bottom: 1px solid #e5e7eb; }
+                                .card-content { padding: 15px; }
+                                .date { font-size: 0.8em; color: #6b7280; margin-bottom: 5px; font-weight: bold; }
+                                .product-name { font-size: 1.1em; font-weight: bold; color: #111827; margin-bottom: 5px; }
+                                .details { font-size: 0.9em; color: #374151; }
+                                .tag { display: inline-block; background: #dcfce7; color: #166534; padding: 2px 8px; border-radius: 999px; font-size: 0.8em; font-weight: bold; margin-right: 5px; }
+                                @media print {
+                                    body { background: white; padding: 0; }
+                                    .container { box-shadow: none; padding: 0; }
+                                    .no-print { display: none; }
+                                    .card { border: 1px solid #ccc; }
+                                }
+                            </style>
+                        </head>
+                        <body>
+                            <div class="no-print" style="text-align: center; margin-bottom: 20px;">
+                                <button onclick="window.print()" style="background: #166534; color: white; border: none; padding: 10px 20px; border-radius: 5px; font-size: 16px; cursor: pointer; font-weight: bold;">🖨️ Imprimer / Enregistrer en PDF</button>
+                                <p style="font-size: 12px; color: #666; margin-top: 5px;">Cliquez pour imprimer ou choisissez "Enregistrer au format PDF" dans la destination de l'imprimante.</p>
+                            </div>
+                            <div class="container">
+                                <h1>Rapport de Traçabilité</h1>
+                                <div class="header-info">
+                                    Période : <strong>${month}/${year}</strong><br>
+                                    Nombre d'étiquettes : <strong>${itemsToExport.length}</strong>
+                                </div>
+                                <div class="grid">
+                    `;
+
+                    // Boucle sur les produits
+                    itemsToExport.forEach(item => {
+                        const dateFormatted = item.sortDate.split('-').reverse().join('/');
+                        htmlContent += `
+                            <div class="card">
+                                <img src="${item.photo}" alt="${item.name}" loading="lazy" onerror="this.src='https://placehold.co/400x300?text=Image+Non+Disponible'">
+                                <div class="card-content">
+                                    <div class="date">📅 ${dateFormatted}</div>
+                                    <div class="product-name">${item.name}</div>
+                                    <div class="details">
+                                        ${item.quantity ? `<span class="tag">Qté: ${item.quantity}</span>` : ''}
+                                        Lot/DLC: <strong>${item.batch || 'N/A'}</strong>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    });
+
+                    htmlContent += `
+                                </div>
+                                <div style="margin-top: 40px; text-align: center; font-size: 0.8em; color: #9ca3af; border-top: 1px solid #e5e7eb; padding-top: 20px;">
+                                    Généré automatiquement par eHygiène So'Chris le ${new Date().toLocaleDateString()}
+                                </div>
+                            </div>
+                        </body>
+                        </html>
+                    `;
+
+                    // Téléchargement du fichier HTML
+                    const blob = new Blob([htmlContent], { type: "text/html;charset=utf-8" });
+                    saveAs(blob, `Rapport_Tracabilite_${restaurantId}_${exportMonth}.html`);
+                    setExportModalOpen(false);
+
+                } catch (e) {
+                    console.error("Erreur génération rapport", e);
+                    alert("Erreur lors de la création du rapport : " + e.message);
+                } finally {
+                    setIsGenerating(false);
+                }
+            };
+
             const onTouchStart = (e) => { if (e.touches.length === 2) { touchStartDist.current = Math.hypot(e.touches[0].pageX - e.touches[1].pageX, e.touches[0].pageY - e.touches[1].pageY); startZoom.current = zoomLevel; } else if (e.touches.length === 1 && zoomLevel > 1) { panStart.current = { x: e.touches[0].pageX, y: e.touches[0].pageY }; startPan.current = { ...pan }; } };
             const onTouchMove = (e) => { if (e.touches.length === 2 && touchStartDist.current) { const dist = Math.hypot(e.touches[0].pageX - e.touches[1].pageX, e.touches[0].pageY - e.touches[1].pageY); setZoomLevel(Math.min(Math.max(0.5, startZoom.current * (dist / touchStartDist.current)), 5)); e.stopPropagation(); } else if (e.touches.length === 1 && panStart.current && zoomLevel > 1) { setPan({ x: startPan.current.x + (e.touches[0].pageX - panStart.current.x), y: startPan.current.y + (e.touches[0].pageY - panStart.current.y) }); e.stopPropagation(); } };
             const onTouchEnd = () => { touchStartDist.current = null; panStart.current = null; };
@@ -509,7 +608,7 @@
                             </div>
                         </div>
                     </div>
-                    {exportModalOpen && (<div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => !isZipping && setExportModalOpen(false)}><div className="bg-white p-6 rounded-2xl w-full max-w-sm shadow-2xl" onClick={e => e.stopPropagation()}><h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2"><Icon name="Download" className="text-green-600"/> Exporter Photos</h3><p className="text-gray-600 mb-4">Choisissez le mois à télécharger (ZIP) :</p><input type="month" value={exportMonth} onChange={(e) => setExportMonth(e.target.value)} className="w-full p-3 border border-gray-300 rounded-lg mb-6 text-lg" disabled={isZipping} /><div className="flex gap-3"><Button onClick={downloadPhotos} className="flex-1" disabled={isZipping}>{isZipping ? "Création ZIP..." : "Télécharger"}</Button><Button variant="ghost" onClick={() => setExportModalOpen(false)} disabled={isZipping}>Annuler</Button></div></div></div>)}
+                    {exportModalOpen && (<div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => !isGenerating && setExportModalOpen(false)}><div className="bg-white p-6 rounded-2xl w-full max-w-sm shadow-2xl" onClick={e => e.stopPropagation()}><h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2"><Icon name="Download" className="text-green-600"/> Générer Rapport</h3><p className="text-gray-600 mb-4">Choisissez le mois :</p><input type="month" value={exportMonth} onChange={(e) => setExportMonth(e.target.value)} className="w-full p-3 border border-gray-300 rounded-lg mb-6 text-lg" disabled={isGenerating} /><div className="flex gap-3"><Button onClick={generateReport} className="flex-1" disabled={isGenerating}>{isGenerating ? "Génération..." : "Créer Rapport"}</Button><Button variant="ghost" onClick={() => setExportModalOpen(false)} disabled={isGenerating}>Annuler</Button></div></div></div>)}
                     {isWebcamOpen && (<div className="fixed inset-0 z-[100] bg-black flex flex-col"><div className="relative flex-1 w-full h-full overflow-hidden"><video ref={videoRef} autoPlay playsInline className={`absolute inset-0 w-full h-full object-cover ${tempPhoto ? 'hidden' : ''}`}></video>{tempPhoto && <img src={tempPhoto.preview} className="absolute inset-0 w-full h-full object-cover" />}{!tempPhoto ? (<><div className="absolute inset-0 flex items-center justify-center pointer-events-none"><div className="w-[80%] h-[60%] border-2 border-green-500/50 rounded-2xl relative"><div className="scan-line"></div></div></div><div className="absolute top-0 w-full p-4 flex justify-between items-center z-20 bg-gradient-to-b from-black/60 to-transparent"><span className="text-white font-bold tracking-wide drop-shadow-md">Scanner</span><button onClick={() => { if(videoRef.current?.srcObject) videoRef.current.srcObject.getTracks().forEach(t=>t.stop()); setIsWebcamOpen(false); }} className="p-3 bg-black/40 rounded-full text-white backdrop-blur-md border border-white/20"><Icon name="X" className="w-6 h-6"/></button></div><div className="absolute bottom-8 w-full flex justify-center z-20"><button onClick={captureWebcam} className="w-20 h-20 bg-white rounded-full border-4 border-gray-200/50 shadow-2xl active:scale-95 transition-transform flex items-center justify-center"><div className="w-16 h-16 bg-white rounded-full border-2 border-black"></div></button></div></>) : (<div className="absolute bottom-8 w-full flex justify-center gap-6 z-20 px-8"><button onClick={retakePhoto} className="flex-1 py-4 bg-red-500/90 backdrop-blur-md text-white rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg active:scale-95 border border-red-400"><Icon name="RotateCcw" className="w-6 h-6"/> Reprendre</button><button onClick={confirmPhoto} className="flex-1 py-4 bg-green-500 text-white rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg active:scale-95"><Icon name="CheckCircle" className="w-6 h-6"/> Valider</button></div>)}</div><canvas ref={canvasRef} className="hidden"></canvas></div>)}
                     {fullscreenPhoto && (<div className="fixed inset-0 z-[100] bg-black flex items-center justify-center overflow-hidden touch-none" onClick={() => setFullscreenPhoto(null)} onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}><div className="absolute bottom-10 z-50 flex gap-4 pointer-events-auto" onClick={e => e.stopPropagation()}><button className="p-4 bg-white/20 backdrop-blur rounded-full text-white border border-white/30 active:scale-95" onClick={() => setZoomLevel(z => Math.max(0.5, z - 0.5))}><Icon name="ZoomOut"/></button><div className="px-4 py-2 bg-black/50 backdrop-blur rounded-full text-white font-mono flex items-center">{Math.round(zoomLevel * 100)}%</div><button className="p-4 bg-white/20 backdrop-blur rounded-full text-white border border-white/30 active:scale-95" onClick={() => setZoomLevel(z => Math.min(3, z + 0.5))}><Icon name="ZoomIn"/></button></div><button className="absolute top-4 right-4 p-3 bg-black/40 backdrop-blur rounded-full text-white border border-white/20 z-50 pointer-events-auto" onClick={() => setFullscreenPhoto(null)}><Icon name="X"/></button><div className="w-full h-full flex items-center justify-center overflow-hidden"><img src={fullscreenPhoto} style={{ transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoomLevel})`, transition: (touchStartDist.current || panStart.current) ? 'none' : 'transform 0.2s ease-out' }} className="max-h-screen max-w-full object-contain pointer-events-auto" onClick={e => e.stopPropagation()} /></div></div>)}
                 </div>
