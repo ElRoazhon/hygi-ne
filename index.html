@@ -1,26 +1,20 @@
-
 <!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>eHygiène - So'Chris</title>
     
-    <!-- SÉCURITÉ & OPTIMISATION CACHE -->
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta http-equiv="Cache-Control" content="public, max-age=31536000, immutable">
-    
-    <!-- PRÉ-CHARGEMENT DES RESSOURCES CRITIQUES -->
+    <!-- OPTIMISATION CACHE & PRELOAD -->
+    <meta http-equiv="Cache-Control" content="public, max-age=31536000">
     <link rel="preload" href="https://cdn.tailwindcss.com" as="script">
     <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js" as="script">
     <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js" as="script">
     <link rel="preload" href="https://unpkg.com/@babel/standalone/babel.min.js" as="script">
     <link rel="preload" href="https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js" as="script">
     <link rel="preload" href="https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js" as="script">
-    <link rel="preload" href="https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js" as="script">
-    <link rel="preload" href="https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js" as="script">
     
-    <!-- CONFIGURATION PWA IOS/ANDROID -->
+    <!-- ICONS -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj48cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgcng9IjEyMCIgZmlsbD0iIzE2YTM0YSIvPjxwYXRoIGQ9Ik0yNTYgODBjMCAwIDE0MCAyNSAxNDAgMTQwYzAgMTAwLTgwIDE4MC0xNDAgMjEyYy02MC0zMi0xNDAtMTEyLTE0MC0yMTJjMC0xMTUgMTQwLTE0MCAxNDAtMTQweiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjMwIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48cGF0aCBkPSJNMzM2IDIwMGwtMTAwIDEwMGwtNjAtNjAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2ZmZiIgc3Ryb2tlLXdpZHRoPSIzMCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PC9zdmc+">
     <link rel="apple-touch-icon" id="dynamic-apple-icon" href="">
     <link rel="manifest" id="dynamic-manifest" href="">
@@ -30,50 +24,40 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#16a34a">
     <meta name="mobile-web-app-capable" content="yes">
-    <meta name="format-detection" content="telephone=no">
 
     <script>
-        // --- 1. GÉNÉRATION PWA ROBUSTE ---
         (function() {
-            try {
-                const svgIcon = `data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj48cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgcng9IjEyMCIgZmlsbD0iIzE2YTM0YSIvPjxwYXRoIGQ9Ik0yNTYgODBjMCAwIDE0MCAyNSAxNDAgMTQwYzAgMTAwLTgwIDE4MC0xNDAgMjEyYy02MC0zMi0xNDAtMTEyLTE0MC0yMTJjMC0xMTUgMTQwLTE0MCAxNDAtMTQweiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjMwIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48cGF0aCBkPSJNMzM2IDIwMGwtMTAwIDEwMGwtNjAtNjAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2ZmZiIgc3Ryb2tlLXdpZHRoPSIzMCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PC9zdmc+`;
-                const img = new Image();
-                img.onload = function() {
-                    const canvas = document.createElement('canvas');
-                    canvas.width = 512; canvas.height = 512;
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(img, 0, 0, 512, 512);
-                    const pngUrl = canvas.toDataURL('image/png');
-                    
-                    const appleIcon = document.getElementById('dynamic-apple-icon');
-                    if (appleIcon) appleIcon.href = pngUrl;
-                    
-                    const manifest = { 
-                        "name": "eHygiène So'Chris", 
-                        "short_name": "So'Chris", 
-                        "start_url": ".", 
-                        "display": "standalone", 
-                        "orientation": "portrait",
-                        "background_color": "#f0fdf4", 
-                        "theme_color": "#16a34a", 
-                        "scope": ".",
-                        "icons": [ 
-                            { "src": pngUrl, "sizes": "512x512", "type": "image/png", "purpose": "any maskable" },
-                            { "src": pngUrl, "sizes": "192x192", "type": "image/png" } 
-                        ] 
-                    };
-                    const stringManifest = JSON.stringify(manifest);
-                    const blob = new Blob([stringManifest], {type: 'application/json'});
-                    const manifestUrl = URL.createObjectURL(blob);
-                    const manifestLink = document.getElementById('dynamic-manifest');
-                    if (manifestLink) manifestLink.href = manifestUrl;
+            const svgIcon = `data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj48cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgcng9IjEyMCIgZmlsbD0iIzE2YTM0YSIvPjxwYXRoIGQ9Ik0yNTYgODBjMCAwIDE0MCAyNSAxNDAgMTQwYzAgMTAwLTgwIDE4MC0xNDAgMjEyYy02MC0zMi0xNDAtMTEyLTE0MC0yMTJjMC0xMTUgMTQwLTE0MCAxNDAtMTQweiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjMwIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48cGF0aCBkPSJNMzM2IDIwMGwtMTAwIDEwMGwtNjAtNjAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2ZmZiIgc3Ryb2tlLXdpZHRoPSIzMCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PC9zdmc+`;
+            const img = new Image();
+            img.onload = function() {
+                const canvas = document.createElement('canvas');
+                canvas.width = 512; canvas.height = 512;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, 512, 512);
+                const pngUrl = canvas.toDataURL('image/png');
+                const appleIcon = document.getElementById('dynamic-apple-icon');
+                if (appleIcon) appleIcon.href = pngUrl;
+                const manifest = { 
+                    "name": "eHygiène So'Chris", 
+                    "short_name": "So'Chris", 
+                    "start_url": ".", 
+                    "display": "standalone", 
+                    "orientation": "portrait",
+                    "background_color": "#f0fdf4", 
+                    "theme_color": "#16a34a", 
+                    "icons": [ { "src": pngUrl, "sizes": "512x512", "type": "image/png", "purpose": "any maskable" } ] 
                 };
-                img.src = svgIcon;
-            } catch(e) { console.error("PWA Init Error", e); }
+                const stringManifest = JSON.stringify(manifest);
+                const blob = new Blob([stringManifest], {type: 'application/json'});
+                const manifestUrl = URL.createObjectURL(blob);
+                const manifestLink = document.getElementById('dynamic-manifest');
+                if (manifestLink) manifestLink.href = manifestUrl;
+            };
+            img.src = svgIcon;
         })();
     </script>
 
-    <!-- CHARGEMENT ASYNCHRONE OPTIMISÉ -->
+    <!-- SCRIPTS MOTEUR (Chargés via CDN pour mise en cache) -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
     <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
@@ -82,10 +66,9 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     
     <script type="module">
-        // --- 2. CONFIGURATION FIREBASE & OFFLINE PERSISTENCE ---
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc, updateDoc, query, where, setDoc, getDocs, enableIndexedDbPersistence, limit, orderBy, deleteField } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc, updateDoc, query, where, setDoc, getDocs, enableIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
 
         let firebaseConfig;
@@ -93,15 +76,11 @@
         let initialAuthToken = null;
 
         try {
-            if (typeof __firebase_config !== 'undefined') {
-                firebaseConfig = JSON.parse(__firebase_config);
-                appId = __app_id;
-                if (typeof __initial_auth_token !== 'undefined') initialAuthToken = __initial_auth_token;
-            } else {
-                throw new Error("Env variables missing");
-            }
+            firebaseConfig = JSON.parse(__firebase_config);
+            appId = __app_id;
+            if (typeof __initial_auth_token !== 'undefined') { initialAuthToken = __initial_auth_token; }
         } catch (e) {
-            console.log("Mode Secours (Fallback)");
+            console.log("Mode Production");
             firebaseConfig = { apiKey: "AIzaSyCoMV_kNz-eI1JlLp33h0iJ4MZR7NnoI-w", authDomain: "epack-hygiene-99e64.firebaseapp.com", projectId: "epack-hygiene-99e64", storageBucket: "epack-hygiene-99e64.firebasestorage.app", messagingSenderId: "917463324646", appId: "1:917463324646:web:14856a7207be0353aca827" };
             appId = 'epack-prod-data'; 
         }
@@ -111,29 +90,28 @@
         const db = getFirestore(app);
         const storage = getStorage(app); 
 
-        // --- 3. PERSISTANCE INDEXEDDB CRITIQUE ---
+        // --- ACTIVATION PERSISTANCE HORS LIGNE ---
         try {
             enableIndexedDbPersistence(db).catch((err) => {
                 if (err.code == 'failed-precondition') {
-                    console.warn("Persistance : onglet déjà ouvert.");
+                    console.warn("Persistance échouée : multiples onglets ouverts.");
                 } else if (err.code == 'unimplemented') {
-                    console.warn("Persistance non supportée.");
+                    console.warn("Persistance non supportée par ce navigateur.");
                 }
             });
         } catch(e) { console.log("Erreur init persistence", e); }
 
-        // Exposition globale sécurisée
         window.db = db; window.auth = auth; window.storage = storage; window.appId = appId; window.initialAuthToken = initialAuthToken; 
         window.collection = collection; window.addDoc = addDoc; window.onSnapshot = onSnapshot; window.deleteDoc = deleteDoc; window.doc = doc; window.updateDoc = updateDoc; window.setDoc = setDoc;
-        window.query = query; window.where = where; window.getDocs = getDocs; window.limit = limit; window.orderBy = orderBy; window.deleteField = deleteField;
         window.signInAnonymously = signInAnonymously; window.signInWithCustomToken = signInWithCustomToken; window.signOut = signOut; window.onAuthStateChanged = onAuthStateChanged;
         window.ref = ref; window.uploadBytes = uploadBytes; window.getDownloadURL = getDownloadURL;
         
+        // Signal que Firebase est chargé
         window.firebaseLoaded = true;
     </script>
 
     <style>
-        body { -webkit-tap-highlight-color: transparent; overscroll-behavior-y: none; }
+        body { -webkit-tap-highlight-color: transparent; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         .fade-in-element { animation: fadeIn 0.3s ease-out; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
@@ -145,6 +123,7 @@
         .offline-badge { background-color: #f97316; color: white; padding: 4px 12px; border-radius: 9999px; font-weight: bold; font-size: 0.8rem; box-shadow: 0 2px 4px rgba(0,0,0,0.2); animation: pulse 2s infinite; display: flex; align-items: center; gap: 6px; }
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.8; } 100% { opacity: 1; } }
         
+        /* Loader Statique et Error Screen */
         #static-loader { position: fixed; inset: 0; background: #f0fdf4; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; font-family: sans-serif; text-align: center; padding: 20px; transition: opacity 0.5s; }
         .loader-spinner { width: 40px; height: 40px; border: 4px solid #dcfce7; border-top: 4px solid #16a34a; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
@@ -152,92 +131,47 @@
     </style>
 </head>
 <body class="bg-green-50 text-gray-900 h-screen w-screen overflow-hidden select-none font-sans">
-    
-    <!-- LOADER (Hors de root pour éviter l'écrasement) -->
-    <div id="static-loader">
-        <div class="loader-spinner" id="loader-spinner"></div>
-        <h2 style="color: #166534; font-weight: bold; font-size: 1.25rem; margin-bottom: 10px;">eHygiène So'Chris</h2>
-        <p id="loader-text" style="color: #4b5563; font-size: 0.9rem;">Chargement des modules...</p>
-        
-        <div id="offline-error">
-            <h3 style="font-weight: bold; margin-bottom: 5px;">Installation Requise</h3>
-            <p style="font-size: 0.9rem; margin-bottom: 10px;">Le premier démarrage nécessite une connexion Internet.</p>
-            <button onclick="window.location.reload()" style="margin-top: 15px; padding: 10px 20px; background: #16a34a; color: white; border: none; border-radius: 5px; font-weight: bold;">Réessayer</button>
+    <!-- LOADER INITIAL (Visible avant que React ne charge) -->
+    <div id="root" class="h-full w-full">
+        <div id="static-loader">
+            <div class="loader-spinner" id="loader-spinner"></div>
+            <h2 style="color: #166534; font-weight: bold; font-size: 1.25rem; margin-bottom: 10px;">eHygiène So'Chris</h2>
+            <p id="loader-text" style="color: #4b5563; font-size: 0.9rem;">Démarrage de l'application...</p>
+            
+            <div id="offline-error">
+                <h3 style="font-weight: bold; margin-bottom: 5px;">⚠️ Connexion Requise</h3>
+                <p style="font-size: 0.9rem; margin-bottom: 10px;">Impossible de charger les fichiers de l'application.</p>
+                <ul style="text-align: left; font-size: 0.85rem; color: #7f1d1d; list-style-type: disc; padding-left: 20px;">
+                    <li>Connectez-vous à Internet (Wi-Fi/4G).</li>
+                    <li>Rechargez la page.</li>
+                    <li>Utilisez ensuite le bouton <b>"Installer pour Hors-Ligne"</b> dans le menu.</li>
+                </ul>
+                <button onclick="window.location.reload()" style="margin-top: 15px; padding: 10px 20px; background: #dc2626; color: white; border: none; border-radius: 5px; font-weight: bold;">Réessayer</button>
+            </div>
+
+            <p id="loader-hint" style="color: #9ca3af; font-size: 0.8rem; margin-top: 20px; max-width: 300px;">
+                Initialisation des composants...
+            </p>
         </div>
-        
-        <p id="cache-status" style="margin-top: 20px; color: #16a34a; font-size: 0.8rem; display:none;">Mise en cache pour hors-ligne...</p>
     </div>
 
-    <!-- APP ROOT -->
-    <div id="root" class="h-full w-full"></div>
-
-    <!-- SCRIPT DE SECOURS (Si CDN HS) -->
+    <!-- Script de secours pour détecter l'échec de chargement -->
     <script>
         setTimeout(function() {
+            // Si React n'est pas chargé après 8 secondes, c'est probablement un problème réseau au démarrage
             if (!window.React) {
                 document.getElementById('loader-spinner').style.display = 'none';
                 document.getElementById('loader-text').style.display = 'none';
+                document.getElementById('loader-hint').style.display = 'none';
                 document.getElementById('offline-error').style.display = 'block';
             }
-        }, 10000); 
+        }, 8000);
     </script>
 
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
 
-        // --- 4. GESTIONNAIRE DE CACHE IDB (Images Haute Qualité) ---
-        const SimpleIDB = {
-            dbName: 'SoChrisDrafts',
-            storeName: 'drafts',
-            version: 1,
-            init: function() {
-                return new Promise((resolve, reject) => {
-                    const request = indexedDB.open(this.dbName, this.version);
-                    request.onupgradeneeded = (event) => {
-                        const db = event.target.result;
-                        if (!db.objectStoreNames.contains(this.storeName)) {
-                            db.createObjectStore(this.storeName);
-                        }
-                    };
-                    request.onsuccess = (event) => resolve(event.target.result);
-                    request.onerror = (event) => reject(event.target.error);
-                });
-            },
-            save: async function(key, value) {
-                try {
-                    const db = await this.init();
-                    return new Promise((resolve, reject) => {
-                        const tx = db.transaction(this.storeName, 'readwrite');
-                        const store = tx.objectStore(this.storeName);
-                        store.put(value, key);
-                        tx.oncomplete = () => resolve();
-                        tx.onerror = () => reject();
-                    });
-                } catch(e) { console.error("IDB Save Error", e); }
-            },
-            get: async function(key) {
-                try {
-                    const db = await this.init();
-                    return new Promise((resolve, reject) => {
-                        const tx = db.transaction(this.storeName, 'readonly');
-                        const store = tx.objectStore(this.storeName);
-                        const req = store.get(key);
-                        req.onsuccess = () => resolve(req.result);
-                        req.onerror = () => reject();
-                    });
-                } catch(e) { return null; }
-            },
-            delete: async function(key) {
-                try {
-                    const db = await this.init();
-                    const tx = db.transaction(this.storeName, 'readwrite');
-                    tx.objectStore(this.storeName).delete(key);
-                } catch(e) {}
-            }
-        };
-
-        // --- OPTIMISATION ANTI-CRASH HAUTE QUALITÉ ---
-        const compressImage = (base64Str, maxWidth = 1600, quality = 0.9) => {
+        const compressImage = (base64Str, maxWidth = 800, quality = 0.6) => {
             return new Promise((resolve) => {
                 const img = new Image();
                 img.src = base64Str;
@@ -258,34 +192,19 @@
         const useSharedCollection = (restaurantId, category, sortField = 'createdAt') => {
             const [data, setData] = useState([]);
             useEffect(() => {
-                // GUARD AUTH: On vérifie que auth et db sont prêts
-                if (!window.db || !restaurantId || !window.auth.currentUser) return;
-                
-                let q;
-                if (window.appId === 'epack-prod-data') {
-                    q = window.collection(window.db, 'haccp_data', restaurantId, category);
-                } else {
-                    // FIX PERMISSION: On filtre par restaurantId dès la requête
-                    // Cela satisfait souvent les règles de sécurité Firestore
-                    q = window.query(
-                        window.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'haccp_items'),
-                        window.where('restaurantId', '==', restaurantId)
-                    );
-                }
+                if (!window.db || !restaurantId) return;
+                let q = window.appId === 'epack-prod-data' ? window.collection(window.db, 'haccp_data', restaurantId, category) : window.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'haccp_items');
                 
                 const unsubscribe = window.onSnapshot(q, (snapshot) => {
                     let items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                    // FILTRE MÉMOIRE: On garde uniquement la bonne catégorie ici pour éviter les index complexes
-                    if (window.appId !== 'epack-prod-data') { 
-                        items = items.filter(item => item.category === category); 
-                    }
+                    if (window.appId !== 'epack-prod-data') { items = items.filter(item => item.restaurantId === restaurantId && item.category === category); }
                     items.sort((a, b) => {
                         if (a.order !== undefined && b.order !== undefined) return a.order - b.order;
                         return (b[sortField] || 0) - (a[sortField] || 0);
                     });
                     setData(items);
                 }, (error) => {
-                    console.warn("Erreur lecture collection:", category, error.code);
+                    console.error("Sync error:", error);
                 });
                 return () => unsubscribe();
             }, [restaurantId, category]);
@@ -297,58 +216,35 @@
 
                 if (item.rawFile) {
                     if (isOffline) {
-                        const offlineKey = `offline_hq_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
-                        await SimpleIDB.save(offlineKey, item.rawFile);
-                        if (item.photo && item.photo.startsWith('data:')) {
-                            const thumbnail = await compressImage(item.photo, 200, 0.5);
-                            itemToSave.photo = thumbnail;
+                        console.log("Offline: Saving image directly to Firestore (High Quality)");
+                        if (item.photo && item.photo.startsWith('data:')) { 
+                            const compressed = await compressImage(item.photo, 1600, 0.85); 
+                            itemToSave.photo = compressed; 
                         }
-                        itemToSave.pendingUploadKey = offlineKey;
-                        itemToSave.targetStoragePath = `${restaurantId}/${category}/${Date.now()}_${Math.random().toString(36).substr(2, 9)}.jpg`;
-                        itemToSave.syncStatus = 'pending';
                         delete itemToSave.rawFile;
                     } else {
                         try {
                             const fileName = `${restaurantId}/${category}/${Date.now()}_${Math.random().toString(36).substr(2, 9)}.jpg`;
                             const storageRef = window.ref(window.storage, fileName);
-                            const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout Upload")), 10000));
+                            const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 10000));
                             await Promise.race([window.uploadBytes(storageRef, item.rawFile), timeoutPromise]);
                             const url = await window.getDownloadURL(storageRef);
                             itemToSave.photo = url; delete itemToSave.rawFile;
                         } catch (e) {
-                            console.log("Upload échoué (réseau instable?), bascule en sauvegarde locale HQ", e);
-                            const offlineKey = `offline_hq_${Date.now()}`;
-                            await SimpleIDB.save(offlineKey, item.rawFile);
-                            if (item.photo) itemToSave.photo = await compressImage(item.photo, 200, 0.5);
-                            itemToSave.pendingUploadKey = offlineKey;
-                            itemToSave.targetStoragePath = `${restaurantId}/${category}/${Date.now()}.jpg`;
-                            itemToSave.syncStatus = 'pending';
-                            delete itemToSave.rawFile;
+                            console.log("Upload failed, fallback base64", e);
+                            if (item.photo && item.photo.startsWith('data:')) { 
+                                const compressed = await compressImage(item.photo, 1600, 0.85); 
+                                itemToSave.photo = compressed; 
+                                delete itemToSave.rawFile; 
+                            } 
+                            else { delete itemToSave.photo; delete itemToSave.rawFile; }
                         }
                     }
                 }
                 if (itemToSave.order === undefined) itemToSave.order = Date.now();
-                
                 try {
-                    let docRef;
-                    if (window.appId === 'epack-prod-data') {
-                        docRef = await window.addDoc(window.collection(window.db, 'haccp_data', restaurantId, category), { createdAt: Date.now(), ...itemToSave });
-                    } else {
-                        docRef = await window.addDoc(window.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'haccp_items'), { restaurantId, category, createdAt: Date.now(), ...itemToSave });
-                    }
-
-                    if (itemToSave.pendingUploadKey) {
-                        const queue = JSON.parse(localStorage.getItem('offline_sync_queue') || '[]');
-                        queue.push({
-                            docId: docRef.id,
-                            collectionType: window.appId === 'epack-prod-data' ? 'prod' : 'artifact',
-                            collectionPath: category, 
-                            idbKey: itemToSave.pendingUploadKey,
-                            storagePath: itemToSave.targetStoragePath
-                        });
-                        localStorage.setItem('offline_sync_queue', JSON.stringify(queue));
-                    }
-
+                    if (window.appId === 'epack-prod-data') await window.addDoc(window.collection(window.db, 'haccp_data', restaurantId, category), { createdAt: Date.now(), ...itemToSave });
+                    else await window.addDoc(window.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'haccp_items'), { restaurantId, category, createdAt: Date.now(), ...itemToSave });
                 } catch (e) { alert("Erreur sauvegarde: " + e.message); }
             };
 
@@ -371,30 +267,16 @@
         const useSharedLogs = (restaurantId, logCategory) => {
             const [logs, setLogs] = useState({});
             useEffect(() => {
-                if (!window.db || !restaurantId || !window.auth.currentUser) return;
-                
-                let q;
-                if (window.appId === 'epack-prod-data') {
-                    q = window.collection(window.db, 'haccp_logs', restaurantId, logCategory);
-                } else {
-                     // FIX PERMISSION: Filtrage par restaurantId
-                    q = window.query(
-                        window.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'haccp_logs'),
-                        window.where('restaurantId', '==', restaurantId)
-                    );
-                }
-
+                if (!window.db || !restaurantId) return;
+                let q = window.appId === 'epack-prod-data' ? window.collection(window.db, 'haccp_logs', restaurantId, logCategory) : window.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'haccp_logs');
                 const unsubscribe = window.onSnapshot(q, (snapshot) => {
                     const loadedLogs = {};
                     snapshot.docs.forEach(doc => {
                         const d = doc.data();
                         if (window.appId === 'epack-prod-data') loadedLogs[doc.id] = d.data;
-                        // FILTRE MÉMOIRE
-                        else if (d.category === logCategory) loadedLogs[d.date] = d.data;
+                        else if (d.restaurantId === restaurantId && d.category === logCategory) loadedLogs[d.date] = d.data;
                     });
                     setLogs(loadedLogs);
-                }, (error) => {
-                    console.warn("Erreur lecture logs:", logCategory, error.code);
                 });
                 return () => unsubscribe();
             }, [restaurantId, logCategory]);
@@ -402,13 +284,11 @@
             const updateLog = async (dateStr, dataToMerge) => {
                 const existingData = logs[dateStr] || {};
                 const newData = { ...existingData, ...dataToMerge };
-                try {
-                    if (window.appId === 'epack-prod-data') await window.setDoc(window.doc(window.db, 'haccp_logs', restaurantId, logCategory, dateStr), { data: newData }, { merge: true });
-                    else {
-                        const docId = `${restaurantId}_${logCategory}_${dateStr}`.replace(/[^a-zA-Z0-9]/g, '_');
-                        await window.setDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'haccp_logs', docId), { restaurantId, category: logCategory, date: dateStr, data: newData }, { merge: true });
-                    }
-                } catch(e) { console.error("Log update error (offline safe)", e); }
+                if (window.appId === 'epack-prod-data') await window.setDoc(window.doc(window.db, 'haccp_logs', restaurantId, logCategory, dateStr), { data: newData }, { merge: true });
+                else {
+                    const docId = `${restaurantId}_${logCategory}_${dateStr}`.replace(/[^a-zA-Z0-9]/g, '_');
+                    await window.setDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'haccp_logs', docId), { restaurantId, category: logCategory, date: dateStr, data: newData }, { merge: true });
+                }
             };
             return { logs, updateLog };
         };
@@ -436,7 +316,7 @@
                 Download: <><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></>,
                 RotateCcw: <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>,
                 Wifi: <><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></>,
-                LogOut: <><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></>,
+                LogOut: <><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></>,
                 Lock: <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />,
                 Snowflake: <path d="M2 12h20M12 2v20M20 20 4 4m16 0L4 20M4.93 19.07l4.24-7.07m5.66 0l4.24 7.07M4.93 4.93l4.24 7.07m5.66 0l4.24-7.07"/>,
                 Truck: <path d="M10 17h4V5H2v12h3m10 0h3l4-4V8h-7v9zm-9 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm11 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/>,
@@ -445,7 +325,9 @@
                 ClipboardList: <><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/></>,
                 WifiOff: <line x1="1" y1="1" x2="23" y2="23"></line>,
                 Smartphone: <><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></>,
-                CloudUpload: <path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242M12 12v9m-4-4 4-4 4 4" />
+                Archive: <><polyline points="21 8 21 21 3 21 3 8"></polyline><rect width="22" height="5" x="1" y="3"></rect><line x1="10" x2="14" y1="12" y2="12"></line></>,
+                SortAsc: <path d="M11 5h10M11 9h7M11 13h4M3 17l3 3 3-3M6 18V4"/>,
+                Edit: <><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></>
             };
             return (
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
@@ -489,91 +371,10 @@
             return isOnline;
         };
 
-        // --- GESTIONNAIRE DE SYNC DE PHOTOS (BACKGROUND) ---
-        const SyncManager = ({ restaurantId }) => {
-            const isOnline = useNetworkStatus();
-            const [pendingCount, setPendingCount] = useState(0);
-
-            useEffect(() => {
-                const checkQueue = () => {
-                    const queue = JSON.parse(localStorage.getItem('offline_sync_queue') || '[]');
-                    setPendingCount(queue.length);
-                };
-                
-                const interval = setInterval(checkQueue, 2000);
-                return () => clearInterval(interval);
-            }, []);
-
-            useEffect(() => {
-                const processQueue = async () => {
-                    if (!isOnline) return;
-
-                    const queue = JSON.parse(localStorage.getItem('offline_sync_queue') || '[]');
-                    if (queue.length === 0) return;
-
-                    console.log("Début synchro photos:", queue.length);
-
-                    // Traitement UN par UN (séquentiel pour fiabilité)
-                    const item = queue[0];
-                    try {
-                        // 1. Récupérer l'image HD locale
-                        const blob = await SimpleIDB.get(item.idbKey);
-                        if (!blob) {
-                            console.warn("Image perdue pour", item.idbKey);
-                            // On retire de la file pour ne pas bloquer
-                            const newQueue = queue.slice(1);
-                            localStorage.setItem('offline_sync_queue', JSON.stringify(newQueue));
-                            return;
-                        }
-
-                        // 2. Upload vers Storage
-                        const storageRef = window.ref(window.storage, item.storagePath);
-                        await window.uploadBytes(storageRef, blob);
-                        const url = await window.getDownloadURL(storageRef);
-
-                        // 3. Mise à jour du document Firestore
-                        const collectionRef = item.collectionType === 'prod' 
-                            ? window.collection(window.db, 'haccp_data', restaurantId, item.collectionPath)
-                            : window.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'haccp_items');
-                        
-                        await window.updateDoc(window.doc(collectionRef, item.docId), {
-                            photo: url,
-                            syncStatus: 'synced',
-                            pendingUploadKey: window.deleteField ? window.deleteField() : null
-                        });
-
-                        // 4. Nettoyage
-                        await SimpleIDB.delete(item.idbKey);
-                        const newQueue = queue.slice(1);
-                        localStorage.setItem('offline_sync_queue', JSON.stringify(newQueue));
-                        setPendingCount(newQueue.length);
-                        console.log("Photo synchronisée !");
-
-                    } catch (e) {
-                        console.error("Erreur sync item", e);
-                        // En cas d'erreur, on attend un peu avant de retenter (le useEffect se relancera si online change ou au prochain montage)
-                    }
-                };
-
-                if (isOnline && pendingCount > 0) {
-                    processQueue();
-                }
-            }, [isOnline, pendingCount, restaurantId]);
-
-            if (pendingCount === 0) return null;
-
-            return (
-                <div className="fixed bottom-20 left-1/2 transform -translate-x-1/2 bg-blue-600 text-white px-4 py-2 rounded-full shadow-lg z-50 flex items-center gap-2 text-sm font-bold animate-pulse">
-                    <Icon name="CloudUpload" className="w-4 h-4" />
-                    Synchro photos ({pendingCount})...
-                </div>
-            );
-        };
-
         // --- MODULES ---
         const TraceabilityModule = ({ restaurantId }) => {
             const { data: products, addItem, deleteItem } = useSharedCollection(restaurantId, 'traceability', 'timestamp');
-            const [newProduct, setNewProduct] = useState({ name: '', batch: '', quantity: '', photo: null, rawFile: null });
+            const [newProduct, setNewProduct] = useState({ name: '', batch: '', photo: null, rawFile: null });
             const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
             const [isWebcamOpen, setIsWebcamOpen] = useState(false);
             const [fullscreenPhoto, setFullscreenPhoto] = useState(null);
@@ -584,6 +385,7 @@
             const [exportModalOpen, setExportModalOpen] = useState(false);
             const [exportMonth, setExportMonth] = useState(new Date().toISOString().slice(0, 7));
             const [isZipping, setIsZipping] = useState(false);
+            const [hasAutoCleaned, setHasAutoCleaned] = useState(false);
             const videoRef = useRef(null);
             const canvasRef = useRef(null);
             const fileInputRef = useRef(null);
@@ -595,170 +397,18 @@
             const productHistory = products.map(p => p.name);
 
             useEffect(() => { if (fullscreenPhoto) { setZoomLevel(1); setPan({x:0, y:0}); } }, [fullscreenPhoto]);
-            
-            useEffect(() => {
-                const loadDraft = async () => {
-                    const savedDraft = localStorage.getItem('draft_traceability_meta');
-                    const savedImage = await SimpleIDB.get('draft_traceability_photo');
-                    
-                    if (savedDraft) {
-                        try { 
-                            const parsed = JSON.parse(savedDraft);
-                            if (savedImage) parsed.photo = savedImage;
-                            setNewProduct(parsed); 
-                        } catch (e) { console.error("Erreur lecture brouillon", e); }
-                    }
-                };
-                loadDraft();
-            }, []);
-
-            useEffect(() => {
-                if (newProduct.name || newProduct.batch) {
-                    const meta = { ...newProduct, photo: null, rawFile: null }; 
-                    try { localStorage.setItem('draft_traceability_meta', JSON.stringify(meta)); } catch (e) {}
-                }
-            }, [newProduct.name, newProduct.batch]);
+            useEffect(() => { if (products.length > 0 && !hasAutoCleaned) { const timer = setTimeout(async () => { const sixMonthsAgo = Date.now() - (180 * 24 * 60 * 60 * 1000); const oldItems = products.filter(p => { const itemDate = p.createdAt || (p.sortDate ? new Date(p.sortDate).getTime() : null); return itemDate && itemDate < sixMonthsAgo; }); if (oldItems.length > 0) { for (const item of oldItems) { try { await deleteItem(item.id); } catch (e) { console.warn("Erreur suppression auto", e); } } } setHasAutoCleaned(true); }, 5000); return () => clearTimeout(timer); } }, [products, hasAutoCleaned]);
 
             const handleCameraClick = () => { if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) { nativeCameraInputRef.current?.click(); } else { startWebcam(); } };
-            
-            const handleNativeCameraCapture = (e) => { 
-                const file = e.target.files[0]; 
-                if (file) {
-                    const previewUrl = URL.createObjectURL(file);
-                    setNewProduct(p => ({ ...p, photo: previewUrl, rawFile: file }));
-                    setTimeout(async () => {
-                        try {
-                            const reader = new FileReader();
-                            reader.onload = async (event) => {
-                                const compressed = await compressImage(event.target.result, 1600, 0.9);
-                                await SimpleIDB.save('draft_traceability_photo', compressed);
-                                setNewProduct(p => ({ ...p, photo: compressed, rawFile: file }));
-                                URL.revokeObjectURL(previewUrl);
-                            };
-                            reader.readAsDataURL(file);
-                        } catch (err) { console.error("Erreur compression background", err); }
-                    }, 500);
-                } 
-            };
-
+            const handleNativeCameraCapture = (e) => { const file = e.target.files[0]; if (file) { const reader = new FileReader(); reader.onload = (event) => { setNewProduct(p => ({ ...p, photo: event.target.result, rawFile: file })); }; reader.readAsDataURL(file); } };
             const startWebcam = async () => { setTempPhoto(null); setIsWebcamOpen(true); try { const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } }); setTimeout(() => { if (videoRef.current) videoRef.current.srcObject = stream; }, 100); } catch (e) { alert("Impossible d'accéder à la webcam."); setIsWebcamOpen(false); } };
-            const captureWebcam = () => { if (videoRef.current && canvasRef.current) { const v = videoRef.current; const c = canvasRef.current; c.width = v.videoWidth; c.height = v.videoHeight; c.getContext('2d').drawImage(v, 0, 0); c.toBlob((blob) => { const previewUrl = c.toDataURL('image/jpeg', 0.9); setTempPhoto({ preview: previewUrl, file: blob }); }, 'image/jpeg', 0.95); v.pause(); } };
+            const captureWebcam = () => { if (videoRef.current && canvasRef.current) { const v = videoRef.current; const c = canvasRef.current; c.width = v.videoWidth; c.height = v.videoHeight; c.getContext('2d').drawImage(v, 0, 0); c.toBlob((blob) => { const previewUrl = c.toDataURL('image/jpeg', 0.8); setTempPhoto({ preview: previewUrl, file: blob }); }, 'image/jpeg', 0.95); v.pause(); } };
             const retakePhoto = () => { setTempPhoto(null); if (videoRef.current) videoRef.current.play(); };
-            
-            const confirmPhoto = async () => { 
-                if (tempPhoto) { 
-                    const compressed = await compressImage(tempPhoto.preview, 1600, 0.9);
-                    await SimpleIDB.save('draft_traceability_photo', compressed);
-                    setNewProduct(p => ({ ...p, photo: compressed, rawFile: tempPhoto.file })); 
-                } 
-                if(videoRef.current?.srcObject) videoRef.current.srcObject.getTracks().forEach(t => t.stop()); 
-                setIsWebcamOpen(false); setTempPhoto(null); 
-            };
-
-            const handleSubmit = async (e) => { 
-                e.preventDefault(); 
-                setIsUploading(true); 
-                try { 
-                    await addItem({ ...newProduct, sortDate: new Date().toISOString().split('T')[0] });
-                    localStorage.removeItem('draft_traceability_meta');
-                    await SimpleIDB.delete('draft_traceability_photo');
-                } catch (error) { console.error(error); } finally { 
-                    setIsUploading(false); 
-                    setNewProduct({ name: '', batch: '', quantity: '', photo: null, rawFile: null }); 
-                } 
-            };
+            const confirmPhoto = () => { if (tempPhoto) { setNewProduct(p => ({ ...p, photo: tempPhoto.preview, rawFile: tempPhoto.file })); } if(videoRef.current?.srcObject) videoRef.current.srcObject.getTracks().forEach(t => t.stop()); setIsWebcamOpen(false); setTempPhoto(null); };
+            const handleSubmit = async (e) => { e.preventDefault(); setIsUploading(true); try { await addItem({ ...newProduct, sortDate: new Date().toISOString().split('T')[0] }); } catch (error) { console.error(error); } finally { setIsUploading(false); setNewProduct({ name: '', batch: '', photo: null, rawFile: null }); } };
             const filtered = products.filter(p => p.sortDate === selectedDate);
             const changeDate = (d) => { const date = new Date(selectedDate); date.setDate(date.getDate() + d); setSelectedDate(date.toISOString().split('T')[0]); };
-
-            // --- CORRECTION TÉLÉCHARGEMENT ROBUSTE (Batch + Fallback) ---
-            const downloadPhotos = async () => {
-                setIsZipping(true);
-                try {
-                    const zip = new JSZip();
-                    const folder = zip.folder(`Photos_${exportMonth}`);
-                    
-                    const itemsToExport = products.filter(p => p.sortDate && p.sortDate.startsWith(exportMonth) && p.photo);
-
-                    if (itemsToExport.length === 0) {
-                        alert("Aucune photo trouvée pour ce mois dans l'historique chargé.");
-                        setIsZipping(false);
-                        return;
-                    }
-
-                    let count = 0;
-                    const errors = [];
-
-                    // Fonction helper pour récupérer l'image coûte que coûte
-                    const getBlob = async (url) => {
-                        // 1. Si c'est déjà du Base64 local
-                        if (url.startsWith('data:')) return (await fetch(url)).blob();
-                        
-                        // 2. Si c'est une URL Cloud
-                        try {
-                            // Tentative A : Fetch Direct
-                            const res = await fetch(url, { mode: 'cors', cache: 'no-cache' });
-                            if (res.ok) return await res.blob();
-                            throw new Error("Fetch bloqué");
-                        } catch (e) {
-                            // Tentative B : Passage par balise Image + Canvas (Contournement CORS partiel)
-                            return new Promise((resolve, reject) => {
-                                const img = new Image();
-                                img.crossOrigin = "Anonymous";
-                                img.onload = () => {
-                                    try {
-                                        const c = document.createElement('canvas');
-                                        c.width = img.width; c.height = img.height;
-                                        const ctx = c.getContext('2d');
-                                        ctx.drawImage(img, 0, 0);
-                                        c.toBlob(blob => {
-                                            if (blob) resolve(blob);
-                                            else reject(new Error("Conversion Canvas échouée"));
-                                        }, 'image/jpeg', 0.85);
-                                    } catch(err) { reject(new Error("Canvas 'tainted' (Sécurité stricte)")); }
-                                };
-                                img.onerror = () => reject(new Error("Chargement image échoué"));
-                                img.src = url + (url.includes('?') ? '&' : '?') + 't=' + new Date().getTime(); // Anti-cache
-                            });
-                        }
-                    };
-
-                    // Traitement par petits paquets pour ne pas figer le navigateur
-                    const BATCH_SIZE = 5;
-                    for (let i = 0; i < itemsToExport.length; i += BATCH_SIZE) {
-                        const batch = itemsToExport.slice(i, i + BATCH_SIZE);
-                        await Promise.all(batch.map(async (item) => {
-                            try {
-                                const blob = await getBlob(item.photo);
-                                const safeName = (item.name || 'produit').replace(/[^a-z0-9]/gi, '_');
-                                const filename = `${item.sortDate}_${safeName}_${item.id.substr(0,4)}.jpg`;
-                                folder.file(filename, blob);
-                                count++;
-                            } catch (e) {
-                                console.warn("Echec export:", item.name, e);
-                                errors.push(item.name);
-                            }
-                        }));
-                    }
-
-                    if (count > 0) {
-                        const content = await zip.generateAsync({ type: "blob" });
-                        saveAs(content, `Traceabilite_${restaurantId}_${exportMonth}.zip`);
-                        if (errors.length > 0) {
-                            alert(`Téléchargement partiel : ${count} réussis.\n${errors.length} bloqués par la sécurité navigateur (CORS).`);
-                        } else {
-                            // Succès total - fermeture modale
-                            setExportModalOpen(false);
-                        }
-                    } else {
-                        alert("Erreur Critique : Le navigateur bloque l'accès aux images distantes (CORS).\nEssayez depuis un ordinateur ou une connexion différente.");
-                    }
-                } catch (e) {
-                    alert("Erreur ZIP globale: " + e.message);
-                } finally {
-                    setIsZipping(false);
-                }
-            };
-            
+            const downloadPhotos = async () => { setIsZipping(true); try { const zip = new JSZip(); const folder = zip.folder(`Photos_${exportMonth}`); const itemsToExport = products.filter(p => p.sortDate && p.sortDate.startsWith(exportMonth) && p.photo); if (itemsToExport.length === 0) { alert("Aucune photo trouvée pour ce mois."); setIsZipping(false); return; } let count = 0; for (const item of itemsToExport) { try { let blob = await (await fetch(item.photo)).blob(); const safeName = (item.name || 'produit').replace(/[^a-z0-9]/gi, '_'); const filename = `${item.sortDate}_${safeName}_${item.id.substr(0,4)}.jpg`; folder.file(filename, blob); count++; } catch (e) { console.error("Erreur téléchargement image", item, e); } } if (count > 0) { const content = await zip.generateAsync({ type: "blob" }); saveAs(content, `Traceabilite_${restaurantId}_${exportMonth}.zip`); setExportModalOpen(false); } else { alert("Erreur: Impossible de récupérer les images."); } } catch (e) { alert("Erreur ZIP: " + e.message); } finally { setIsZipping(false); } };
             const onTouchStart = (e) => { if (e.touches.length === 2) { touchStartDist.current = Math.hypot(e.touches[0].pageX - e.touches[1].pageX, e.touches[0].pageY - e.touches[1].pageY); startZoom.current = zoomLevel; } else if (e.touches.length === 1 && zoomLevel > 1) { panStart.current = { x: e.touches[0].pageX, y: e.touches[0].pageY }; startPan.current = { ...pan }; } };
             const onTouchMove = (e) => { if (e.touches.length === 2 && touchStartDist.current) { const dist = Math.hypot(e.touches[0].pageX - e.touches[1].pageX, e.touches[0].pageY - e.touches[1].pageY); setZoomLevel(Math.min(Math.max(0.5, startZoom.current * (dist / touchStartDist.current)), 5)); e.stopPropagation(); } else if (e.touches.length === 1 && panStart.current && zoomLevel > 1) { setPan({ x: startPan.current.x + (e.touches[0].pageX - panStart.current.x), y: startPan.current.y + (e.touches[0].pageY - panStart.current.y) }); e.stopPropagation(); } };
             const onTouchEnd = () => { touchStartDist.current = null; panStart.current = null; };
@@ -770,34 +420,10 @@
                         <div className="lg:col-span-4">
                             <Card className="border-2 border-green-100">
                                 <form onSubmit={handleSubmit}>
-                                    <div className="mb-4">
-                                        {isUploading ? (
-                                            <div className="w-full h-56 bg-gray-50 rounded-xl flex flex-col items-center justify-center text-green-600 animate-pulse border-2 border-green-200">
-                                                <Icon name="Wifi" className="mb-2 animate-bounce"/>Envoi vers le Cloud...
-                                            </div>
-                                        ) : newProduct.photo ? (
-                                            <div onClick={() => setNewProduct({...newProduct, photo: null, rawFile: null})} className="relative cursor-pointer group h-56 w-full bg-gray-100 rounded-xl overflow-hidden border border-green-200 flex items-center justify-center">
-                                                <img src={newProduct.photo} className="h-full w-full object-contain" />
-                                                <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 rounded-xl text-white font-bold transition-all">
-                                                    <Icon name="Trash2" className="mr-2"/> Retirer
-                                                </div>
-                                            </div>
-                                        ) : (
-                                            <div className="space-y-3">
-                                                <button type="button" onClick={handleCameraClick} className="w-full h-56 bg-green-50 text-green-700 rounded-xl border-2 border-dashed border-green-300 flex flex-col items-center justify-center hover:bg-green-100 transition-colors">
-                                                    <Icon name="Aperture" className="w-12 h-12 mb-4"/> 
-                                                    <span className="font-bold text-lg">Scanner / Photo</span>
-                                                </button>
-                                                <div onClick={() => fileInputRef.current?.click()} className="text-center text-sm text-gray-400 underline cursor-pointer pb-2">Importer fichier</div>
-                                                <input type="file" ref={fileInputRef} onChange={handleNativeCameraCapture} accept="image/*" className="hidden"/><input type="file" ref={nativeCameraInputRef} onChange={handleNativeCameraCapture} accept="image/*" capture="environment" className="hidden"/>
-                                            </div>
-                                        )}
-                                    </div>
+                                    <div className="mb-4">{isUploading ? <div className="w-full py-8 bg-gray-50 rounded-xl flex flex-col items-center justify-center text-green-600 animate-pulse border-2 border-green-200"><Icon name="Wifi" className="mb-2 animate-bounce"/>Envoi vers le Cloud...</div> : newProduct.photo ? <div onClick={() => setNewProduct({...newProduct, photo: null, rawFile: null})} className="relative cursor-pointer group"><img src={newProduct.photo} className="w-full rounded-lg" /><div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 rounded-lg text-white font-bold"><Icon name="Trash2" className="mr-2"/> Retirer</div></div> : <div className="space-y-3"><button type="button" onClick={handleCameraClick} className="w-full py-8 bg-green-50 text-green-700 rounded-xl border-2 border-dashed border-green-300 flex flex-col items-center justify-center hover:bg-green-100 transition-colors"><Icon name="Aperture" className="w-8 h-8 mb-2"/> Scanner / Photo</button><div onClick={() => fileInputRef.current?.click()} className="text-center text-sm text-gray-400 underline cursor-pointer">Importer fichier</div><input type="file" ref={fileInputRef} onChange={handleNativeCameraCapture} accept="image/*" className="hidden"/><input type="file" ref={nativeCameraInputRef} onChange={handleNativeCameraCapture} accept="image/*" capture="environment" className="hidden"/></div>}</div>
                                     <AutocompleteInput label="Produit" value={newProduct.name} onChange={e => setNewProduct({...newProduct, name: e.target.value})} options={productHistory} required />
-                                    <Input label="Qté" type="number" value={newProduct.quantity} onChange={e => setNewProduct({...newProduct, quantity: e.target.value})} />
                                     <Input label="Lot / DLC" value={newProduct.batch} onChange={e => setNewProduct({...newProduct, batch: e.target.value})} />
-                                    
-                                    <Button type="submit" className="w-full" disabled={!newProduct.name || !newProduct.photo || isUploading}>{isUploading ? "Enregistrement..." : "Enregistrer"}</Button>
+                                    <Button type="submit" className="w-full" disabled={!newProduct.name || !newProduct.photo || isUploading}>{isUploading ? "Enregistrement..." : "Enregistrer (Cloud)"}</Button>
                                 </form>
                             </Card>
                         </div>
@@ -805,7 +431,7 @@
                              <div className="bg-white p-4 rounded-xl border flex justify-between items-center mb-4"><div className="flex items-center gap-2"><button onClick={() => changeDate(-1)}><Icon name="ChevronLeft" className="w-6 h-6"/></button><div className="flex items-center gap-2 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200"><Icon name="Calendar" className="w-5 h-5 text-green-600"/><input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} className="bg-transparent font-bold text-gray-700 outline-none" /></div><button onClick={() => changeDate(1)}><Icon name="ChevronRight" className="w-6 h-6"/></button></div><span className="text-sm text-gray-500">{filtered.length} produit(s)</span></div>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 {filtered.length === 0 && <div className="col-span-full text-center py-10 text-gray-400">Rien ce jour.</div>}
-                                {filtered.map(item => (<div key={item.id} className="bg-white rounded-lg border p-3 flex justify-between items-start"><div className="flex gap-3 w-full" onClick={() => setFullscreenPhoto(item.photo)}><img src={item.photo} className={`w-20 h-20 object-cover rounded-lg bg-gray-100 cursor-zoom-in ${item.syncStatus === 'pending' ? 'opacity-50 blur-[1px]' : ''}`} /><div><p className="font-bold flex items-center gap-2">{item.name} {item.quantity && <span className="text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded-full font-bold">x{item.quantity}</span>}</p><p className="text-sm text-green-600">{item.batch}</p>{item.syncStatus === 'pending' && <p className="text-xs text-orange-500 font-bold flex items-center gap-1"><Icon name="WifiOff" className="w-3 h-3"/> En attente synchro...</p>}</div></div><button onClick={() => deleteItem(item.id)} className="text-gray-300 hover:text-red-500"><Icon name="Trash2"/></button></div>))}
+                                {filtered.map(item => (<div key={item.id} className="bg-white rounded-lg border p-3 flex justify-between items-start"><div className="flex gap-3 w-full" onClick={() => setFullscreenPhoto(item.photo)}><img src={item.photo} className="w-20 h-20 object-cover rounded-lg bg-gray-100 cursor-zoom-in" /><div><p className="font-bold">{item.name}</p><p className="text-sm text-green-600">{item.batch}</p></div></div><button onClick={() => deleteItem(item.id)} className="text-gray-300 hover:text-red-500"><Icon name="Trash2"/></button></div>))}
                             </div>
                         </div>
                     </div>
@@ -864,82 +490,85 @@
             );
         };
 
+        // --- NOUVEAU COMPOSANT GESTION STOCK CONGELÉ ---
+        const FrozenStockView = ({ restaurantId, onBack }) => {
+            const { data: stockItems, deleteItem } = useSharedCollection(restaurantId, 'frozen_stock', 'date');
+            const [sortBy, setSortBy] = useState('date'); // 'date' | 'alpha'
+
+            const sortedItems = [...stockItems].sort((a, b) => {
+                if (sortBy === 'alpha') {
+                    return (a.product || '').localeCompare(b.product || '');
+                } else {
+                    // Date desc (plus récent en haut)
+                    return (b.date || '').localeCompare(a.date || '');
+                }
+            });
+
+            return (
+                <div className="space-y-6 fade-in-element">
+                    <div className="flex items-center gap-4">
+                        <button onClick={onBack} className="p-2 bg-white rounded-lg border hover:bg-gray-50"><Icon name="ChevronLeft" className="w-6 h-6 text-gray-600"/></button>
+                        <h2 className="text-2xl font-bold text-blue-800 flex items-center gap-2"><Icon name="Snowflake" className="w-8 h-8"/> Stock Congelé</h2>
+                    </div>
+
+                    <div className="flex justify-between items-center bg-blue-50 p-3 rounded-lg border border-blue-100">
+                        <span className="font-bold text-blue-800">{sortedItems.length} produits en stock</span>
+                        <div className="flex gap-2">
+                            <button onClick={() => setSortBy('date')} className={`px-3 py-1 rounded-md text-sm font-bold ${sortBy==='date' ? 'bg-blue-600 text-white' : 'bg-white text-blue-600'}`}>Date</button>
+                            <button onClick={() => setSortBy('alpha')} className={`px-3 py-1 rounded-md text-sm font-bold flex items-center gap-1 ${sortBy==='alpha' ? 'bg-blue-600 text-white' : 'bg-white text-blue-600'}`}>A-Z <Icon name="SortAsc" className="w-4 h-4"/></button>
+                        </div>
+                    </div>
+
+                    <div className="grid gap-3">
+                        {sortedItems.map(item => (
+                            <div key={item.id} className="bg-white p-4 rounded-xl border shadow-sm flex justify-between items-center">
+                                <div>
+                                    <div className="font-bold text-lg text-gray-800">{item.product}</div>
+                                    <div className="text-sm text-gray-500 flex gap-3">
+                                        <span className="flex items-center gap-1"><Icon name="Calendar" className="w-3 h-3"/> Ajouté le {new Date(item.date).toLocaleDateString()}</span>
+                                        {item.quantity && <span className="font-bold text-blue-600 bg-blue-50 px-2 rounded">Qté: {item.quantity}</span>}
+                                    </div>
+                                </div>
+                                <button onClick={() => { if(confirm("Sortir ce produit du stock ?")) deleteItem(item.id); }} className="px-4 py-2 bg-red-50 text-red-600 rounded-lg font-bold border border-red-100 hover:bg-red-100 flex items-center gap-2">
+                                    <Icon name="LogOut" className="w-4 h-4"/> Sortir
+                                </button>
+                            </div>
+                        ))}
+                        {sortedItems.length === 0 && (
+                            <div className="text-center py-12 text-gray-400">
+                                <Icon name="Archive" className="w-12 h-12 mx-auto mb-2 opacity-20"/>
+                                <p>Le congélateur est vide.</p>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        };
+
         const MonitoringModule = ({ restaurantId }) => {
             const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
             
             // --- 1. Refroidissement / Congélation ---
-            // UPDATE: On récupère aussi 'updateItem' ici
             const { data: coolings, addItem: addCooling, deleteItem: removeCooling, updateItem: updateCooling } = useSharedCollection(restaurantId, 'cooling_logs', 'startTime');
-            const [newCooling, setNewCooling] = useState({ type: 'Refroidissement', start: '', end: '', product: '', tempIn: '', tempOut: '' });
+            // Ajout du Hook pour le Stock Congelé (pour l'ajout automatique)
+            const { addItem: addStock } = useSharedCollection(restaurantId, 'frozen_stock');
             
-            // --- MODIF: Gestion Edition Cooling ---
-            const [editingCooling, setEditingCooling] = useState(null); // L'objet en cours d'édition
+            // Nouveau state pour afficher la vue Stock
+            const [showFrozenStock, setShowFrozenStock] = useState(false);
+            
+            // --- GESTION EDITION ---
+            const [editingId, setEditingId] = useState(null);
+
+            // Mise à jour du formulaire avec "quantity" et "addToStock"
+            const [newCooling, setNewCooling] = useState({ 
+                type: 'Refroidissement', 
+                start: '', end: '', product: '', tempIn: '', tempOut: '',
+                quantity: '', addToStock: false 
+            });
             
             const filteredCoolings = coolings.filter(c => c.sortDate === selectedDate);
             const coolingHistory = coolings.map(c => c.product);
-
-            // --- NOTIFICATIONS & ALERTES ---
-            useEffect(() => {
-                // Demande permission notification au démarrage
-                if ("Notification" in window && Notification.permission !== "granted") {
-                    Notification.requestPermission();
-                }
-
-                // Vérification toutes les minutes
-                const checkAlerts = () => {
-                    const now = new Date();
-                    const activeCycles = coolings.filter(c => !c.end); // Cycles non terminés
-
-                    activeCycles.forEach(c => {
-                        // On construit la date de début. Attention, si sortDate != today, ça peut être hier.
-                        // Simplification : on suppose que c'est sur la journée en cours ou récente.
-                        const startParts = c.start.split(':');
-                        const startDate = new Date(c.sortDate);
-                        startDate.setHours(parseInt(startParts[0]), parseInt(startParts[1]));
-
-                        const diffMs = now - startDate;
-                        const diffHours = diffMs / (1000 * 60 * 60);
-
-                        // Si > 3h et pas de notif récente (simple check)
-                        if (diffHours >= 3) {
-                             if ("Notification" in window && Notification.permission === "granted") {
-                                // Pour éviter le spam, on pourrait stocker le lastNotifTime, mais ici on fait simple
-                                // On notifie si on est pile à une nouvelle heure ou via une logique plus complexe.
-                                // Ici, on va juste logger ou afficher une alerte visuelle dans l'UI.
-                                // Pour la "notification système", on le fait une fois si on vient de passer le cap (compliqué sans état persistant local).
-                                // On va se contenter de l'affichage UI rouge clignotant.
-                             }
-                        }
-                    });
-                };
-                const interval = setInterval(checkAlerts, 60000);
-                return () => clearInterval(interval);
-            }, [coolings]);
             
-            // Fonction pour savoir si un cycle est en alerte (> 3h)
-            const isCycleLate = (c) => {
-                if (c.end) return false;
-                const now = new Date();
-                const startParts = c.start.split(':');
-                const startDate = new Date(c.sortDate);
-                startDate.setHours(parseInt(startParts[0]), parseInt(startParts[1]));
-                const diffHours = (now - startDate) / (1000 * 60 * 60);
-                return diffHours >= 3;
-            };
-
-            // Fonction pour soumettre la fin de cycle (Edition)
-            const submitEndCycle = async () => {
-                if (!editingCooling || !editingCooling.end || !editingCooling.tempOut) return;
-                
-                await updateCooling(editingCooling.id, {
-                    end: editingCooling.end,
-                    tempOut: editingCooling.tempOut
-                });
-                setEditingCooling(null);
-            };
-
-            // ... (Le reste du module Monitoring reste identique jusqu'au rendu de la liste Refroidissement)
-
             // --- 2. Livraison ---
             const { data: deliveries, addItem: addDelivery, deleteItem: removeDelivery } = useSharedCollection(restaurantId, 'delivery_logs', 'timestamp');
             const [newDelivery, setNewDelivery] = useState({ supplier: '', product: '', batch: '', dlc: '', temp: '', compliant: 'Oui', comment: '', photo: null });
@@ -961,40 +590,11 @@
             const videoRef = useRef(null);
             const canvasRef = useRef(null);
 
-            // --- BROUILLON LIVRAISON VIA INDEXEDDB + LS ---
-            useEffect(() => {
-                const loadDraft = async () => {
-                    const savedDraft = localStorage.getItem('draft_delivery_meta');
-                    const savedImage = await SimpleIDB.get('draft_delivery_photo');
-                    
-                    if (savedDraft) {
-                        try { 
-                            const parsed = JSON.parse(savedDraft);
-                            if (savedImage) parsed.photo = savedImage;
-                            setNewDelivery(parsed); 
-                        } catch (e) { console.error("Erreur lecture brouillon livraison", e); }
-                    }
-                };
-                loadDraft();
-            }, []);
-
-            useEffect(() => {
-                if (newDelivery.supplier || newDelivery.product) {
-                    const meta = { ...newDelivery, photo: null, rawFile: null };
-                    try { localStorage.setItem('draft_delivery_meta', JSON.stringify(meta)); } catch (e) {}
-                }
-            }, [newDelivery.supplier, newDelivery.product, newDelivery.batch]); // Check specific fields to avoid loop with photo
-
             const startWebcam = async () => { setTempPhoto(null); setIsWebcamOpen(true); try { const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } }); setTimeout(() => { if (videoRef.current) videoRef.current.srcObject = stream; }, 100); } catch (e) { alert("Impossible d'accéder à la webcam."); setIsWebcamOpen(false); } };
-            const captureWebcam = () => { if (videoRef.current && canvasRef.current) { const v = videoRef.current; const c = canvasRef.current; c.width = v.videoWidth; c.height = v.videoHeight; c.getContext('2d').drawImage(v, 0, 0); c.toBlob((blob) => { const previewUrl = c.toDataURL('image/jpeg', 0.9); setTempPhoto({ preview: previewUrl, file: blob }); }, 'image/jpeg', 0.95); v.pause(); } };
+            const captureWebcam = () => { if (videoRef.current && canvasRef.current) { const v = videoRef.current; const c = canvasRef.current; c.width = v.videoWidth; c.height = v.videoHeight; c.getContext('2d').drawImage(v, 0, 0); c.toBlob((blob) => { const previewUrl = c.toDataURL('image/jpeg', 0.8); setTempPhoto({ preview: previewUrl, file: blob }); }, 'image/jpeg', 0.95); v.pause(); } };
             const retakePhoto = () => { setTempPhoto(null); if (videoRef.current) videoRef.current.play(); };
-            
-            const confirmPhoto = async () => { 
-                if (tempPhoto) { 
-                    const compressed = await compressImage(tempPhoto.preview, 1600, 0.9);
-                    await SimpleIDB.save('draft_delivery_photo', compressed);
-                    setNewDelivery({...newDelivery, photo: compressed, rawFile: tempPhoto.file}); 
-                } 
+            const confirmPhoto = () => { 
+                if (tempPhoto) { setNewDelivery({...newDelivery, photo: tempPhoto.preview, rawFile: tempPhoto.file}); } 
                 if(videoRef.current?.srcObject) videoRef.current.srcObject.getTracks().forEach(t => t.stop()); 
                 setIsWebcamOpen(false); setTempPhoto(null); 
             };
@@ -1010,129 +610,148 @@
 
             const changeDate = (d) => { const date = new Date(selectedDate); date.setDate(date.getDate() + d); setSelectedDate(date.toISOString().split('T')[0]); };
 
+            const startEdit = (item) => {
+                setEditingId(item.id);
+                setNewCooling({
+                    type: item.type || 'Refroidissement',
+                    start: item.start || '',
+                    end: item.end || '',
+                    product: item.product || '',
+                    tempIn: item.tempIn || '',
+                    tempOut: item.tempOut || '',
+                    quantity: item.quantity || '',
+                    addToStock: false 
+                });
+                document.querySelector('.cooling-form')?.scrollIntoView({ behavior: 'smooth' });
+            };
+
+            const cancelEdit = () => {
+                setEditingId(null);
+                setNewCooling({ type: 'Refroidissement', start: '', end: '', product: '', tempIn: '', tempOut: '', quantity: '', addToStock: false });
+            };
+
             const submitCooling = async (e) => {
                 e.preventDefault();
-                await addCooling({ ...newCooling, sortDate: selectedDate, timestamp: Date.now() });
-                setNewCooling({ type: 'Refroidissement', start: '', end: '', product: '', tempIn: '', tempOut: '' });
+                
+                if (editingId) {
+                    await updateCooling(editingId, { ...newCooling });
+                    cancelEdit();
+                } else {
+                    // 1. Ajouter au journal de traçabilité (toujours)
+                    await addCooling({ ...newCooling, sortDate: selectedDate, timestamp: Date.now() });
+
+                    // 2. Si c'est une congélation ET qu'on veut ajouter au stock
+                    if (newCooling.type === 'Congélation' && newCooling.addToStock) {
+                        await addStock({
+                            product: newCooling.product,
+                            quantity: newCooling.quantity || '1',
+                            date: selectedDate,
+                            createdAt: Date.now()
+                        });
+                    }
+                    // Reset form
+                    setNewCooling({ type: 'Refroidissement', start: '', end: '', product: '', tempIn: '', tempOut: '', quantity: '', addToStock: false });
+                }
             };
 
             const handleDeliveryPhoto = (e) => {
                 const file = e.target.files[0];
                 if(file) {
-                    const previewUrl = URL.createObjectURL(file);
-                    setNewDelivery(prev => ({...prev, photo: previewUrl, rawFile: file}));
-
-                    setTimeout(async () => {
-                        try {
-                            const reader = new FileReader();
-                            reader.onload = async (event) => {
-                                const compressed = await compressImage(event.target.result, 1600, 0.9);
-                                await SimpleIDB.save('draft_delivery_photo', compressed);
-                                setNewDelivery(prev => ({ ...prev, photo: compressed, rawFile: file }));
-                                URL.revokeObjectURL(previewUrl);
-                            };
-                            reader.readAsDataURL(file);
-                        } catch (err) { console.error(err); }
-                    }, 500);
+                    const reader = new FileReader();
+                    reader.onload = (ev) => setNewDelivery({...newDelivery, photo: ev.target.result, rawFile: file});
+                    reader.readAsDataURL(file);
                 }
             };
-
             const submitDelivery = async (e) => {
                 e.preventDefault();
                 await addDelivery({ ...newDelivery, sortDate: selectedDate, timestamp: Date.now() });
-                // Clean up IDB and LS
-                localStorage.removeItem('draft_delivery_meta');
-                await SimpleIDB.delete('draft_delivery_photo');
                 setNewDelivery({ supplier: '', product: '', batch: '', dlc: '', temp: '', compliant: 'Oui', comment: '', photo: null });
             };
 
-            // MODIFICATION: Logique intelligente de nettoyage
-            // Cette fonction regarde en arrière selon la fréquence pour voir si c'est "fait"
-            const getCleaningStatus = (taskId, freq) => {
-                // Limite en jours pour regarder en arrière
-                const daysLimit = freq === 'Hebdomadaire' ? 7 : freq === 'Mensuel' ? 30 : 0;
-                
-                // Journalier = Strictement aujourd'hui
-                if (daysLimit === 0) return { valid: !!logs[selectedDate]?.[taskId], date: selectedDate };
+            const toggleZone = (id) => updateLog(selectedDate, { [id]: !(logs[selectedDate]?.[id]) });
+            const isDone = (id) => logs[selectedDate]?.[id];
+            const cleanProgress = zones.length === 0 ? 0 : Math.round((zones.filter(z => isDone(z.id)).length / zones.length) * 100);
 
-                // Pour Hebdo/Mensuel, on regarde les jours précédents
-                // On commence par la date sélectionnée et on recule
-                for(let i = 0; i < daysLimit; i++) {
-                    const d = new Date(selectedDate);
-                    d.setDate(d.getDate() - i);
-                    const dateStr = d.toISOString().split('T')[0];
-                    if (logs[dateStr]?.[taskId]) {
-                        return { valid: true, date: dateStr }; // Trouvé ! C'est valide
-                    }
-                }
-                return { valid: false, date: null };
-            };
-
-            const toggleZone = (id, freq, currentStatus) => {
-                // Si c'est déjà fait AUJOURD'HUI, on décoche (annulation)
-                if (currentStatus.valid && currentStatus.date === selectedDate) {
-                    updateLog(selectedDate, { [id]: false });
-                } 
-                // Sinon (pas fait OU fait il y a longtemps), on valide pour AUJOURD'HUI
-                // Cela "renouvelle" la période de validité
-                else {
-                    updateLog(selectedDate, { [id]: true });
-                }
-            };
-
-            const cleanProgress = zones.length === 0 ? 0 : Math.round((zones.filter(z => getCleaningStatus(z.id, z.freq).valid).length / zones.length) * 100);
+            // Si on est en mode "Stock Congelé", on affiche uniquement ce composant
+            if (showFrozenStock) {
+                return <FrozenStockView restaurantId={restaurantId} onBack={() => setShowFrozenStock(false)} />;
+            }
 
             return (
                 <div className="space-y-8 fade-in-element pb-24">
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4"><h2 className="text-2xl font-bold text-green-800 flex items-center gap-2"><Icon name="ClipboardList" className="w-8 h-8"/> Suivi & Hygiène</h2><div className="flex items-center gap-4 bg-white p-2 rounded-lg border ml-auto w-full sm:w-auto justify-between sm:justify-start"><button onClick={() => changeDate(-1)}><Icon name="ChevronLeft"/></button><div className="flex items-center gap-2 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200"><Icon name="Calendar" className="w-5 h-5 text-green-600"/><input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} className="bg-transparent font-bold text-gray-700 outline-none w-32" /></div><button onClick={() => changeDate(1)}><Icon name="ChevronRight"/></button></div></div>
 
                     {/* 1. Suivi des Denrées (Refroidissement / Congélation) */}
-                    <Card className="border-l-4 border-l-blue-500">
-                        <h3 className="text-xl font-bold text-blue-800 mb-4 flex items-center gap-2"><Icon name="Snowflake" className="w-6 h-6"/> Refroidissement / Congélation</h3>
-                        <form onSubmit={submitCooling} className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 bg-blue-50 p-4 rounded-xl">
+                    <Card className="border-l-4 border-l-blue-500 relative cooling-form">
+                        {/* BOUTON ACCÈS STOCK */}
+                        <div className="absolute top-4 right-4">
+                            <button onClick={() => setShowFrozenStock(true)} className="px-3 py-1.5 bg-blue-100 text-blue-700 text-sm font-bold rounded-lg hover:bg-blue-200 transition-colors flex items-center gap-2 border border-blue-200 shadow-sm">
+                                <Icon name="Snowflake" className="w-4 h-4"/> Voir Stock Congelé
+                            </button>
+                        </div>
+
+                        <h3 className="text-xl font-bold text-blue-800 mb-4 flex items-center gap-2 pr-40"><Icon name="Snowflake" className="w-6 h-6"/> Refroidissement / Congélation</h3>
+                        
+                        <form onSubmit={submitCooling} className={`grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 bg-blue-50 p-4 rounded-xl border border-blue-100 transition-all ${editingId ? 'ring-2 ring-orange-400' : ''}`}>
                             <div className="flex gap-2 col-span-full">
-                                <label className={`flex-1 p-2 text-center rounded-lg cursor-pointer border font-bold ${newCooling.type === 'Refroidissement' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-600'}`}><input type="radio" className="hidden" name="type" checked={newCooling.type==='Refroidissement'} onChange={()=>setNewCooling({...newCooling, type:'Refroidissement'})} /> Refroidissement</label>
-                                <label className={`flex-1 p-2 text-center rounded-lg cursor-pointer border font-bold ${newCooling.type === 'Congélation' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-600'}`}><input type="radio" className="hidden" name="type" checked={newCooling.type==='Congélation'} onChange={()=>setNewCooling({...newCooling, type:'Congélation'})} /> Congélation</label>
+                                <label className={`flex-1 p-2 text-center rounded-lg cursor-pointer border font-bold transition-all ${newCooling.type === 'Refroidissement' ? 'bg-blue-600 text-white border-blue-600 shadow-md' : 'bg-white text-gray-600 hover:bg-gray-50'}`}><input type="radio" className="hidden" name="type" checked={newCooling.type==='Refroidissement'} onChange={()=>setNewCooling({...newCooling, type:'Refroidissement'})} /> Refroidissement</label>
+                                <label className={`flex-1 p-2 text-center rounded-lg cursor-pointer border font-bold transition-all ${newCooling.type === 'Congélation' ? 'bg-blue-600 text-white border-blue-600 shadow-md' : 'bg-white text-gray-600 hover:bg-gray-50'}`}><input type="radio" className="hidden" name="type" checked={newCooling.type==='Congélation'} onChange={()=>setNewCooling({...newCooling, type:'Congélation'})} /> Congélation</label>
                             </div>
+                            
                             <div className="col-span-full"><AutocompleteInput placeholder="Produit..." value={newCooling.product} onChange={e=>setNewCooling({...newCooling, product:e.target.value})} options={coolingHistory} required/></div>
+                            
                             <div className="flex gap-2">
-                                <div className="flex-1"><label className="text-xs font-bold text-gray-500 ml-1">T° Départ</label><input type="number" placeholder="°C" className="w-full p-3 rounded-lg border" value={newCooling.tempIn} onChange={e=>setNewCooling({...newCooling, tempIn:e.target.value})} /></div>
-                                <div className="flex-1"><label className="text-xs font-bold text-gray-500 ml-1">T° Fin</label><input type="number" placeholder="°C" className="w-full p-3 rounded-lg border" value={newCooling.tempOut} onChange={e=>setNewCooling({...newCooling, tempOut:e.target.value})} /></div>
+                                <div className="flex-1"><label className="text-xs font-bold text-gray-500 ml-1">T° Départ</label><input type="number" placeholder="°C" className="w-full p-3 rounded-lg border bg-white" value={newCooling.tempIn} onChange={e=>setNewCooling({...newCooling, tempIn:e.target.value})} /></div>
+                                <div className="flex-1"><label className="text-xs font-bold text-gray-500 ml-1">T° Fin</label><input type="number" placeholder="°C" className="w-full p-3 rounded-lg border bg-white" value={newCooling.tempOut} onChange={e=>setNewCooling({...newCooling, tempOut:e.target.value})} /></div>
                             </div>
+                            
                             <div className="flex gap-2">
-                                <div className="flex-1"><label className="text-xs font-bold text-gray-500 ml-1">Heure Début</label><input type="time" className="w-full p-3 rounded-lg border" value={newCooling.start} onChange={e=>setNewCooling({...newCooling, start:e.target.value})} required /></div>
-                                <div className="flex-1"><label className="text-xs font-bold text-gray-500 ml-1">Heure Fin</label><input type="time" className="w-full p-3 rounded-lg border" value={newCooling.end} onChange={e=>setNewCooling({...newCooling, end:e.target.value})} /></div>
+                                <div className="flex-1"><label className="text-xs font-bold text-gray-500 ml-1">Heure Début</label><input type="time" className="w-full p-3 rounded-lg border bg-white" value={newCooling.start} onChange={e=>setNewCooling({...newCooling, start:e.target.value})} required /></div>
+                                <div className="flex-1"><label className="text-xs font-bold text-gray-500 ml-1">Heure Fin</label><input type="time" className="w-full p-3 rounded-lg border bg-white" value={newCooling.end} onChange={e=>setNewCooling({...newCooling, end:e.target.value})} /></div>
                             </div>
-                            <Button type="submit" className="col-span-full bg-blue-600 hover:bg-blue-700 text-white">Ajouter cycle</Button>
-                        </form>
-                        <div className="space-y-2">
-                            {filteredCoolings.map(c => {
-                                const isLate = isCycleLate(c);
-                                return (
-                                <div key={c.id} className={`flex justify-between items-center bg-gray-50 p-3 rounded-lg border ${isLate ? 'border-red-500 border-l-4 shadow-red-100' : ''}`}>
-                                    <div>
-                                        <div className="font-bold text-gray-800 flex items-center gap-2">
-                                            {c.product} 
-                                            <span className="text-xs font-normal text-blue-600 bg-blue-100 px-2 py-0.5 rounded-full">{c.type}</span>
-                                            {isLate && <span className="text-[10px] bg-red-600 text-white px-1.5 py-0.5 rounded animate-pulse">! RETARD &gt; 3H</span>}
+
+                            {/* NOUVEAUX CHAMPS POUR LE STOCK (Visible seulement si Congélation et PAS en édition pour éviter doublons) */}
+                            {newCooling.type === 'Congélation' && !editingId && (
+                                <div className="col-span-full bg-blue-100/50 p-3 rounded-lg border border-blue-200 animate-[fadeIn_0.3s]">
+                                    <div className="flex items-center gap-4">
+                                        <div className="flex-1">
+                                            <label className="text-xs font-bold text-blue-700 ml-1">Quantité (facultatif)</label>
+                                            <input type="text" placeholder="Ex: 2kg, 3 bacs..." className="w-full p-2 rounded-lg border border-blue-200 text-sm" value={newCooling.quantity} onChange={e=>setNewCooling({...newCooling, quantity:e.target.value})} />
                                         </div>
-                                        <div className="text-sm text-gray-500 flex items-center gap-1">
-                                            {c.start} ➝ {c.end ? c.end : <span className="italic text-orange-500">En cours...</span>}
-                                            {c.tempIn && c.tempOut && <span className="ml-2 font-mono text-xs bg-gray-200 px-1 rounded">({c.tempIn}°C ➝ {c.tempOut}°C)</span>}
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        {/* BOUTON MODIFIER / TERMINER */}
-                                        {!c.end && (
-                                            <button onClick={() => setEditingCooling(c)} className="p-2 bg-blue-50 text-blue-600 rounded-full hover:bg-blue-100 border border-blue-200">
-                                                {/* Icône Crayon SVG inline car Icon 'Edit' n'est pas def */}
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
-                                            </button>
-                                        )}
-                                        <button onClick={() => removeCooling(c.id)} className="p-2 text-gray-300 hover:text-red-500"><Icon name="Trash2"/></button>
+                                        <label className="flex items-center gap-2 font-bold text-blue-800 cursor-pointer select-none bg-white px-3 py-2 rounded-lg border border-blue-200 shadow-sm mt-4">
+                                            <input type="checkbox" className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500" checked={newCooling.addToStock} onChange={e=>setNewCooling({...newCooling, addToStock:e.target.checked})} />
+                                            Ajouter au stock
+                                        </label>
                                     </div>
                                 </div>
-                            )})}
+                            )}
+
+                            <div className="col-span-full flex gap-2">
+                                <Button type="submit" className={`flex-1 ${editingId ? 'bg-orange-500 hover:bg-orange-600' : 'bg-blue-600 hover:bg-blue-700'} text-white`}>
+                                    {editingId ? 'Mettre à jour' : 'Ajouter cycle'}
+                                </Button>
+                                {editingId && (
+                                    <Button variant="ghost" onClick={cancelEdit} className="bg-gray-200 text-gray-700 hover:bg-gray-300">Annuler</Button>
+                                )}
+                            </div>
+                        </form>
+                        <div className="space-y-2">
+                            {filteredCoolings.map(c => (
+                                <div key={c.id} className={`flex justify-between items-center bg-gray-50 p-3 rounded-lg border ${editingId === c.id ? 'border-orange-400 bg-orange-50' : ''}`}>
+                                    <div>
+                                        <div className="font-bold text-gray-800">{c.product} <span className="text-xs font-normal text-blue-600 bg-blue-100 px-2 py-0.5 rounded-full">{c.type}</span></div>
+                                        <div className="text-sm text-gray-500">{c.start} ➝ {c.end || 'En cours'} {c.tempIn && c.tempOut && <span className="ml-2 font-mono text-xs bg-gray-200 px-1 rounded">({c.tempIn}°C ➝ {c.tempOut}°C)</span>}</div>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <button onClick={() => startEdit(c)} className="p-2 text-blue-400 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-colors" title="Modifier">
+                                            <Icon name="Edit" className="w-5 h-5"/>
+                                        </button>
+                                        <button onClick={() => removeCooling(c.id)} className="p-2 text-red-300 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors" title="Supprimer">
+                                            <Icon name="Trash2" className="w-5 h-5"/>
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
                             {filteredCoolings.length === 0 && <p className="text-center text-gray-400 italic text-sm">Aucun cycle enregistré ce jour.</p>}
                         </div>
                     </Card>
@@ -1146,6 +765,7 @@
                             <div className="flex gap-2"><input placeholder="N° Lot" className="p-2 rounded border flex-1" value={newDelivery.batch} onChange={e=>setNewDelivery({...newDelivery, batch:e.target.value})} /><input placeholder="T°C" type="number" className="p-2 rounded border w-24" value={newDelivery.temp} onChange={e=>setNewDelivery({...newDelivery, temp:e.target.value})} /></div>
                             <div className="flex gap-2">
                                 <select className={`p-2 rounded border flex-1 font-bold ${newDelivery.compliant==='Non'?'bg-red-50 text-red-600 border-red-300':'bg-white'}`} value={newDelivery.compliant} onChange={e=>setNewDelivery({...newDelivery, compliant:e.target.value})}><option value="Oui">Conforme</option><option value="Non">Non Conforme</option></select>
+                                {/* MODIFICATION 2: Bouton Camera Smart */}
                                 <input type="file" ref={deliveryCameraRef} onChange={handleDeliveryPhoto} accept="image/*" capture="environment" className="hidden"/>
                                 <button type="button" onClick={handleDeliveryCameraClick} className={`flex-1 border rounded flex items-center justify-center gap-2 font-medium ${newDelivery.photo ? 'bg-green-100 text-green-700 border-green-300' : 'bg-white text-gray-500 border-gray-300 hover:bg-gray-50'}`}><Icon name="Camera" className="w-5 h-5"/> {newDelivery.photo ? 'Photo OK' : 'Photo'}</button>
                             </div>
@@ -1153,7 +773,7 @@
                             <Button type="submit" className="col-span-full bg-orange-600 hover:bg-orange-700 text-white">Valider réception</Button>
                         </form>
                         <div className="space-y-2">
-                            {filteredDeliveries.map(d => ( <div key={d.id} className={`flex justify-between items-start bg-white p-3 rounded-lg border shadow-sm ${d.compliant === 'Non' ? 'border-l-4 border-l-red-500' : ''}`}><div className="flex gap-3">{d.photo && <img src={d.photo} className={`w-12 h-12 object-cover rounded bg-gray-200 ${d.syncStatus === 'pending' ? 'opacity-50 blur-[1px]' : ''}`} />}<div><div className="font-bold text-gray-800">{d.product} <span className="text-xs text-gray-500">({d.supplier})</span></div><div className="text-sm text-gray-600">Lot: {d.batch} • {d.temp}°C • <span className={d.compliant==='Oui'?'text-green-600 font-bold':'text-red-600 font-bold'}>{d.compliant==='Oui'?'Conforme':'Non Conforme'}</span></div>{d.comment && <div className="text-xs text-red-500 mt-1 italic">⚠️ {d.comment}</div>}{d.syncStatus === 'pending' && <p className="text-xs text-orange-500 font-bold flex items-center gap-1 mt-1"><Icon name="WifiOff" className="w-3 h-3"/> En attente synchro...</p>}</div></div><button onClick={() => removeDelivery(d.id)} className="text-gray-300 hover:text-red-500"><Icon name="Trash2"/></button></div> ))}
+                            {filteredDeliveries.map(d => ( <div key={d.id} className={`flex justify-between items-start bg-white p-3 rounded-lg border shadow-sm ${d.compliant === 'Non' ? 'border-l-4 border-l-red-500' : ''}`}><div className="flex gap-3">{d.photo && <img src={d.photo} className="w-12 h-12 object-cover rounded bg-gray-200" />}<div><div className="font-bold text-gray-800">{d.product} <span className="text-xs text-gray-500">({d.supplier})</span></div><div className="text-sm text-gray-600">Lot: {d.batch} • {d.temp}°C • <span className={d.compliant==='Oui'?'text-green-600 font-bold':'text-red-600 font-bold'}>{d.compliant==='Oui'?'Conforme':'Non Conforme'}</span></div>{d.comment && <div className="text-xs text-red-500 mt-1 italic">⚠️ {d.comment}</div>}</div></div><button onClick={() => removeDelivery(d.id)} className="text-gray-300 hover:text-red-500"><Icon name="Trash2"/></button></div> ))}
                             {filteredDeliveries.length === 0 && <p className="text-center text-gray-400 italic text-sm">Aucune livraison scannée ce jour.</p>}
                         </div>
                     </Card>
@@ -1163,68 +783,10 @@
                         <div className="flex justify-between items-end mb-4"><h3 className="text-xl font-bold text-gray-700 flex items-center gap-2"><Icon name="ClipboardCheck" className="w-6 h-6"/> Plan de Nettoyage</h3><span className="text-2xl font-bold text-green-600">{cleanProgress}%</span></div>
                         <div className="w-full bg-gray-200 rounded-full h-2 mb-6"><div className="bg-green-600 h-2 rounded-full transition-all duration-500" style={{width: `${cleanProgress}%`}}></div></div>
                         <div className="grid gap-3">
-                            {zones.map(z => {
-                                const status = getCleaningStatus(z.id, z.freq);
-                                return ( 
-                                    <div key={z.id} onClick={() => toggleZone(z.id, z.freq, status)} className={`p-4 rounded-xl border cursor-pointer flex justify-between items-center transition-all ${status.valid ? 'bg-green-600 text-white border-green-700 shadow-md transform scale-[1.02]' : 'bg-white border-gray-200'}`}>
-                                        <div>
-                                            <h4 className="font-bold text-lg">{z.name}</h4>
-                                            <div className="flex items-center gap-2">
-                                                <span className={`text-xs px-2 py-0.5 rounded-full ${status.valid ? 'bg-green-500 text-green-50' : 'bg-gray-100 text-gray-500'}`}>{z.freq}</span>
-                                                {status.valid && (
-                                                    <span className="text-xs font-medium text-green-100 flex items-center gap-1">
-                                                        <Icon name="CheckCircle" className="w-3 h-3"/> 
-                                                        {status.date === selectedDate 
-                                                            ? "Fait aujourd'hui" 
-                                                            : `Fait le ${new Date(status.date).toLocaleDateString('fr-FR', {day: 'numeric', month:'numeric'})}`
-                                                        }
-                                                    </span>
-                                                )}
-                                            </div>
-                                        </div>
-                                        <div className="flex gap-4 items-center">
-                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center ${status.valid ? 'bg-white text-green-600' : 'bg-gray-100 text-gray-300'}`}>
-                                                <Icon name="CheckCircle" />
-                                            </div>
-                                            <button onClick={(e) => { e.stopPropagation(); removeZone(z.id); }} className="p-2 hover:bg-white/20 rounded-full">
-                                                <Icon name="Trash2" className="w-5 h-5"/>
-                                            </button>
-                                        </div>
-                                    </div> 
-                                );
-                            })}
+                            {zones.map(z => ( <div key={z.id} onClick={() => toggleZone(z.id)} className={`p-4 rounded-xl border cursor-pointer flex justify-between items-center transition-all ${isDone(z.id) ? 'bg-green-600 text-white border-green-700 shadow-md transform scale-[1.02]' : 'bg-white border-gray-200'}`}><div><h4 className="font-bold text-lg">{z.name}</h4><span className={`text-xs px-2 py-0.5 rounded-full ${isDone(z.id) ? 'bg-green-500 text-green-50' : 'bg-gray-100 text-gray-500'}`}>{z.freq}</span></div><div className="flex gap-4 items-center"><div className={`w-8 h-8 rounded-full flex items-center justify-center ${isDone(z.id) ? 'bg-white text-green-600' : 'bg-gray-100 text-gray-300'}`}><Icon name="CheckCircle" /></div><button onClick={(e) => { e.stopPropagation(); removeZone(z.id); }} className="p-2 hover:bg-white/20 rounded-full"><Icon name="Trash2" className="w-5 h-5"/></button></div></div> ))}
                             {showAddZone ? ( <Card className="bg-green-50 border-dashed border-2 border-green-300"><div className="flex flex-col gap-2"><AutocompleteInput placeholder="Nom de la tâche..." value={newZone.name} onChange={e=>setNewZone({...newZone, name: e.target.value})} options={cleaningTaskHistory} /><div className="flex gap-2"><select className="p-2 rounded border border-gray-300 bg-white flex-1" value={newZone.freq} onChange={e=>setNewZone({...newZone, freq: e.target.value})}><option value="Journalier">Journalier</option><option value="Hebdomadaire">Hebdomadaire</option><option value="Mensuel">Mensuel</option></select><Button className="flex-1" onClick={() => { if(newZone.name) { addZone(newZone); setNewZone({name:"", freq:"Journalier"}); setShowAddZone(false); } }}>Ajouter</Button></div><Button variant="ghost" onClick={() => setShowAddZone(false)} className="w-full text-sm py-1">Annuler</Button></div></Card> ) : <button onClick={() => setShowAddZone(true)} className="w-full py-4 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 font-bold hover:bg-green-50">+ Nouvelle tâche</button>}
                         </div>
                     </div>
-
-                    {/* MODAL EDITION COOLING */}
-                    {editingCooling && (
-                        <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setEditingCooling(null)}>
-                            <div className="bg-white p-6 rounded-2xl w-full max-w-sm shadow-2xl" onClick={e => e.stopPropagation()}>
-                                <h3 className="text-xl font-bold text-blue-800 mb-4 flex items-center gap-2">
-                                    <Icon name="Snowflake" className="w-6 h-6"/> Terminer le cycle
-                                </h3>
-                                <div className="mb-4 text-sm text-gray-600 bg-gray-50 p-3 rounded">
-                                    <p><strong>Produit:</strong> {editingCooling.product}</p>
-                                    <p><strong>Début:</strong> {editingCooling.start} ({editingCooling.tempIn || '?'}°C)</p>
-                                </div>
-                                <div className="space-y-4">
-                                    <div>
-                                        <label className="block text-sm font-bold text-gray-700 mb-1">Heure de fin</label>
-                                        <input type="time" className="w-full p-3 border rounded-lg" value={editingCooling.end} onChange={e => setEditingCooling({...editingCooling, end: e.target.value})} autoFocus />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-bold text-gray-700 mb-1">Température de fin (°C)</label>
-                                        <input type="number" className="w-full p-3 border rounded-lg" value={editingCooling.tempOut} onChange={e => setEditingCooling({...editingCooling, tempOut: e.target.value})} placeholder="Ex: 3" />
-                                    </div>
-                                    <Button onClick={submitEndCycle} className="w-full bg-blue-600 hover:bg-blue-700 text-white" disabled={!editingCooling.end || !editingCooling.tempOut}>
-                                        Valider la fin
-                                    </Button>
-                                    <Button variant="ghost" onClick={() => setEditingCooling(null)} className="w-full">Annuler</Button>
-                                </div>
-                            </div>
-                        </div>
-                    )}
 
                     {/* WEBCAM OVERLAY FOR DELIVERY */}
                     {isWebcamOpen && (<div className="fixed inset-0 z-[100] bg-black flex flex-col"><div className="relative flex-1 w-full h-full overflow-hidden"><video ref={videoRef} autoPlay playsInline className={`absolute inset-0 w-full h-full object-cover ${tempPhoto ? 'hidden' : ''}`}></video>{tempPhoto && <img src={tempPhoto.preview} className="absolute inset-0 w-full h-full object-cover" />}{!tempPhoto ? (<><div className="absolute inset-0 flex items-center justify-center pointer-events-none"><div className="w-[80%] h-[60%] border-2 border-green-500/50 rounded-2xl relative"><div className="scan-line"></div></div></div><div className="absolute top-0 w-full p-4 flex justify-between items-center z-20 bg-gradient-to-b from-black/60 to-transparent"><span className="text-white font-bold tracking-wide drop-shadow-md">Scanner</span><button onClick={() => { if(videoRef.current?.srcObject) videoRef.current.srcObject.getTracks().forEach(t=>t.stop()); setIsWebcamOpen(false); }} className="p-3 bg-black/40 rounded-full text-white backdrop-blur-md border border-white/20"><Icon name="X" className="w-6 h-6"/></button></div><div className="absolute bottom-8 w-full flex justify-center z-20"><button onClick={captureWebcam} className="w-20 h-20 bg-white rounded-full border-4 border-gray-200/50 shadow-2xl active:scale-95 transition-transform flex items-center justify-center"><div className="w-16 h-16 bg-white rounded-full border-2 border-black"></div></button></div></>) : (<div className="absolute bottom-8 w-full flex justify-center gap-6 z-20 px-8"><button onClick={retakePhoto} className="flex-1 py-4 bg-red-500/90 backdrop-blur-md text-white rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg active:scale-95 border border-red-400"><Icon name="RotateCcw" className="w-6 h-6"/> Reprendre</button><button onClick={confirmPhoto} className="flex-1 py-4 bg-green-500 text-white rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg active:scale-95"><Icon name="CheckCircle" className="w-6 h-6"/> Valider</button></div>)}</div><canvas ref={canvasRef} className="hidden"></canvas></div>)}
@@ -1257,46 +819,34 @@
             const [isLoginLoading, setIsLoginLoading] = useState(false);
             const [isCaching, setIsCaching] = useState(false);
             const isOnline = useNetworkStatus();
-            
-            // LOGO STATE & LOGIC
-            const [logo, setLogo] = useState(localStorage.getItem(`logo_${restaurantId}`) || "https://cdn-icons-png.flaticon.com/512/2913/2913465.png");
-            const logoInputRef = useRef(null);
 
             useEffect(() => {
+                // Masquer le loader statique HTML une fois que React prend le relais
                 const loader = document.getElementById('static-loader');
-                // --- 5. AUTOMATISATION DU CACHE AU DÉMARRAGE (CRITIQUE) ---
-                const preloadAssets = async () => {
-                   if (navigator.onLine && !localStorage.getItem('app_cached_v3')) {
-                       const txtEl = document.getElementById('loader-text');
-                       if (txtEl) txtEl.innerText = "Installation hors-ligne...";
-                       const statusEl = document.getElementById('cache-status');
-                       if (statusEl) statusEl.style.display = 'block';
-
-                       try {
-                           const urls = [ "https://cdn.tailwindcss.com", "https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js", "https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js", "https://unpkg.com/@babel/standalone/babel.min.js", "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js", "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js", "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js", "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js", "https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js", "https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js" ];
-                           await Promise.all(urls.map(url => fetch(url, { mode: 'cors', cache: 'force-cache' })));
-                           localStorage.setItem('app_cached_v3', 'true');
-                       } catch(e) { console.warn("Cache preload partial error", e); }
-                   }
-                   if (loader) loader.style.display = 'none';
-                };
+                if (loader) loader.style.display = 'none';
 
                 let unsubscribe;
                 const startAuth = async () => {
+                    // 1. D'abord on écoute si une session existe déjà (Persistence Firebase)
                     unsubscribe = window.onAuthStateChanged(window.auth, (u) => {
                         if (u) {
+                            console.log("Session restaurée (Offline/Online)");
                             setUser(u);
                             setIsAuthLoading(false);
-                            preloadAssets(); 
                         } else {
+                            // 2. Pas d'utilisateur connu ? On tente de se connecter
+                            console.log("Aucune session, tentative de connexion anonyme...");
                             const doLogin = async () => {
                                 try {
-                                    if (window.initialAuthToken) await window.signInWithCustomToken(window.auth, window.initialAuthToken); 
-                                    else await window.signInAnonymously(window.auth); 
+                                    if (window.initialAuthToken) { 
+                                        await window.signInWithCustomToken(window.auth, window.initialAuthToken); 
+                                    } else { 
+                                        await window.signInAnonymously(window.auth); 
+                                    }
                                 } catch (e) {
-                                    console.error("Auth Error (Offline?):", e);
+                                    console.error("Erreur Auth (Probablement hors ligne sans cache)", e);
+                                    // Si on échoue à se connecter (hors ligne et jamais venu), on arrête le chargement
                                     setIsAuthLoading(false);
-                                    preloadAssets(); 
                                 }
                             };
                             doLogin();
@@ -1307,101 +857,57 @@
                 return () => { if(unsubscribe) unsubscribe(); };
             }, []);
 
-            // --- SYNC LOGO FIRESTORE ---
-            useEffect(() => {
-                if (!window.db || !restaurantId) return;
-                try {
-                    const docPath = window.appId === 'epack-prod-data' 
-                        ? ['haccp_settings', restaurantId] 
-                        : ['artifacts', window.appId, 'public', 'data', 'haccp_settings', restaurantId];
-                    
-                    const docRef = window.doc(window.db, ...docPath);
-                    const unsub = window.onSnapshot(docRef, (snap) => {
-                        if (snap.exists() && snap.data().logo) {
-                            setLogo(snap.data().logo);
-                            localStorage.setItem(`logo_${restaurantId}`, snap.data().logo);
-                        }
-                    }, (error) => {
-                         // FIX: Ajout du gestionnaire d'erreur pour éviter "Uncaught Error"
-                         console.warn("Logo sync error (permission?):", error.code);
-                    });
-                    return () => unsub();
-                } catch(e) { console.warn("Logo sync disabled (offline?)"); }
-            }, [restaurantId]);
-
-            const handleLogoUpload = async (e) => {
-                const file = e.target.files[0];
-                if (!file) return;
-
-                const reader = new FileReader();
-                reader.onload = async (evt) => {
-                    // 1. Mise à jour immédiate (Local)
-                    const compressed = await compressImage(evt.target.result, 400, 0.9);
-                    setLogo(compressed);
-                    localStorage.setItem(`logo_${restaurantId}`, compressed);
-
-                    // 2. Sauvegarde Cloud (Si connecté)
-                    if (navigator.onLine && window.storage) {
-                         try {
-                            const storageRef = window.ref(window.storage, `${restaurantId}/logo_${Date.now()}.jpg`);
-                            const res = await fetch(compressed);
-                            const blob = await res.blob();
-                            await window.uploadBytes(storageRef, blob);
-                            const url = await window.getDownloadURL(storageRef);
-
-                            const docPath = window.appId === 'epack-prod-data' 
-                                ? ['haccp_settings', restaurantId] 
-                                : ['artifacts', window.appId, 'public', 'data', 'haccp_settings', restaurantId];
-                            const docRef = window.doc(window.db, ...docPath);
-                            await window.setDoc(docRef, { logo: url }, { merge: true });
-                        } catch(err) { console.error("Erreur upload logo", err); }
-                    }
-                };
-                reader.readAsDataURL(file);
-            };
-
             useEffect(() => { localStorage.setItem('haccp_restaurant_id', restaurantId); }, [restaurantId]);
             const handleLogin = async (code) => { if (code === '030613') { localStorage.setItem('haccp_app_unlocked', 'true'); setIsLocked(false); } else { alert("Code incorrect"); } };
             const handleLock = () => { localStorage.removeItem('haccp_app_unlocked'); setIsLocked(true); };
             
             const handleInstallCache = async () => {
                 setIsCaching(true);
+                alert("L'application va télécharger tous les fichiers nécessaires. Veuillez patienter...");
+                const urlsToCache = [
+                    "https://cdn.tailwindcss.com",
+                    "https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js",
+                    "https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js",
+                    "https://unpkg.com/@babel/standalone/babel.min.js",
+                    "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js",
+                    "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js",
+                    "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js",
+                    "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js",
+                    "https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js",
+                    "https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"
+                ];
+
                 try {
-                    if (navigator.storage && navigator.storage.persist) await navigator.storage.persist();
-                    const urlsToCache = [ "https://cdn.tailwindcss.com", "https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js", "https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js", "https://unpkg.com/@babel/standalone/babel.min.js", "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js", "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js", "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js", "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js", "https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js", "https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js" ];
-                    const fetchPromises = urlsToCache.map(url => fetch(url, { mode: 'no-cors', cache: 'reload', credentials: 'omit' }));
-                    await Promise.allSettled(fetchPromises);
-                    localStorage.setItem('app_cached_v3', 'true');
-                    alert("✅ Application et données mises à jour pour hors-ligne !");
-                } catch (e) { console.error("Erreur MAJ:", e); alert("⚠️ Erreur mineure lors de la mise à jour : " + (e.message || "Réseau instable")); } finally { setIsCaching(false); }
+                    // On tente de fetch chaque ressource pour que le navigateur la mette en cache
+                    await Promise.all(urlsToCache.map(url => fetch(url, { mode: 'cors' })));
+                    alert("✅ Succès ! L'application est prête.\n\nIMPORTANT : Maintenant, ajoutez cette page à votre Écran d'Accueil (via le menu du navigateur) pour garantir l'accès hors ligne.");
+                } catch (e) {
+                    alert("⚠️ Erreur lors du téléchargement. Vérifiez votre connexion et réessayez.");
+                } finally {
+                    setIsCaching(false);
+                }
             };
 
-            if (isAuthLoading) return null; 
+            if (isAuthLoading) return <div className="flex items-center justify-center h-full text-green-700 font-bold animate-pulse">Chargement de vos données...</div>;
             if (isLocked) { return <PinScreen onLogin={handleLogin} isLoading={isLoginLoading} />; }
             
             const MenuBtn = ({ id, label, icon }) => ( <button onClick={() => setTab(id)} className={`w-full flex items-center gap-4 px-4 py-4 rounded-xl transition-all ${tab === id ? 'bg-green-600 text-white shadow-lg' : 'text-gray-600 hover:bg-green-50'}`}><Icon name={icon} className="w-6 h-6"/> <span className="font-semibold text-lg hidden lg:inline">{label}</span><span className="lg:hidden"><Icon name={icon} className="w-8 h-8"/></span></button> );
 
             return (
                 <div className="flex h-[100dvh] bg-green-50/50 w-full overflow-hidden flex-col md:flex-row fade-in-element">
-                    <SyncManager restaurantId={restaurantId} />
-                    <input type="file" ref={logoInputRef} onChange={handleLogoUpload} accept="image/*" className="hidden" />
-                    
                     <div className="md:w-72 bg-white border-r border-gray-200 z-50 flex flex-col md:h-full shadow-xl order-2 md:order-1">
-                        <div className="p-6 border-b hidden md:flex justify-start items-center gap-3">
-                            <img onClick={() => logoInputRef.current?.click()} src={logo} alt="Logo" className="w-10 h-10 object-contain cursor-pointer hover:opacity-80 transition-opacity" title="Changer le logo" />
-                            <h1 className="text-2xl font-extrabold text-green-700">eHygiène<span className="text-green-400">.</span></h1>
-                        </div>
+                        <div className="p-6 border-b hidden md:flex justify-start items-center gap-2"><h1 className="text-2xl font-extrabold text-green-700">eHygiène<span className="text-green-400">.</span></h1></div>
                         <div className="p-4 bg-green-50 border-b hidden md:block"><p className="text-xs text-green-600 font-bold uppercase tracking-wider">Restaurant</p><p className="font-bold text-gray-800 truncate">{restaurantId}</p></div>
                         <nav className="p-2 space-y-2 flex-1 overflow-y-auto hidden md:block">
                             <MenuBtn id="traceability" label="Traçabilité" icon="ScanBarcode"/>
                             <MenuBtn id="temperature" label="Températures" icon="Thermometer"/>
+                            {/* Renommé de Nettoyage à Suivi */}
                             <MenuBtn id="tracking" label="Suivi & Hygiène" icon="ClipboardList"/>
                             
                             <div className="pt-4 mt-4 border-t px-2">
                                 <button onClick={handleInstallCache} disabled={isCaching || !isOnline} className="w-full py-3 px-3 text-sm bg-orange-50 text-orange-700 hover:bg-orange-100 rounded-lg flex items-center gap-2 border border-orange-200 font-semibold disabled:opacity-50">
-                                    <Icon name="Smartphone" className="w-5 h-5"/> {isCaching ? "Téléchargement..." : "Mise à jour Hors-Ligne"}
+                                    <Icon name="Smartphone" className="w-5 h-5"/> {isCaching ? "Téléchargement..." : "Installer pour Hors-Ligne"}
                                 </button>
-                                <p className="text-[10px] text-gray-400 mt-2 text-center px-2">Cliquez pour forcer la mise à jour.</p>
                             </div>
                         </nav>
                         <div className="p-4 border-t hidden md:block"><button onClick={handleLock} className="w-full py-2 text-sm text-red-500 hover:bg-red-50 rounded flex items-center justify-center gap-2"><Icon name="LogOut" className="w-4 h-4"/> Verrouiller</button></div>
@@ -1409,16 +915,13 @@
                             <button onClick={() => setTab('traceability')} className={`flex flex-col items-center ${tab === 'traceability' ? 'text-green-600' : 'text-green-600/50'}`}><Icon name="ScanBarcode" className="w-6 h-6"/><span className="text-xs">Traçabilité</span></button>
                             <button onClick={() => setTab('temperature')} className={`flex flex-col items-center ${tab === 'temperature' ? 'text-green-600' : 'text-green-600/50'}`}><Icon name="Thermometer" className="w-6 h-6"/><span className="text-xs">Températures</span></button>
                             <button onClick={() => setTab('tracking')} className={`flex flex-col items-center ${tab === 'tracking' ? 'text-green-600' : 'text-green-600/50'}`}><Icon name="ClipboardList" className="w-6 h-6"/><span className="text-xs">Suivi</span></button>
-                            <button onClick={handleInstallCache} className={`flex flex-col items-center text-orange-600/70`}><Icon name="Smartphone" className="w-6 h-6"/><span className="text-xs">MàJ</span></button>
+                            <button onClick={handleInstallCache} className={`flex flex-col items-center text-orange-600/70`}><Icon name="Smartphone" className="w-6 h-6"/><span className="text-xs">Install</span></button>
                         </div>
                     </div>
                     <main className="flex-1 flex flex-col h-full overflow-hidden relative w-full order-1 md:order-2 pb-16 md:pb-0">
                         {/* HEADER MOBILE + BADGE OFFLINE */}
                         <div className="md:hidden bg-white p-4 border-b flex justify-between items-center relative">
-                            <div className="flex items-center gap-2">
-                                <img onClick={() => logoInputRef.current?.click()} src={logo} alt="Logo" className="w-8 h-8 object-contain cursor-pointer hover:opacity-80 transition-opacity" />
-                                <h1 className="text-xl font-extrabold text-green-700">eHygiène<span className="text-green-400">.</span></h1>
-                            </div>
+                            <h1 className="text-xl font-extrabold text-green-700">eHygiène<span className="text-green-400">.</span></h1>
                             {!isOnline && <div className="absolute left-1/2 transform -translate-x-1/2 bg-orange-100 text-orange-600 px-3 py-1 rounded-full text-xs font-bold border border-orange-200 flex items-center gap-1 shadow-sm"><Icon name="WifiOff" className="w-3 h-3"/> Hors Ligne</div>}
                             <button onClick={handleLock} className="text-red-500"><Icon name="LogOut" className="w-6 h-6"/></button>
                         </div>
@@ -1431,6 +934,7 @@
                             <div className="max-w-5xl mx-auto w-full">
                                 {tab === 'traceability' && <TraceabilityModule restaurantId={restaurantId} />}
                                 {tab === 'temperature' && <TemperatureModule restaurantId={restaurantId} />}
+                                {/* Changé CleaningModule par MonitoringModule */}
                                 {tab === 'tracking' && <MonitoringModule restaurantId={restaurantId} />}
                             </div>
                         </div>
