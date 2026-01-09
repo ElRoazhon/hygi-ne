@@ -744,12 +744,31 @@
             const supplierHistory = deliveries.map(d => d.supplier);
             const deliveryProductHistory = deliveries.map(d => d.product);
 
-            // --- 3. Nettoyage (NOUVELLE LOGIQUE) ---
+            // --- 3. Nettoyage (NOUVELLE LOGIQUE + COMMENTAIRES) ---
             const { data: zones, addItem: addZone, deleteItem: removeZone } = useSharedCollection(restaurantId, 'cleaning');
             const { logs, updateLog } = useSharedLogs(restaurantId, 'cleaning_logs');
             const [showAddZone, setShowAddZone] = useState(false);
             const [newZone, setNewZone] = useState({ name: "", freq: "Journalier" });
             const cleaningTaskHistory = zones.map(z => z.name);
+            
+            // État pour le commentaire du jour
+            const [dailyComment, setDailyComment] = useState("");
+            const [isSavingComment, setIsSavingComment] = useState(false);
+
+            // Synchroniser le commentaire quand on change de date ou que les logs arrivent
+            // C'est ici que la "réinitialisation" se fait : si on change de date, on charge le commentaire de la nouvelle date (qui est vide par défaut)
+            useEffect(() => {
+                setDailyComment(logs[selectedDate]?.comment || "");
+            }, [selectedDate, logs]);
+
+            // Sauvegarder le commentaire quand on quitte le champ (onBlur)
+            const handleCommentBlur = async () => {
+                if (dailyComment !== (logs[selectedDate]?.comment || "")) {
+                    setIsSavingComment(true);
+                    await updateLog(selectedDate, { comment: dailyComment });
+                    setTimeout(() => setIsSavingComment(false), 1500);
+                }
+            };
 
             // Fonction intelligente pour calculer le statut d'une tâche selon sa fréquence
             const getTaskStatus = (task, targetDate) => {
@@ -852,7 +871,6 @@
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4"><h2 className="text-2xl font-bold text-green-800 flex items-center gap-2"><Icon name="ClipboardList" className="w-8 h-8"/> Suivi & Hygiène</h2><div className="flex items-center gap-4 bg-white p-2 rounded-lg border ml-auto w-full sm:w-auto justify-between sm:justify-start"><button onClick={() => changeDate(-1)}><Icon name="ChevronLeft"/></button><div className="flex items-center gap-2 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200"><Icon name="Calendar" className="w-5 h-5 text-green-600"/><input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} className="bg-transparent font-bold text-gray-700 outline-none w-32" /></div><button onClick={() => changeDate(1)}><Icon name="ChevronRight"/></button></div></div>
 
                     {/* 1. Suivi des Denrées (Refroidissement / Congélation) */}
-                    {/* MODIF 2 : Correction Layout Mobile (plus de superposition du bouton Stock) */}
                     <Card className="border-l-4 border-l-blue-500 relative cooling-form">
                         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-2">
                             <h3 className="text-xl font-bold text-blue-800 flex items-center gap-2">
@@ -892,6 +910,23 @@
                     <div className="border-t pt-8">
                         <div className="flex justify-between items-end mb-4"><h3 className="text-xl font-bold text-gray-700 flex items-center gap-2"><Icon name="ClipboardCheck" className="w-6 h-6"/> Plan de Nettoyage</h3><span className={`text-2xl font-bold ${cleanProgress === 100 ? 'text-green-600' : 'text-orange-500'}`}>{cleanProgress}%</span></div>
                         <div className="w-full bg-gray-200 rounded-full h-2 mb-6"><div className={`h-2 rounded-full transition-all duration-500 ${cleanProgress === 100 ? 'bg-green-600' : 'bg-orange-400'}`} style={{width: `${cleanProgress}%`}}></div></div>
+                        
+                        {/* AJOUT DE LA ZONE DE COMMENTAIRES DU JOUR */}
+                        <div className="mb-6">
+                            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 block flex justify-between items-center">
+                                <span>Observation du {new Date(selectedDate).toLocaleDateString('fr-FR')}</span>
+                                {isSavingComment && <span className="text-green-600 flex items-center gap-1 bg-green-50 px-2 rounded-full animate-pulse"><Icon name="CheckCircle" className="w-3 h-3"/> Enregistré</span>}
+                            </label>
+                            <textarea 
+                                value={dailyComment}
+                                onChange={(e) => setDailyComment(e.target.value)}
+                                onBlur={handleCommentBlur}
+                                placeholder="R.A.S, problème technique, grand nettoyage... (Repart à zéro chaque jour)"
+                                className="w-full p-3 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-green-500 outline-none transition-all resize-none shadow-sm text-gray-700 placeholder-gray-400"
+                                rows="2"
+                            />
+                        </div>
+
                         <div className="grid gap-3">
                             {zones.map(z => {
                                 const status = getTaskStatus(z, selectedDate);
