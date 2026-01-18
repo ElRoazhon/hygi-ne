@@ -298,7 +298,7 @@
             const icons = {
                 ScanBarcode: <><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></>,
                 Thermometer: <path d="M14 4v10.54a4 4 0 1 1-4 0V4a2 2 0 0 1 4 0Z" />,
-                ClipboardCheck: <><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M15 2H9a1 1 0 0 0-1 1v2a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V3a1 1 0 0 0-1-1Z"/><path d="m9 14 2 2 4-4"/></>,
+                ClipboardCheck: <><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1-2-2h2"/><path d="M15 2H9a1 1 0 0 0-1 1v2a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V3a1 1 0 0 0-1-1Z"/><path d="m9 14 2 2 4-4"/></>,
                 Camera: <><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></>,
                 ChevronRight: <path d="m9 18 6-6-6-6"/>,
                 ChevronLeft: <path d="m15 18-6-6 6-6"/>,
@@ -485,8 +485,9 @@
                     const constraints = {
                         video: {
                             facingMode: 'environment', // Caméra arrière
-                            width: { ideal: 4096 },    // Demander la 4K si dispo
-                            height: { ideal: 2160 }
+                            width: { ideal: 3000 },    // Demander la haute résolution
+                            height: { ideal: 4000 },
+                            aspectRatio: { ideal: 0.75 } // Tenter d'obtenir du 3:4 natif
                         }
                     };
                     const stream = await navigator.mediaDevices.getUserMedia(constraints);
@@ -550,15 +551,39 @@
                 if (videoRef.current && canvasRef.current) { 
                     const v = videoRef.current; 
                     const c = canvasRef.current; 
-                    // Capture en pleine résolution native du flux vidéo
-                    c.width = v.videoWidth; 
-                    c.height = v.videoHeight; 
-                    c.getContext('2d').drawImage(v, 0, 0); 
+                    
+                    // CALCUL POUR RECADRER EN 3/4 EXACT (comme affiché à l'écran)
+                    const targetAspect = 3 / 4;
+                    const srcWidth = v.videoWidth;
+                    const srcHeight = v.videoHeight;
+                    const srcAspect = srcWidth / srcHeight;
+                    
+                    let drawWidth, drawHeight, startX, startY;
+
+                    if (srcAspect > targetAspect) {
+                        // La vidéo est plus large que 3/4 (ex: 1:1 ou 4:3 paysage) => On coupe les côtés
+                        drawHeight = srcHeight;
+                        drawWidth = srcHeight * targetAspect;
+                        startX = (srcWidth - drawWidth) / 2;
+                        startY = 0;
+                    } else {
+                        // La vidéo est plus haute que 3/4 (ex: 9:16 smartphone moderne) => On coupe haut/bas
+                        drawWidth = srcWidth;
+                        drawHeight = srcWidth / targetAspect;
+                        startX = 0;
+                        startY = (srcHeight - drawHeight) / 2;
+                    }
+
+                    c.width = drawWidth; 
+                    c.height = drawHeight; 
+                    
+                    // Dessiner uniquement la partie visible (3/4)
+                    c.getContext('2d').drawImage(v, startX, startY, drawWidth, drawHeight, 0, 0, drawWidth, drawHeight); 
+                    
                     c.toBlob((blob) => { 
-                        const previewUrl = c.toDataURL('image/jpeg', 0.85); // Bonne qualité JPEG
+                        const previewUrl = c.toDataURL('image/jpeg', 0.85); 
                         setTempPhoto({ preview: previewUrl, file: blob }); 
                     }, 'image/jpeg', 0.95); 
-                    // On ne met pas en pause la vidéo pour garder le flux actif (et le flash si besoin), on cache juste la vidéo par l'image
                 } 
             };
             
@@ -570,11 +595,25 @@
                 stopWebcam();
                 setTempPhoto(null); 
             };
+            
+            // --- FONCTION RESTAURÉE: handleSubmit ---
+            const handleSubmit = async (e) => { 
+                e.preventDefault(); 
+                setIsUploading(true); 
+                try { 
+                    await addItem({ ...newProduct, sortDate: new Date().toISOString().split('T')[0] }); 
+                } catch (error) { 
+                    console.error(error); 
+                } finally { 
+                    setIsUploading(false); 
+                    setNewProduct({ name: '', quantity: '', batch: '', photo: null, rawFile: null }); 
+                } 
+            };
 
-            const handleSubmit = async (e) => { e.preventDefault(); setIsUploading(true); try { await addItem({ ...newProduct, sortDate: new Date().toISOString().split('T')[0] }); } catch (error) { console.error(error); } finally { setIsUploading(false); setNewProduct({ name: '', quantity: '', batch: '', photo: null, rawFile: null }); } };
+            // --- FONCTIONS RESTAURÉES: filtered, changeDate, generateReport ---
             const filtered = products.filter(p => p.sortDate === selectedDate);
             const changeDate = (d) => { const date = new Date(selectedDate); date.setDate(date.getDate() + d); setSelectedDate(date.toISOString().split('T')[0]); };
-            
+
             const generateReport = async () => {
                 setIsGenerating(true);
                 try {
@@ -618,62 +657,69 @@
                             </div>
                         </div>
                     </div>
+                    
                     {exportModalOpen && (<div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => !isGenerating && setExportModalOpen(false)}><div className="bg-white p-6 rounded-2xl w-full max-w-sm shadow-2xl" onClick={e => e.stopPropagation()}><h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2"><Icon name="Download" className="text-green-600"/> Générer Rapport</h3><p className="text-gray-600 mb-4">Choisissez le mois :</p><input type="month" value={exportMonth} onChange={(e) => setExportMonth(e.target.value)} className="w-full p-3 border border-gray-300 rounded-lg mb-6 text-lg" disabled={isGenerating} /><div className="flex gap-3"><Button onClick={generateReport} className="flex-1" disabled={isGenerating}>{isGenerating ? "Génération..." : "Créer Rapport"}</Button><Button variant="ghost" onClick={() => setExportModalOpen(false)} disabled={isGenerating}>Annuler</Button></div></div></div>)}
+                    
+                    {/* NOUVELLE INTERFACE CAMÉRA 3/4 AVEC CADRE NOIR */}
                     {isWebcamOpen && (
-                        <div className="fixed inset-0 z-[100] bg-black flex flex-col">
-                            <div className="relative flex-1 w-full h-full overflow-hidden bg-black flex items-center justify-center">
-                                {/* Flux Vidéo */}
-                                <video ref={videoRef} autoPlay playsInline muted className={`absolute inset-0 w-full h-full object-cover ${tempPhoto ? 'hidden' : ''}`}></video>
-                                
-                                {/* Aperçu de la photo prise */}
-                                {tempPhoto && <img src={tempPhoto.preview} className="absolute inset-0 w-full h-full object-contain bg-black z-10" />}
-                                
-                                {/* Overlay Caméra (Grille + Boutons) */}
-                                {!tempPhoto ? (
-                                    <>
-                                        {/* Header Caméra */}
-                                        <div className="absolute top-0 w-full p-4 flex justify-between items-center z-20 bg-gradient-to-b from-black/80 to-transparent">
-                                            <span className="text-white font-bold tracking-wide drop-shadow-md text-lg">Scanner</span>
-                                            <div className="flex gap-4">
-                                                {/* Bouton Flash (si dispo) */}
-                                                {hasFlash && (
-                                                    <button onClick={toggleFlash} className={`p-3 rounded-full backdrop-blur-md border ${isFlashOn ? 'bg-yellow-400 text-black border-yellow-400' : 'bg-black/40 text-white border-white/20'}`}>
-                                                        {isFlashOn ? <Icon name="Zap" className="w-6 h-6 fill-current"/> : <Icon name="ZapOff" className="w-6 h-6"/>}
-                                                    </button>
-                                                )}
-                                                <button onClick={stopWebcam} className="p-3 bg-black/40 rounded-full text-white backdrop-blur-md border border-white/20">
-                                                    <Icon name="X" className="w-6 h-6"/>
-                                                </button>
-                                            </div>
-                                        </div>
-                                        
-                                        {/* Viseur SUPPRIMÉ comme demandé */}
+                        <div className="fixed inset-0 z-[100] bg-black flex flex-col justify-between">
+                            
+                            {/* BARRE DU HAUT (NOIRE OPAQUE) */}
+                            <div className="bg-black p-4 flex justify-between items-center shrink-0 h-20 shadow-lg z-20">
+                                <span className="text-white font-bold text-lg tracking-wide">Scanner</span>
+                                <div className="flex gap-4">
+                                    {hasFlash && (
+                                        <button onClick={toggleFlash} className={`p-3 rounded-full border transition-colors ${isFlashOn ? 'bg-yellow-400 text-black border-yellow-400' : 'bg-gray-800 text-white border-gray-700 hover:bg-gray-700'}`}>
+                                            {isFlashOn ? <Icon name="Zap" className="w-6 h-6 fill-current"/> : <Icon name="ZapOff" className="w-6 h-6"/>}
+                                        </button>
+                                    )}
+                                    <button onClick={stopWebcam} className="p-3 bg-gray-800 rounded-full text-white border border-gray-700 hover:bg-gray-700 transition-colors">
+                                        <Icon name="X" className="w-6 h-6"/>
+                                    </button>
+                                </div>
+                            </div>
 
-                                        {/* Déclencheur */}
-                                        <div className="absolute bottom-10 w-full flex justify-center z-20">
-                                            <button onClick={captureWebcam} className="w-20 h-20 bg-white rounded-full border-4 border-gray-300 shadow-2xl active:scale-90 transition-transform flex items-center justify-center ring-4 ring-white/30">
-                                                <div className="w-16 h-16 bg-white rounded-full border-2 border-gray-400"></div>
-                                            </button>
-                                        </div>
-                                    </>
-                                ) : (
-                                    /* Overlay Validation */
-                                    <div className="absolute bottom-0 w-full p-6 pb-12 bg-gradient-to-t from-black via-black/80 to-transparent z-20 flex flex-col gap-4">
-                                        <div className="text-white text-center font-medium drop-shadow-md mb-2">Photo correcte ?</div>
-                                        <div className="flex gap-4">
-                                            <button onClick={retakePhoto} className="flex-1 py-4 bg-white/20 backdrop-blur-md text-white rounded-2xl font-bold flex items-center justify-center gap-2 shadow-lg active:scale-95 border border-white/30">
-                                                <Icon name="RotateCcw" className="w-6 h-6"/> Refaire
-                                            </button>
-                                            <button onClick={confirmPhoto} className="flex-1 py-4 bg-green-500 text-white rounded-2xl font-bold flex items-center justify-center gap-2 shadow-lg active:scale-95 hover:bg-green-600">
-                                                <Icon name="CheckCircle" className="w-6 h-6"/> Valider
-                                            </button>
-                                        </div>
+                            {/* ZONE VIDÉO CENTRALE (Format 3/4 forcé) */}
+                            <div className="relative w-full max-w-lg mx-auto aspect-[3/4] bg-black overflow-hidden shadow-2xl border-x-2 border-gray-900 z-10">
+                                {/* Vidéo */}
+                                <video ref={videoRef} autoPlay playsInline muted className={`w-full h-full object-cover ${tempPhoto ? 'hidden' : ''}`}></video>
+                                
+                                {/* Aperçu Photo prise */}
+                                {tempPhoto && <img src={tempPhoto.preview} className="w-full h-full object-cover" />}
+                                
+                                {/* Guide visuel (Optionnel: coins verts pour aider au cadrage) */}
+                                {!tempPhoto && (
+                                    <div className="absolute inset-0 pointer-events-none opacity-50">
+                                        <div className="absolute top-4 left-4 w-8 h-8 border-t-2 border-l-2 border-white rounded-tl-lg"></div>
+                                        <div className="absolute top-4 right-4 w-8 h-8 border-t-2 border-r-2 border-white rounded-tr-lg"></div>
+                                        <div className="absolute bottom-4 left-4 w-8 h-8 border-b-2 border-l-2 border-white rounded-bl-lg"></div>
+                                        <div className="absolute bottom-4 right-4 w-8 h-8 border-b-2 border-r-2 border-white rounded-br-lg"></div>
                                     </div>
                                 )}
                             </div>
+
+                            {/* BARRE DU BAS (NOIRE OPAQUE) */}
+                            <div className="bg-black p-6 flex flex-col justify-center items-center shrink-0 min-h-[140px] z-20 shadow-[0_-5px_15px_rgba(0,0,0,0.5)]">
+                                {!tempPhoto ? (
+                                    <button onClick={captureWebcam} className="w-20 h-20 bg-white rounded-full border-4 border-gray-300 shadow-2xl active:scale-90 transition-transform flex items-center justify-center ring-4 ring-gray-600">
+                                        <div className="w-16 h-16 bg-white rounded-full border-2 border-gray-400"></div>
+                                    </button>
+                                ) : (
+                                    <div className="flex gap-6 w-full max-w-xs">
+                                        <button onClick={retakePhoto} className="flex-1 py-4 bg-gray-800 text-white rounded-2xl font-bold flex items-center justify-center gap-2 border border-gray-700 hover:bg-gray-700 active:scale-95 transition-all">
+                                            <Icon name="RotateCcw" className="w-5 h-5"/> Refaire
+                                        </button>
+                                        <button onClick={confirmPhoto} className="flex-1 py-4 bg-green-600 text-white rounded-2xl font-bold flex items-center justify-center gap-2 border border-green-500 hover:bg-green-500 active:scale-95 transition-all shadow-lg shadow-green-900/50">
+                                            <Icon name="CheckCircle" className="w-5 h-5"/> Valider
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+
                             <canvas ref={canvasRef} className="hidden"></canvas>
                         </div>
                     )}
+                    
                     {fullscreenPhoto && (<div className="fixed inset-0 z-[100] bg-black flex items-center justify-center overflow-hidden touch-none" onClick={() => setFullscreenPhoto(null)} onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}><div className="absolute bottom-10 z-50 flex gap-4 pointer-events-auto" onClick={e => e.stopPropagation()}><button className="p-4 bg-white/20 backdrop-blur rounded-full text-white border border-white/30 active:scale-95" onClick={() => setZoomLevel(z => Math.max(0.5, z - 0.5))}><Icon name="ZoomOut"/></button><div className="px-4 py-2 bg-black/50 backdrop-blur rounded-full text-white font-mono flex items-center">{Math.round(zoomLevel * 100)}%</div><button className="p-4 bg-white/20 backdrop-blur rounded-full text-white border border-white/30 active:scale-95" onClick={() => setZoomLevel(z => Math.min(3, z + 0.5))}><Icon name="ZoomIn"/></button></div><button className="absolute top-4 right-4 p-3 bg-black/40 backdrop-blur rounded-full text-white border border-white/20 z-50 pointer-events-auto" onClick={() => setFullscreenPhoto(null)}><Icon name="X"/></button><div className="w-full h-full flex items-center justify-center overflow-hidden"><img src={fullscreenPhoto} style={{ transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoomLevel})`, transition: (touchStartDist.current || panStart.current) ? 'none' : 'transform 0.2s ease-out' }} className="max-h-screen max-w-full object-contain pointer-events-auto" onClick={e => e.stopPropagation()} /></div></div>)}
                 </div>
             );
@@ -808,11 +854,13 @@
             const supplierHistory = deliveries.map(d => d.supplier);
             const deliveryProductHistory = deliveries.map(d => d.product);
 
-            // --- 3. Nettoyage (NOUVELLE LOGIQUE + COMMENTAIRES) ---
-            const { data: zones, addItem: addZone, deleteItem: removeZone } = useSharedCollection(restaurantId, 'cleaning');
+            // --- 3. Nettoyage (MODIFICATION AJOUTÉE) ---
+            // J'ai ajouté 'updateItem' alias 'updateZone' ici
+            const { data: zones, addItem: addZone, deleteItem: removeZone, updateItem: updateZone } = useSharedCollection(restaurantId, 'cleaning');
             const { logs, updateLog } = useSharedLogs(restaurantId, 'cleaning_logs');
             const [showAddZone, setShowAddZone] = useState(false);
             const [newZone, setNewZone] = useState({ name: "", freq: "Journalier" });
+            const [editingZoneId, setEditingZoneId] = useState(null); // Nouvel état pour savoir quelle tâche on modifie
             const cleaningTaskHistory = zones.map(z => z.name);
             
             // État pour le commentaire du jour
@@ -820,7 +868,6 @@
             const [isSavingComment, setIsSavingComment] = useState(false);
 
             // Synchroniser le commentaire quand on change de date ou que les logs arrivent
-            // C'est ici que la "réinitialisation" se fait : si on change de date, on charge le commentaire de la nouvelle date (qui est vide par défaut)
             useEffect(() => {
                 setDailyComment(logs[selectedDate]?.comment || "");
             }, [selectedDate, logs]);
@@ -832,6 +879,24 @@
                     await updateLog(selectedDate, { comment: dailyComment });
                     setTimeout(() => setIsSavingComment(false), 1500);
                 }
+            };
+
+            // Fonction pour démarrer la modification d'une zone
+            const startEditZone = (zone) => {
+                setEditingZoneId(zone.id);
+                setNewZone({ name: zone.name, freq: zone.freq });
+                setShowAddZone(true);
+                // Petit scroll vers le bas pour voir le formulaire
+                setTimeout(() => {
+                    document.getElementById('zone-form')?.scrollIntoView({ behavior: 'smooth' });
+                }, 100);
+            };
+
+            // Fonction pour annuler la modification
+            const cancelEditZone = () => {
+                setEditingZoneId(null);
+                setNewZone({ name: "", freq: "Journalier" });
+                setShowAddZone(false);
             };
 
             // Fonction intelligente pour calculer le statut d'une tâche selon sa fréquence
@@ -879,9 +944,6 @@
             };
 
             const toggleZone = (id) => {
-                // Quand on clique, on inverse l'état POUR LA DATE SÉLECTIONNÉE (Aujourd'hui généralement)
-                // Si c'est déjà fait aujourd'hui, ça l'enlève.
-                // Si c'était fait il y a 3 jours (donc valide Hebdo), cliquer va le "refaire" pour aujourd'hui (mise à jour de la date).
                 const currentVal = logs[selectedDate]?.[id];
                 updateLog(selectedDate, { [id]: !currentVal });
             };
@@ -894,7 +956,8 @@
             const [tempPhoto, setTempPhoto] = useState(null);
             const videoRef = useRef(null);
             const canvasRef = useRef(null);
-
+            
+            // ... (Code webcam existant inchangé) ...
             const startWebcam = async () => { setTempPhoto(null); setIsWebcamOpen(true); try { const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } }); setTimeout(() => { if (videoRef.current) videoRef.current.srcObject = stream; }, 100); } catch (e) { alert("Impossible d'accéder à la webcam."); setIsWebcamOpen(false); } };
             const captureWebcam = () => { if (videoRef.current && canvasRef.current) { const v = videoRef.current; const c = canvasRef.current; c.width = v.videoWidth; c.height = v.videoHeight; c.getContext('2d').drawImage(v, 0, 0); c.toBlob((blob) => { const previewUrl = c.toDataURL('image/jpeg', 0.8); setTempPhoto({ preview: previewUrl, file: blob }); }, 'image/jpeg', 0.95); v.pause(); } };
             const retakePhoto = () => { setTempPhoto(null); if (videoRef.current) videoRef.current.play(); };
@@ -903,7 +966,6 @@
                 if(videoRef.current?.srcObject) videoRef.current.srcObject.getTracks().forEach(t => t.stop()); 
                 setIsWebcamOpen(false); setTempPhoto(null); 
             };
-            
             const handleDeliveryCameraClick = () => { 
                 if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) { deliveryCameraRef.current?.click(); } else { startWebcam(); } 
             };
@@ -997,7 +1059,7 @@
                             {zones.map(z => {
                                 const status = getTaskStatus(z, selectedDate);
                                 return ( 
-                                    <div key={z.id} onClick={() => toggleZone(z.id)} className={`p-4 rounded-xl border cursor-pointer flex justify-between items-center transition-all shadow-sm active:scale-[0.98] ${status.bg} ${status.border}`}>
+                                    <div key={z.id} onClick={() => toggleZone(z.id)} className={`p-4 rounded-xl border cursor-pointer flex justify-between items-center transition-all shadow-sm active:scale-[0.98] ${status.bg} ${status.border} ${editingZoneId === z.id ? 'ring-2 ring-orange-400' : ''}`}>
                                         <div className="flex flex-col">
                                             <h4 className="font-bold text-lg text-gray-800">{z.name}</h4>
                                             <span className="text-xs text-gray-400 font-medium bg-gray-100 px-2 py-0.5 rounded-full w-fit">{z.freq}</span>
@@ -1010,12 +1072,56 @@
                                             <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${status.isValid ? 'bg-green-600 text-white shadow-lg shadow-green-200' : 'bg-gray-200 text-gray-400'}`}>
                                                 {status.isValid && <Icon name="CheckCircle" />}
                                             </div>
-                                            <button onClick={(e) => { e.stopPropagation(); removeZone(z.id); }} className="p-2 hover:bg-red-50 text-gray-300 hover:text-red-500 rounded-full"><Icon name="Trash2" className="w-5 h-5"/></button>
+                                            {/* BOUTONS D'ACTION (MODIFIER / SUPPRIMER) */}
+                                            <div className="flex gap-1 ml-2">
+                                                <button onClick={(e) => { e.stopPropagation(); startEditZone(z); }} className="p-2 hover:bg-blue-50 text-gray-300 hover:text-blue-500 rounded-full transition-colors" title="Modifier">
+                                                    <Icon name="Edit" className="w-5 h-5"/>
+                                                </button>
+                                                <button onClick={(e) => { e.stopPropagation(); removeZone(z.id); }} className="p-2 hover:bg-red-50 text-gray-300 hover:text-red-500 rounded-full transition-colors" title="Supprimer">
+                                                    <Icon name="Trash2" className="w-5 h-5"/>
+                                                </button>
+                                            </div>
                                         </div>
                                     </div> 
                                 );
                             })}
-                            {showAddZone ? ( <Card className="bg-green-50 border-dashed border-2 border-green-300"><div className="flex flex-col gap-2"><AutocompleteInput placeholder="Nom de la tâche..." value={newZone.name} onChange={e=>setNewZone({...newZone, name: e.target.value})} options={cleaningTaskHistory} /><div className="flex gap-2"><select className="p-2 rounded border border-gray-300 bg-white flex-1" value={newZone.freq} onChange={e=>setNewZone({...newZone, freq: e.target.value})}><option value="Journalier">Journalier</option><option value="Hebdomadaire">Hebdomadaire</option><option value="Mensuel">Mensuel</option><option value="Biannuel">Biannuel</option><option value="Annuel">Annuel</option></select><Button className="flex-1" onClick={() => { if(newZone.name) { addZone(newZone); setNewZone({name:"", freq:"Journalier"}); setShowAddZone(false); } }}>Ajouter</Button></div><Button variant="ghost" onClick={() => setShowAddZone(false)} className="w-full text-sm py-1">Annuler</Button></div></Card> ) : <button onClick={() => setShowAddZone(true)} className="w-full py-4 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 font-bold hover:bg-green-50">+ Nouvelle tâche</button>}
+                            
+                            {showAddZone ? ( 
+                                <Card id="zone-form" className={`bg-${editingZoneId ? 'orange' : 'green'}-50 border-dashed border-2 border-${editingZoneId ? 'orange' : 'green'}-300`}>
+                                    <div className="flex flex-col gap-2">
+                                        <div className="font-bold text-sm mb-1 text-gray-500">{editingZoneId ? 'Modification de la tâche' : 'Nouvelle tâche'}</div>
+                                        <AutocompleteInput placeholder="Nom de la tâche..." value={newZone.name} onChange={e=>setNewZone({...newZone, name: e.target.value})} options={cleaningTaskHistory} />
+                                        <div className="flex gap-2">
+                                            <select className="p-2 rounded border border-gray-300 bg-white flex-1" value={newZone.freq} onChange={e=>setNewZone({...newZone, freq: e.target.value})}>
+                                                <option value="Journalier">Journalier</option>
+                                                <option value="Hebdomadaire">Hebdomadaire</option>
+                                                <option value="Mensuel">Mensuel</option>
+                                                <option value="Biannuel">Biannuel</option>
+                                                <option value="Annuel">Annuel</option>
+                                            </select>
+                                            <Button className={`flex-1 ${editingZoneId ? 'bg-orange-500 hover:bg-orange-600' : 'bg-green-600 hover:bg-green-700'}`} onClick={() => { 
+                                                if(newZone.name) { 
+                                                    if (editingZoneId) {
+                                                        // MODIFICATION
+                                                        updateZone(editingZoneId, newZone);
+                                                        setEditingZoneId(null);
+                                                    } else {
+                                                        // AJOUT
+                                                        addZone(newZone); 
+                                                    }
+                                                    setNewZone({name:"", freq:"Journalier"}); 
+                                                    setShowAddZone(false); 
+                                                } 
+                                            }}>
+                                                {editingZoneId ? "Modifier" : "Ajouter"}
+                                            </Button>
+                                        </div>
+                                        <Button variant="ghost" onClick={cancelEditZone} className="w-full text-sm py-1">Annuler</Button>
+                                    </div>
+                                </Card> 
+                            ) : (
+                                <button onClick={() => setShowAddZone(true)} className="w-full py-4 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 font-bold hover:bg-green-50">+ Nouvelle tâche</button>
+                            )}
                         </div>
                     </div>
 
