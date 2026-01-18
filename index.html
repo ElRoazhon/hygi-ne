@@ -328,7 +328,9 @@
                 Smartphone: <><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></>,
                 Archive: <><polyline points="21 8 21 21 3 21 3 8"></polyline><rect width="22" height="5" x="1" y="3"></rect><line x1="10" x2="14" y1="12" y2="12"></line></>,
                 SortAsc: <path d="M11 5h10M11 9h7M11 13h4M3 17l3 3 3-3M6 18V4"/>,
-                Edit: <><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></>
+                Edit: <><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></>,
+                Zap: <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>,
+                ZapOff: <><polyline points="12.41 6.75 13 2 10.57 4.92"></polyline><polyline points="18.57 12.91 21 10 15.66 10"></polyline><polyline points="8 8 3 14 12 14 11 22 16 16"></polyline><line x1="1" y1="1" x2="23" y2="23"></line></>
             };
             return (
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
@@ -447,7 +449,12 @@
             const { data: products, addItem, deleteItem } = useSharedCollection(restaurantId, 'traceability', 'timestamp');
             const [newProduct, setNewProduct] = useState({ name: '', quantity: '', batch: '', photo: null, rawFile: null });
             const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+            
+            // WEBCAM STATES
             const [isWebcamOpen, setIsWebcamOpen] = useState(false);
+            const [hasFlash, setHasFlash] = useState(false);
+            const [isFlashOn, setIsFlashOn] = useState(false);
+            
             const [fullscreenPhoto, setFullscreenPhoto] = useState(null);
             const [isUploading, setIsUploading] = useState(false);
             const [zoomLevel, setZoomLevel] = useState(1);
@@ -455,129 +462,133 @@
             const [tempPhoto, setTempPhoto] = useState(null);
             const [exportModalOpen, setExportModalOpen] = useState(false);
             const [exportMonth, setExportMonth] = useState(new Date().toISOString().slice(0, 7));
-            const [isGenerating, setIsGenerating] = useState(false); // Renamed from isZipping
+            const [isGenerating, setIsGenerating] = useState(false);
             const [hasAutoCleaned, setHasAutoCleaned] = useState(false);
             const videoRef = useRef(null);
             const canvasRef = useRef(null);
             const fileInputRef = useRef(null);
-            const nativeCameraInputRef = useRef(null);
             const touchStartDist = useRef(null);
             const startZoom = useRef(1);
             const panStart = useRef(null);
             const startPan = useRef({ x: 0, y: 0 });
             const productHistory = products.map(p => p.name);
+            const streamRef = useRef(null);
 
             useEffect(() => { if (fullscreenPhoto) { setZoomLevel(1); setPan({x:0, y:0}); } }, [fullscreenPhoto]);
             useEffect(() => { if (products.length > 0 && !hasAutoCleaned) { const timer = setTimeout(async () => { const sixMonthsAgo = Date.now() - (180 * 24 * 60 * 60 * 1000); const oldItems = products.filter(p => { const itemDate = p.createdAt || (p.sortDate ? new Date(p.sortDate).getTime() : null); return itemDate && itemDate < sixMonthsAgo; }); if (oldItems.length > 0) { for (const item of oldItems) { try { await deleteItem(item.id); } catch (e) { console.warn("Erreur suppression auto", e); } } } setHasAutoCleaned(true); }, 5000); return () => clearTimeout(timer); } }, [products, hasAutoCleaned]);
 
-            const handleCameraClick = () => { if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) { nativeCameraInputRef.current?.click(); } else { startWebcam(); } };
-            const handleNativeCameraCapture = (e) => { const file = e.target.files[0]; if (file) { const reader = new FileReader(); reader.onload = (event) => { setNewProduct(p => ({ ...p, photo: event.target.result, rawFile: file })); }; reader.readAsDataURL(file); } };
-            const startWebcam = async () => { setTempPhoto(null); setIsWebcamOpen(true); try { const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } }); setTimeout(() => { if (videoRef.current) videoRef.current.srcObject = stream; }, 100); } catch (e) { alert("Impossible d'accéder à la webcam."); setIsWebcamOpen(false); } };
-            const captureWebcam = () => { if (videoRef.current && canvasRef.current) { const v = videoRef.current; const c = canvasRef.current; c.width = v.videoWidth; c.height = v.videoHeight; c.getContext('2d').drawImage(v, 0, 0); c.toBlob((blob) => { const previewUrl = c.toDataURL('image/jpeg', 0.8); setTempPhoto({ preview: previewUrl, file: blob }); }, 'image/jpeg', 0.95); v.pause(); } };
-            const retakePhoto = () => { setTempPhoto(null); if (videoRef.current) videoRef.current.play(); };
-            const confirmPhoto = () => { if (tempPhoto) { setNewProduct(p => ({ ...p, photo: tempPhoto.preview, rawFile: tempPhoto.file })); } if(videoRef.current?.srcObject) videoRef.current.srcObject.getTracks().forEach(t => t.stop()); setIsWebcamOpen(false); setTempPhoto(null); };
+            // NOUVELLE FONCTION WEBCAM HAUTE QUALITÉ AVEC FLASH
+            const startWebcam = async () => {
+                setTempPhoto(null);
+                setIsWebcamOpen(true);
+                try {
+                    const constraints = {
+                        video: {
+                            facingMode: 'environment', // Caméra arrière
+                            width: { ideal: 4096 },    // Demander la 4K si dispo
+                            height: { ideal: 2160 }
+                        }
+                    };
+                    const stream = await navigator.mediaDevices.getUserMedia(constraints);
+                    streamRef.current = stream;
+
+                    // Détection du Flash
+                    const track = stream.getVideoTracks()[0];
+                    const capabilities = track.getCapabilities ? track.getCapabilities() : {};
+                    if (capabilities.torch) {
+                        setHasFlash(true);
+                    } else {
+                        setHasFlash(false);
+                    }
+
+                    setTimeout(() => { if (videoRef.current) videoRef.current.srcObject = stream; }, 100);
+                } catch (e) {
+                    console.error(e);
+                    alert("Impossible d'accéder à la caméra. Vérifiez les permissions.");
+                    setIsWebcamOpen(false);
+                }
+            };
+
+            const toggleFlash = async () => {
+                if (!streamRef.current) return;
+                const track = streamRef.current.getVideoTracks()[0];
+                const newStatus = !isFlashOn;
+                
+                try {
+                    await track.applyConstraints({
+                        advanced: [{ torch: newStatus }]
+                    });
+                    setIsFlashOn(newStatus);
+                } catch (e) {
+                    console.error("Erreur flash", e);
+                }
+            };
+
+            const stopWebcam = () => {
+                if (streamRef.current) {
+                    streamRef.current.getTracks().forEach(t => t.stop());
+                }
+                setIsWebcamOpen(false);
+                setIsFlashOn(false);
+            };
+
+            // Modification : On lance toujours la caméra in-app, plus de fallback "native"
+            const handleCameraClick = () => { 
+                startWebcam(); 
+            };
+
+            const handleFileImport = (e) => { 
+                const file = e.target.files[0]; 
+                if (file) { 
+                    const reader = new FileReader(); 
+                    reader.onload = (event) => { setNewProduct(p => ({ ...p, photo: event.target.result, rawFile: file })); }; 
+                    reader.readAsDataURL(file); 
+                } 
+            };
+
+            const captureWebcam = () => { 
+                if (videoRef.current && canvasRef.current) { 
+                    const v = videoRef.current; 
+                    const c = canvasRef.current; 
+                    // Capture en pleine résolution native du flux vidéo
+                    c.width = v.videoWidth; 
+                    c.height = v.videoHeight; 
+                    c.getContext('2d').drawImage(v, 0, 0); 
+                    c.toBlob((blob) => { 
+                        const previewUrl = c.toDataURL('image/jpeg', 0.85); // Bonne qualité JPEG
+                        setTempPhoto({ preview: previewUrl, file: blob }); 
+                    }, 'image/jpeg', 0.95); 
+                    // On ne met pas en pause la vidéo pour garder le flux actif (et le flash si besoin), on cache juste la vidéo par l'image
+                } 
+            };
+            
+            const retakePhoto = () => { setTempPhoto(null); };
+            const confirmPhoto = () => { 
+                if (tempPhoto) { 
+                    setNewProduct(p => ({ ...p, photo: tempPhoto.preview, rawFile: tempPhoto.file })); 
+                } 
+                stopWebcam();
+                setTempPhoto(null); 
+            };
+
             const handleSubmit = async (e) => { e.preventDefault(); setIsUploading(true); try { await addItem({ ...newProduct, sortDate: new Date().toISOString().split('T')[0] }); } catch (error) { console.error(error); } finally { setIsUploading(false); setNewProduct({ name: '', quantity: '', batch: '', photo: null, rawFile: null }); } };
             const filtered = products.filter(p => p.sortDate === selectedDate);
             const changeDate = (d) => { const date = new Date(selectedDate); date.setDate(date.getDate() + d); setSelectedDate(date.toISOString().split('T')[0]); };
             
-            // --- NOUVELLE FONCTION DE GÉNÉRATION DE RAPPORT (REMPLACE LE ZIP) ---
             const generateReport = async () => {
                 setIsGenerating(true);
                 try {
                     const [year, month] = exportMonth.split('-');
-                    // Filtrer les produits du mois sélectionné
                     const itemsToExport = products.filter(p => p.sortDate && p.sortDate.startsWith(exportMonth));
-                    
-                    if (itemsToExport.length === 0) {
-                        alert("Aucune donnée trouvée pour ce mois.");
-                        setIsGenerating(false);
-                        return;
-                    }
-
-                    // Trier par date (du plus ancien au plus récent pour le rapport)
+                    if (itemsToExport.length === 0) { alert("Aucune donnée trouvée pour ce mois."); setIsGenerating(false); return; }
                     itemsToExport.sort((a, b) => a.sortDate.localeCompare(b.sortDate));
-
-                    // Création du contenu HTML
-                    let htmlContent = `
-                        <!DOCTYPE html>
-                        <html lang="fr">
-                        <head>
-                            <meta charset="UTF-8">
-                            <title>Rapport Traçabilité - ${month}/${year}</title>
-                            <style>
-                                body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f3f4f6; color: #1f2937; margin: 0; padding: 20px; }
-                                .container { max-width: 1000px; margin: 0 auto; background: white; padding: 40px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-                                h1 { color: #166534; text-align: center; border-bottom: 2px solid #bbf7d0; padding-bottom: 20px; margin-bottom: 30px; }
-                                .header-info { text-align: center; margin-bottom: 40px; color: #4b5563; font-style: italic; }
-                                .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
-                                .card { border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden; break-inside: avoid; page-break-inside: avoid; background: #fff; }
-                                .card img { width: 100%; height: 200px; object-fit: cover; border-bottom: 1px solid #e5e7eb; }
-                                .card-content { padding: 15px; }
-                                .date { font-size: 0.8em; color: #6b7280; margin-bottom: 5px; font-weight: bold; }
-                                .product-name { font-size: 1.1em; font-weight: bold; color: #111827; margin-bottom: 5px; }
-                                .details { font-size: 0.9em; color: #374151; }
-                                .tag { display: inline-block; background: #dcfce7; color: #166534; padding: 2px 8px; border-radius: 999px; font-size: 0.8em; font-weight: bold; margin-right: 5px; }
-                                @media print {
-                                    body { background: white; padding: 0; }
-                                    .container { box-shadow: none; padding: 0; }
-                                    .no-print { display: none; }
-                                    .card { border: 1px solid #ccc; }
-                                }
-                            </style>
-                        </head>
-                        <body>
-                            <div class="no-print" style="text-align: center; margin-bottom: 20px;">
-                                <button onclick="window.print()" style="background: #166534; color: white; border: none; padding: 10px 20px; border-radius: 5px; font-size: 16px; cursor: pointer; font-weight: bold;">🖨️ Imprimer / Enregistrer en PDF</button>
-                                <p style="font-size: 12px; color: #666; margin-top: 5px;">Cliquez pour imprimer ou choisissez "Enregistrer au format PDF" dans la destination de l'imprimante.</p>
-                            </div>
-                            <div class="container">
-                                <h1>Rapport de Traçabilité</h1>
-                                <div class="header-info">
-                                    Période : <strong>${month}/${year}</strong><br>
-                                    Nombre d'étiquettes : <strong>${itemsToExport.length}</strong>
-                                </div>
-                                <div class="grid">
-                    `;
-
-                    // Boucle sur les produits
-                    itemsToExport.forEach(item => {
-                        const dateFormatted = item.sortDate.split('-').reverse().join('/');
-                        htmlContent += `
-                            <div class="card">
-                                <img src="${item.photo}" alt="${item.name}" loading="lazy" onerror="this.src='https://placehold.co/400x300?text=Image+Non+Disponible'">
-                                <div class="card-content">
-                                    <div class="date">📅 ${dateFormatted}</div>
-                                    <div class="product-name">${item.name}</div>
-                                    <div class="details">
-                                        ${item.quantity ? `<span class="tag">Qté: ${item.quantity}</span>` : ''}
-                                        Lot/DLC: <strong>${item.batch || 'N/A'}</strong>
-                                    </div>
-                                </div>
-                            </div>
-                        `;
-                    });
-
-                    htmlContent += `
-                                </div>
-                                <div style="margin-top: 40px; text-align: center; font-size: 0.8em; color: #9ca3af; border-top: 1px solid #e5e7eb; padding-top: 20px;">
-                                    Généré automatiquement par eHygiène So'Chris le ${new Date().toLocaleDateString()}
-                                </div>
-                            </div>
-                        </body>
-                        </html>
-                    `;
-
-                    // Téléchargement du fichier HTML
+                    let htmlContent = `<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><title>Rapport Traçabilité - ${month}/${year}</title><style>body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f3f4f6; color: #1f2937; margin: 0; padding: 20px; } .container { max-width: 1000px; margin: 0 auto; background: white; padding: 40px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); } h1 { color: #166534; text-align: center; border-bottom: 2px solid #bbf7d0; padding-bottom: 20px; margin-bottom: 30px; } .header-info { text-align: center; margin-bottom: 40px; color: #4b5563; font-style: italic; } .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; } .card { border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden; break-inside: avoid; page-break-inside: avoid; background: #fff; } .card img { width: 100%; height: 200px; object-fit: cover; border-bottom: 1px solid #e5e7eb; } .card-content { padding: 15px; } .date { font-size: 0.8em; color: #6b7280; margin-bottom: 5px; font-weight: bold; } .product-name { font-size: 1.1em; font-weight: bold; color: #111827; margin-bottom: 5px; } .details { font-size: 0.9em; color: #374151; } .tag { display: inline-block; background: #dcfce7; color: #166534; padding: 2px 8px; border-radius: 999px; font-size: 0.8em; font-weight: bold; margin-right: 5px; } @media print { body { background: white; padding: 0; } .container { box-shadow: none; padding: 0; } .no-print { display: none; } .card { border: 1px solid #ccc; } }</style></head><body><div class="no-print" style="text-align: center; margin-bottom: 20px;"><button onclick="window.print()" style="background: #166534; color: white; border: none; padding: 10px 20px; border-radius: 5px; font-size: 16px; cursor: pointer; font-weight: bold;">🖨️ Imprimer / Enregistrer en PDF</button><p style="font-size: 12px; color: #666; margin-top: 5px;">Cliquez pour imprimer ou choisissez "Enregistrer au format PDF" dans la destination de l'imprimante.</p></div><div class="container"><h1>Rapport de Traçabilité</h1><div class="header-info">Période : <strong>${month}/${year}</strong><br>Nombre d'étiquettes : <strong>${itemsToExport.length}</strong></div><div class="grid">`;
+                    itemsToExport.forEach(item => { const dateFormatted = item.sortDate.split('-').reverse().join('/'); htmlContent += `<div class="card"><img src="${item.photo}" alt="${item.name}" loading="lazy" onerror="this.src='https://placehold.co/400x300?text=Image+Non+Disponible'"><div class="card-content"><div class="date">📅 ${dateFormatted}</div><div class="product-name">${item.name}</div><div class="details">${item.quantity ? `<span class="tag">Qté: ${item.quantity}</span>` : ''} Lot/DLC: <strong>${item.batch || 'N/A'}</strong></div></div></div>`; });
+                    htmlContent += `</div><div style="margin-top: 40px; text-align: center; font-size: 0.8em; color: #9ca3af; border-top: 1px solid #e5e7eb; padding-top: 20px;">Généré automatiquement par eHygiène So'Chris le ${new Date().toLocaleDateString()}</div></div></body></html>`;
                     const blob = new Blob([htmlContent], { type: "text/html;charset=utf-8" });
                     saveAs(blob, `Rapport_Tracabilite_${restaurantId}_${exportMonth}.html`);
                     setExportModalOpen(false);
-
-                } catch (e) {
-                    console.error("Erreur génération rapport", e);
-                    alert("Erreur lors de la création du rapport : " + e.message);
-                } finally {
-                    setIsGenerating(false);
-                }
+                } catch (e) { console.error("Erreur génération rapport", e); alert("Erreur lors de la création du rapport : " + e.message); } finally { setIsGenerating(false); }
             };
 
             const onTouchStart = (e) => { if (e.touches.length === 2) { touchStartDist.current = Math.hypot(e.touches[0].pageX - e.touches[1].pageX, e.touches[0].pageY - e.touches[1].pageY); startZoom.current = zoomLevel; } else if (e.touches.length === 1 && zoomLevel > 1) { panStart.current = { x: e.touches[0].pageX, y: e.touches[0].pageY }; startPan.current = { ...pan }; } };
@@ -591,9 +602,8 @@
                         <div className="lg:col-span-4">
                             <Card className="border-2 border-green-100">
                                 <form onSubmit={handleSubmit}>
-                                    <div className="mb-4">{isUploading ? <div className="w-full py-8 bg-gray-50 rounded-xl flex flex-col items-center justify-center text-green-600 animate-pulse border-2 border-green-200"><Icon name="Wifi" className="mb-2 animate-bounce"/>Envoi vers le Cloud...</div> : newProduct.photo ? <div onClick={() => setNewProduct({...newProduct, photo: null, rawFile: null})} className="relative cursor-pointer group"><img src={newProduct.photo} className="w-full rounded-lg" /><div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 rounded-lg text-white font-bold"><Icon name="Trash2" className="mr-2"/> Retirer</div></div> : <div className="space-y-3"><button type="button" onClick={handleCameraClick} className="w-full py-8 bg-green-50 text-green-700 rounded-xl border-2 border-dashed border-green-300 flex flex-col items-center justify-center hover:bg-green-100 transition-colors"><Icon name="Aperture" className="w-8 h-8 mb-2"/> Scanner / Photo</button><div onClick={() => fileInputRef.current?.click()} className="text-center text-sm text-gray-400 underline cursor-pointer">Importer fichier</div><input type="file" ref={fileInputRef} onChange={handleNativeCameraCapture} accept="image/*" className="hidden"/><input type="file" ref={nativeCameraInputRef} onChange={handleNativeCameraCapture} accept="image/*" capture="environment" className="hidden"/></div>}</div>
+                                    <div className="mb-4">{isUploading ? <div className="w-full py-8 bg-gray-50 rounded-xl flex flex-col items-center justify-center text-green-600 animate-pulse border-2 border-green-200"><Icon name="Wifi" className="mb-2 animate-bounce"/>Envoi vers le Cloud...</div> : newProduct.photo ? <div onClick={() => setNewProduct({...newProduct, photo: null, rawFile: null})} className="relative cursor-pointer group"><img src={newProduct.photo} className="w-full rounded-lg" /><div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 rounded-lg text-white font-bold"><Icon name="Trash2" className="mr-2"/> Retirer</div></div> : <div className="space-y-3"><button type="button" onClick={handleCameraClick} className="w-full py-8 bg-green-50 text-green-700 rounded-xl border-2 border-dashed border-green-300 flex flex-col items-center justify-center hover:bg-green-100 transition-colors"><Icon name="Aperture" className="w-8 h-8 mb-2"/> Scanner / Photo (App)</button><div onClick={() => fileInputRef.current?.click()} className="text-center text-sm text-gray-400 underline cursor-pointer">Importer fichier</div><input type="file" ref={fileInputRef} onChange={handleFileImport} accept="image/*" className="hidden"/></div>}</div>
                                     <AutocompleteInput label="Produit" value={newProduct.name} onChange={e => setNewProduct({...newProduct, name: e.target.value})} options={productHistory} required />
-                                    {/* MODIF 1 : Ajout de l'input Quantité entre Produit et Lot */}
                                     <Input label="Quantité" value={newProduct.quantity} onChange={e => setNewProduct({...newProduct, quantity: e.target.value})} placeholder="Ex: 5 kg, 2 cartons..." />
                                     <Input label="Lot / DLC" value={newProduct.batch} onChange={e => setNewProduct({...newProduct, batch: e.target.value})} />
                                     <Button type="submit" className="w-full" disabled={!newProduct.name || !newProduct.photo || isUploading}>{isUploading ? "Enregistrement..." : "Enregistrer (Cloud)"}</Button>
@@ -609,7 +619,69 @@
                         </div>
                     </div>
                     {exportModalOpen && (<div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => !isGenerating && setExportModalOpen(false)}><div className="bg-white p-6 rounded-2xl w-full max-w-sm shadow-2xl" onClick={e => e.stopPropagation()}><h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2"><Icon name="Download" className="text-green-600"/> Générer Rapport</h3><p className="text-gray-600 mb-4">Choisissez le mois :</p><input type="month" value={exportMonth} onChange={(e) => setExportMonth(e.target.value)} className="w-full p-3 border border-gray-300 rounded-lg mb-6 text-lg" disabled={isGenerating} /><div className="flex gap-3"><Button onClick={generateReport} className="flex-1" disabled={isGenerating}>{isGenerating ? "Génération..." : "Créer Rapport"}</Button><Button variant="ghost" onClick={() => setExportModalOpen(false)} disabled={isGenerating}>Annuler</Button></div></div></div>)}
-                    {isWebcamOpen && (<div className="fixed inset-0 z-[100] bg-black flex flex-col"><div className="relative flex-1 w-full h-full overflow-hidden"><video ref={videoRef} autoPlay playsInline className={`absolute inset-0 w-full h-full object-cover ${tempPhoto ? 'hidden' : ''}`}></video>{tempPhoto && <img src={tempPhoto.preview} className="absolute inset-0 w-full h-full object-cover" />}{!tempPhoto ? (<><div className="absolute inset-0 flex items-center justify-center pointer-events-none"><div className="w-[80%] h-[60%] border-2 border-green-500/50 rounded-2xl relative"><div className="scan-line"></div></div></div><div className="absolute top-0 w-full p-4 flex justify-between items-center z-20 bg-gradient-to-b from-black/60 to-transparent"><span className="text-white font-bold tracking-wide drop-shadow-md">Scanner</span><button onClick={() => { if(videoRef.current?.srcObject) videoRef.current.srcObject.getTracks().forEach(t=>t.stop()); setIsWebcamOpen(false); }} className="p-3 bg-black/40 rounded-full text-white backdrop-blur-md border border-white/20"><Icon name="X" className="w-6 h-6"/></button></div><div className="absolute bottom-8 w-full flex justify-center z-20"><button onClick={captureWebcam} className="w-20 h-20 bg-white rounded-full border-4 border-gray-200/50 shadow-2xl active:scale-95 transition-transform flex items-center justify-center"><div className="w-16 h-16 bg-white rounded-full border-2 border-black"></div></button></div></>) : (<div className="absolute bottom-8 w-full flex justify-center gap-6 z-20 px-8"><button onClick={retakePhoto} className="flex-1 py-4 bg-red-500/90 backdrop-blur-md text-white rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg active:scale-95 border border-red-400"><Icon name="RotateCcw" className="w-6 h-6"/> Reprendre</button><button onClick={confirmPhoto} className="flex-1 py-4 bg-green-500 text-white rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg active:scale-95"><Icon name="CheckCircle" className="w-6 h-6"/> Valider</button></div>)}</div><canvas ref={canvasRef} className="hidden"></canvas></div>)}
+                    {isWebcamOpen && (
+                        <div className="fixed inset-0 z-[100] bg-black flex flex-col">
+                            <div className="relative flex-1 w-full h-full overflow-hidden bg-black flex items-center justify-center">
+                                {/* Flux Vidéo */}
+                                <video ref={videoRef} autoPlay playsInline muted className={`absolute inset-0 w-full h-full object-cover ${tempPhoto ? 'hidden' : ''}`}></video>
+                                
+                                {/* Aperçu de la photo prise */}
+                                {tempPhoto && <img src={tempPhoto.preview} className="absolute inset-0 w-full h-full object-contain bg-black z-10" />}
+                                
+                                {/* Overlay Caméra (Grille + Boutons) */}
+                                {!tempPhoto ? (
+                                    <>
+                                        {/* Header Caméra */}
+                                        <div className="absolute top-0 w-full p-4 flex justify-between items-center z-20 bg-gradient-to-b from-black/80 to-transparent">
+                                            <span className="text-white font-bold tracking-wide drop-shadow-md text-lg">Scanner</span>
+                                            <div className="flex gap-4">
+                                                {/* Bouton Flash (si dispo) */}
+                                                {hasFlash && (
+                                                    <button onClick={toggleFlash} className={`p-3 rounded-full backdrop-blur-md border ${isFlashOn ? 'bg-yellow-400 text-black border-yellow-400' : 'bg-black/40 text-white border-white/20'}`}>
+                                                        {isFlashOn ? <Icon name="Zap" className="w-6 h-6 fill-current"/> : <Icon name="ZapOff" className="w-6 h-6"/>}
+                                                    </button>
+                                                )}
+                                                <button onClick={stopWebcam} className="p-3 bg-black/40 rounded-full text-white backdrop-blur-md border border-white/20">
+                                                    <Icon name="X" className="w-6 h-6"/>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        
+                                        {/* Viseur */}
+                                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                            <div className="w-[80%] aspect-[3/4] border-2 border-white/30 rounded-2xl relative shadow-[0_0_0_1000px_rgba(0,0,0,0.5)]">
+                                                <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-green-500 rounded-tl-xl"></div>
+                                                <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-green-500 rounded-tr-xl"></div>
+                                                <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-green-500 rounded-bl-xl"></div>
+                                                <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-green-500 rounded-br-xl"></div>
+                                            </div>
+                                        </div>
+
+                                        {/* Déclencheur */}
+                                        <div className="absolute bottom-10 w-full flex justify-center z-20">
+                                            <button onClick={captureWebcam} className="w-20 h-20 bg-white rounded-full border-4 border-gray-300 shadow-2xl active:scale-90 transition-transform flex items-center justify-center ring-4 ring-white/30">
+                                                <div className="w-16 h-16 bg-white rounded-full border-2 border-gray-400"></div>
+                                            </button>
+                                        </div>
+                                    </>
+                                ) : (
+                                    /* Overlay Validation */
+                                    <div className="absolute bottom-0 w-full p-6 pb-12 bg-gradient-to-t from-black via-black/80 to-transparent z-20 flex flex-col gap-4">
+                                        <div className="text-white text-center font-medium drop-shadow-md mb-2">Photo correcte ?</div>
+                                        <div className="flex gap-4">
+                                            <button onClick={retakePhoto} className="flex-1 py-4 bg-white/20 backdrop-blur-md text-white rounded-2xl font-bold flex items-center justify-center gap-2 shadow-lg active:scale-95 border border-white/30">
+                                                <Icon name="RotateCcw" className="w-6 h-6"/> Refaire
+                                            </button>
+                                            <button onClick={confirmPhoto} className="flex-1 py-4 bg-green-500 text-white rounded-2xl font-bold flex items-center justify-center gap-2 shadow-lg active:scale-95 hover:bg-green-600">
+                                                <Icon name="CheckCircle" className="w-6 h-6"/> Valider
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                            <canvas ref={canvasRef} className="hidden"></canvas>
+                        </div>
+                    )}
                     {fullscreenPhoto && (<div className="fixed inset-0 z-[100] bg-black flex items-center justify-center overflow-hidden touch-none" onClick={() => setFullscreenPhoto(null)} onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}><div className="absolute bottom-10 z-50 flex gap-4 pointer-events-auto" onClick={e => e.stopPropagation()}><button className="p-4 bg-white/20 backdrop-blur rounded-full text-white border border-white/30 active:scale-95" onClick={() => setZoomLevel(z => Math.max(0.5, z - 0.5))}><Icon name="ZoomOut"/></button><div className="px-4 py-2 bg-black/50 backdrop-blur rounded-full text-white font-mono flex items-center">{Math.round(zoomLevel * 100)}%</div><button className="p-4 bg-white/20 backdrop-blur rounded-full text-white border border-white/30 active:scale-95" onClick={() => setZoomLevel(z => Math.min(3, z + 0.5))}><Icon name="ZoomIn"/></button></div><button className="absolute top-4 right-4 p-3 bg-black/40 backdrop-blur rounded-full text-white border border-white/20 z-50 pointer-events-auto" onClick={() => setFullscreenPhoto(null)}><Icon name="X"/></button><div className="w-full h-full flex items-center justify-center overflow-hidden"><img src={fullscreenPhoto} style={{ transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoomLevel})`, transition: (touchStartDist.current || panStart.current) ? 'none' : 'transform 0.2s ease-out' }} className="max-h-screen max-w-full object-contain pointer-events-auto" onClick={e => e.stopPropagation()} /></div></div>)}
                 </div>
             );
@@ -797,6 +869,8 @@
                 if (task.freq === 'Journalier') isValid = (diffDays === 0);
                 else if (task.freq === 'Hebdomadaire') isValid = (diffDays < 7);
                 else if (task.freq === 'Mensuel') isValid = (diffDays < 30);
+                else if (task.freq === 'Biannuel') isValid = (diffDays < 182); // ~6 mois
+                else if (task.freq === 'Annuel') isValid = (diffDays < 365); // 1 an
 
                 // 5. Formater la date pour l'affichage
                 let dateDisplay = lastDoneDate.split('-').reverse().slice(0, 2).join('/'); // JJ/MM
@@ -949,7 +1023,7 @@
                                     </div> 
                                 );
                             })}
-                            {showAddZone ? ( <Card className="bg-green-50 border-dashed border-2 border-green-300"><div className="flex flex-col gap-2"><AutocompleteInput placeholder="Nom de la tâche..." value={newZone.name} onChange={e=>setNewZone({...newZone, name: e.target.value})} options={cleaningTaskHistory} /><div className="flex gap-2"><select className="p-2 rounded border border-gray-300 bg-white flex-1" value={newZone.freq} onChange={e=>setNewZone({...newZone, freq: e.target.value})}><option value="Journalier">Journalier</option><option value="Hebdomadaire">Hebdomadaire</option><option value="Mensuel">Mensuel</option></select><Button className="flex-1" onClick={() => { if(newZone.name) { addZone(newZone); setNewZone({name:"", freq:"Journalier"}); setShowAddZone(false); } }}>Ajouter</Button></div><Button variant="ghost" onClick={() => setShowAddZone(false)} className="w-full text-sm py-1">Annuler</Button></div></Card> ) : <button onClick={() => setShowAddZone(true)} className="w-full py-4 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 font-bold hover:bg-green-50">+ Nouvelle tâche</button>}
+                            {showAddZone ? ( <Card className="bg-green-50 border-dashed border-2 border-green-300"><div className="flex flex-col gap-2"><AutocompleteInput placeholder="Nom de la tâche..." value={newZone.name} onChange={e=>setNewZone({...newZone, name: e.target.value})} options={cleaningTaskHistory} /><div className="flex gap-2"><select className="p-2 rounded border border-gray-300 bg-white flex-1" value={newZone.freq} onChange={e=>setNewZone({...newZone, freq: e.target.value})}><option value="Journalier">Journalier</option><option value="Hebdomadaire">Hebdomadaire</option><option value="Mensuel">Mensuel</option><option value="Biannuel">Biannuel</option><option value="Annuel">Annuel</option></select><Button className="flex-1" onClick={() => { if(newZone.name) { addZone(newZone); setNewZone({name:"", freq:"Journalier"}); setShowAddZone(false); } }}>Ajouter</Button></div><Button variant="ghost" onClick={() => setShowAddZone(false)} className="w-full text-sm py-1">Annuler</Button></div></Card> ) : <button onClick={() => setShowAddZone(true)} className="w-full py-4 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 font-bold hover:bg-green-50">+ Nouvelle tâche</button>}
                         </div>
                     </div>
 
