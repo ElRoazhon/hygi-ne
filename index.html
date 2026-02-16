@@ -352,11 +352,67 @@
             const [suggestions, setSuggestions] = useState([]);
             const [show, setShow] = useState(false);
             const wrapperRef = useRef(null);
+            
             useEffect(() => { const handleClickOutside = (event) => { if (wrapperRef.current && !wrapperRef.current.contains(event.target)) setShow(false); }; document.addEventListener("mousedown", handleClickOutside); return () => document.removeEventListener("mousedown", handleClickOutside); }, []);
-            const handleChange = (e) => { const val = e.target.value; onChange(e); if (val.length > 0) { const uniqueOptions = [...new Set(options)]; const filtered = uniqueOptions.filter(opt => opt && opt.toLowerCase().includes(val.toLowerCase()) && opt !== val).slice(0, 5); setSuggestions(filtered); setShow(true); } else { setShow(false); } };
+            
+            const handleChange = (e) => { 
+                const val = e.target.value; 
+                onChange(e); 
+                if (val.length > 0) { 
+                    const uniqueOptions = [...new Set(options)]; 
+                    // J'augmente la limite de 5 à 15 pour voir plus d'historique
+                    const filtered = uniqueOptions.filter(opt => opt && opt.toLowerCase().includes(val.toLowerCase()) && opt !== val).slice(0, 15); 
+                    setSuggestions(filtered); 
+                    setShow(true); 
+                } else { 
+                    setShow(false); 
+                } 
+            };
+            
             const handleSelect = (val) => { onChange({ target: { value: val } }); setShow(false); };
-            const handleFocus = () => { if (value && value.length > 0) { const uniqueOptions = [...new Set(options)]; const filtered = uniqueOptions.filter(opt => opt && opt.toLowerCase().includes(value.toLowerCase()) && opt !== value).slice(0, 5); if(filtered.length > 0) { setSuggestions(filtered); setShow(true); } } };
-            return ( <div className="mb-4 relative" ref={wrapperRef}> {label && <label className="block text-sm font-semibold text-gray-700 mb-1">{label}</label>} <input className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none" value={value} onChange={handleChange} onFocus={handleFocus} placeholder={placeholder} required={required} autoComplete="off" /> {show && suggestions.length > 0 && (<ul className="absolute z-50 w-full bg-white border border-gray-200 rounded-lg shadow-xl mt-1 max-h-48 overflow-y-auto">{suggestions.map((s, i) => (<li key={i} className="p-3 hover:bg-green-50 cursor-pointer border-b last:border-b-0 text-gray-700 font-medium" onClick={() => handleSelect(s)}>{s}</li>))}</ul>)} </div> );
+            
+            const handleFocus = (e) => { 
+                // 1. Logique existante pour afficher les suggestions
+                if (value && value.length > 0) { 
+                    const uniqueOptions = [...new Set(options)]; 
+                    const filtered = uniqueOptions.filter(opt => opt && opt.toLowerCase().includes(value.toLowerCase()) && opt !== value).slice(0, 15); 
+                    if(filtered.length > 0) { setSuggestions(filtered); setShow(true); } 
+                }
+                
+                // 2. NOUVEAU : Optimisation Mobile (Scroll vers le haut)
+                // Si on est sur un petit écran, on remonte l'élément en haut de la vue pour que le clavier ne cache pas la liste
+                if (window.innerWidth < 768) {
+                    setTimeout(() => {
+                        e.target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }, 300); // Petit délai pour laisser le temps au clavier virtuel de s'ouvrir
+                }
+            };
+
+            return ( 
+                <div className="mb-4 relative" ref={wrapperRef}> 
+                    {label && <label className="block text-sm font-semibold text-gray-700 mb-1">{label}</label>} 
+                    <input 
+                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none scroll-mt-24" // scroll-mt donne une petite marge en haut
+                        value={value} 
+                        onChange={handleChange} 
+                        onFocus={handleFocus} 
+                        placeholder={placeholder} 
+                        required={required} 
+                        autoComplete="off" 
+                        id={label ? label.replace(/\s+/g, '-').toLowerCase() : 'autocomplete-input'}
+                    /> 
+                    {show && suggestions.length > 0 && (
+                        <ul className="absolute z-50 w-full bg-white border border-gray-200 rounded-lg shadow-2xl mt-1 max-h-60 overflow-y-auto pb-safe">
+                            {/* max-h-60 augmente la hauteur visible de la liste */}
+                            {suggestions.map((s, i) => (
+                                <li key={i} className="p-3 hover:bg-green-50 cursor-pointer border-b last:border-b-0 text-gray-700 font-medium active:bg-green-100" onClick={() => handleSelect(s)}>
+                                    {s}
+                                </li>
+                            ))}
+                        </ul>
+                    )} 
+                </div> 
+            );
         };
 
         const useNetworkStatus = () => {
