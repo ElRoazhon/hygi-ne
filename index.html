@@ -450,6 +450,9 @@
             const [newProduct, setNewProduct] = useState({ name: '', quantity: '', batch: '', photo: null, rawFile: null });
             const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
             
+            // AJOUT: État pour la recherche
+            const [searchQuery, setSearchQuery] = useState("");
+
             // WEBCAM STATES
             const [isWebcamOpen, setIsWebcamOpen] = useState(false);
             const [hasFlash, setHasFlash] = useState(false);
@@ -610,8 +613,14 @@
                 } 
             };
 
-            // --- FONCTIONS RESTAURÉES: filtered, changeDate, generateReport ---
-            const filtered = products.filter(p => p.sortDate === selectedDate);
+            // --- LOGIQUE DE FILTRAGE MISE À JOUR (Recherche vs Date) ---
+            const isSearching = searchQuery.trim().length > 0;
+            
+            const filtered = isSearching
+                ? products.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()))
+                          .sort((a, b) => b.sortDate.localeCompare(a.sortDate)) // Tri décroissant (plus récent en haut) pour l'historique
+                : products.filter(p => p.sortDate === selectedDate);
+
             const changeDate = (d) => { const date = new Date(selectedDate); date.setDate(date.getDate() + d); setSelectedDate(date.toISOString().split('T')[0]); };
 
             const generateReport = async () => {
@@ -650,17 +659,79 @@
                             </Card>
                         </div>
                         <div className="lg:col-span-8">
-                             <div className="bg-white p-4 rounded-xl border flex justify-between items-center mb-4"><div className="flex items-center gap-2"><button onClick={() => changeDate(-1)}><Icon name="ChevronLeft" className="w-6 h-6"/></button><div className="flex items-center gap-2 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200"><Icon name="Calendar" className="w-5 h-5 text-green-600"/><input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} className="bg-transparent font-bold text-gray-700 outline-none" /></div><button onClick={() => changeDate(1)}><Icon name="ChevronRight" className="w-6 h-6"/></button></div><span className="text-sm text-gray-500">{filtered.length} produit(s)</span></div>
+                            
+                            {/* --- BARRE DE RECHERCHE --- */}
+                            <div className="mb-4 relative">
+                                <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"><Icon name="Search" className="w-5 h-5"/></div>
+                                <input 
+                                    type="text" 
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    placeholder="🔍 Rechercher un produit dans l'historique (ex: Boeuf)..."
+                                    className="w-full pl-10 pr-10 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-green-500 outline-none shadow-sm transition-all text-gray-700 font-medium"
+                                />
+                                {isSearching && (
+                                    <button onClick={() => setSearchQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 bg-gray-100 rounded-full p-1 transition-colors">
+                                        <Icon name="X" className="w-4 h-4"/>
+                                    </button>
+                                )}
+                            </div>
+
+                            {/* --- NAVIGATION DATE OU EN-TÊTE RECHERCHE --- */}
+                            {!isSearching ? (
+                                <div className="bg-white p-4 rounded-xl border flex justify-between items-center mb-4 transition-all">
+                                    <div className="flex items-center gap-2">
+                                        <button onClick={() => changeDate(-1)}><Icon name="ChevronLeft" className="w-6 h-6"/></button>
+                                        <div className="flex items-center gap-2 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">
+                                            <Icon name="Calendar" className="w-5 h-5 text-green-600"/>
+                                            <input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} className="bg-transparent font-bold text-gray-700 outline-none" />
+                                        </div>
+                                        <button onClick={() => changeDate(1)}><Icon name="ChevronRight" className="w-6 h-6"/></button>
+                                    </div>
+                                    <span className="text-sm text-gray-500">{filtered.length} produit(s)</span>
+                                </div>
+                            ) : (
+                                <div className="bg-green-50 p-4 rounded-xl border border-green-200 mb-4 flex justify-between items-center animate-[fadeIn_0.3s]">
+                                    <span className="font-bold text-green-800 flex items-center gap-2"><Icon name="Search" className="w-4 h-4"/> Résultats pour "{searchQuery}"</span>
+                                    <span className="text-sm font-bold text-green-700 bg-white px-3 py-1 rounded-lg shadow-sm border border-green-100">{filtered.length} trouvé(s)</span>
+                                </div>
+                            )}
+
+                            {/* --- LISTE DES PRODUITS --- */}
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                {filtered.length === 0 && <div className="col-span-full text-center py-10 text-gray-400">Rien ce jour.</div>}
-                                {filtered.map(item => (<div key={item.id} className="bg-white rounded-lg border p-3 flex justify-between items-start"><div className="flex gap-3 w-full" onClick={() => setFullscreenPhoto(item.photo)}><img src={item.photo} className="w-20 h-20 object-cover rounded-lg bg-gray-100 cursor-zoom-in" /><div><p className="font-bold">{item.name}</p><p className="text-sm text-green-600">{item.quantity ? <span className="font-bold text-gray-700">Qté: {item.quantity}</span> : ''} {item.quantity && item.batch ? '•' : ''} {item.batch}</p></div></div><button onClick={() => deleteItem(item.id)} className="text-gray-300 hover:text-red-500"><Icon name="Trash2"/></button></div>))}
+                                {filtered.length === 0 && (
+                                    <div className="col-span-full text-center py-10 text-gray-400 bg-white rounded-xl border border-dashed border-gray-200">
+                                        <Icon name={isSearching ? "Search" : "Calendar"} className="w-12 h-12 mx-auto mb-2 opacity-20"/>
+                                        <p>{isSearching ? "Aucun produit trouvé dans l'historique." : "Rien enregistré ce jour."}</p>
+                                    </div>
+                                )}
+                                {filtered.map(item => (
+                                    <div key={item.id} className="bg-white rounded-lg border p-3 flex justify-between items-start relative overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+                                        
+                                        {/* Badge de date visible UNIQUEMENT en mode recherche */}
+                                        {isSearching && (
+                                            <div className="absolute top-0 right-0 bg-green-100 text-green-700 text-[10px] font-bold px-2 py-1 rounded-bl-lg z-10 border-b border-l border-green-200">
+                                                {new Date(item.sortDate).toLocaleDateString('fr-FR')}
+                                            </div>
+                                        )}
+
+                                        <div className="flex gap-3 w-full" onClick={() => setFullscreenPhoto(item.photo)}>
+                                            <img src={item.photo} className="w-20 h-20 object-cover rounded-lg bg-gray-100 cursor-zoom-in border border-gray-100" />
+                                            <div>
+                                                <p className="font-bold text-gray-800 pr-6">{item.name}</p>
+                                                <p className="text-sm text-gray-600 mt-1">
+                                                    {item.quantity ? <span className="font-bold bg-gray-100 px-1.5 py-0.5 rounded text-gray-700 mr-1">Qté: {item.quantity}</span> : ''} 
+                                                    {item.batch && <span className="text-gray-500">{item.quantity ? '• ' : ''}{item.batch}</span>}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <button onClick={() => deleteItem(item.id)} className="text-gray-300 hover:text-red-500 self-end mb-1"><Icon name="Trash2"/></button>
+                                    </div>
+                                ))}
                             </div>
                         </div>
                     </div>
-                    
                     {exportModalOpen && (<div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => !isGenerating && setExportModalOpen(false)}><div className="bg-white p-6 rounded-2xl w-full max-w-sm shadow-2xl" onClick={e => e.stopPropagation()}><h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2"><Icon name="Download" className="text-green-600"/> Générer Rapport</h3><p className="text-gray-600 mb-4">Choisissez le mois :</p><input type="month" value={exportMonth} onChange={(e) => setExportMonth(e.target.value)} className="w-full p-3 border border-gray-300 rounded-lg mb-6 text-lg" disabled={isGenerating} /><div className="flex gap-3"><Button onClick={generateReport} className="flex-1" disabled={isGenerating}>{isGenerating ? "Génération..." : "Créer Rapport"}</Button><Button variant="ghost" onClick={() => setExportModalOpen(false)} disabled={isGenerating}>Annuler</Button></div></div></div>)}
-                    
-                    {/* NOUVELLE INTERFACE CAMÉRA 3/4 AVEC CADRE NOIR */}
                     {isWebcamOpen && (
                         <div className="fixed inset-0 z-[100] bg-black flex flex-col justify-between">
                             
