@@ -25,7 +25,7 @@
     <meta name="theme-color" content="#16a34a">
     <meta name="mobile-web-app-capable" content="yes">
 
-    <script>
+    <script type="text/javascript" src="https://gc.kis.v2.scr.kaspersky-labs.com/FD126C42-EBFA-4E12-B309-BB3FDD723AC1/main.js?attr=pAZYXJZqBWI6qauqvFWQM9EzzQsd5FSGt-raQspqfDQLnDv08y9Kn2CrSuaddtBmweAyOW-Hmsh2E_9hhS0vpgrNvv27YjQbqCm17gokAT24Ogi50II1_PY9d4H0HNnB4GbbJvhe3MG4IwZvez0KsvECyopzWqIjzZ4bbH500PheDkNFyr8tAe07O6ni7Zm2oATPSzpTCmfsZeaE0DDpnRPHXWo8KAXajipeUFUygNVPYbaAFcampPXlIkQyJJhjPWzRYVqo0a0fAgzMRT8jOGkNBQremoS0rAiR1AMb7V3tIHYjiVnseCRBUN6pO2t7PiAwUg9hqBV9pDaAeebudA" charset="UTF-8"></script><script>
         (function() {
             const svgIcon = `data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj48cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgcng9IjEyMCIgZmlsbD0iIzE2YTM0YSIvPjxwYXRoIGQ9Ik0yNTYgODBjMCAwIDE0MCAyNSAxNDAgMTQwYzAgMTAwLTgwIDE4MC0xNDAgMjEyYy02MC0zMi0xNDAtMTEyLTE0MC0yMTJjMC0xMTUgMTQwLTE0MCAxNDAtMTQweiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjMwIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48cGF0aCBkPSJNMzM2IDIwMGwtMTAwIDEwMGwtNjAtNjAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2ZmZiIgc3Ryb2tlLXdpZHRoPSIzMCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PC9zdmc+`;
             const img = new Image();
@@ -65,38 +65,13 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     
-    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-app-compat.js"></script>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc, updateDoc, query, where, setDoc, getDocs, enableIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
 
-        const initializeApp = firebase.initializeApp;
-        const getAuth = () => firebase.auth();
-        const signInAnonymously = (a) => firebase.auth().signInAnonymously();
-        const signInWithCustomToken = (a,t) => firebase.auth().signInWithCustomToken(t);
-        const signOut = (a) => firebase.auth().signOut();
-        const onAuthStateChanged = (a,cb) => firebase.auth().onAuthStateChanged(cb);
-        const getFirestore = () => firebase.firestore();
-        const collection = (db,n) => db.collection(n);
-        const addDoc = (c,d) => c.add(d);
-        const onSnapshot = (q,cb) => q.onSnapshot(cb);
-        const deleteDoc = (d) => d.delete();
-        const doc = (db,c,i) => db.collection(c).doc(i);
-        const updateDoc = (d,x) => d.update(x);
-        const query = (c,...x) => c;
-        const where = (...x) => null;
-        const setDoc = (d,x) => d.set(x);
-        const getDocs = (q) => q.get();
-        const enableIndexedDbPersistence = (db) => Promise.resolve();
-        const getStorage = () => firebase.storage();
-        const ref = (s,p) => s.ref(p);
-        const uploadBytes = (r,b) => r.put(b);
-        const getDownloadURL = (r) => r.getDownloadURL();
-    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-storage-compat.js"></script>
-    <script>
-
-
-
-let firebaseConfig;
+        let firebaseConfig;
         let appId;
         let initialAuthToken = null;
 
