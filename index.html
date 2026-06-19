@@ -65,12 +65,13 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc, updateDoc, query, where, setDoc, getDocs, enableIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
+    <!-- Firebase compatible version (stable with GitHub Pages + Babel) -->
+    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-storage-compat.js"></script>
 
+    <script>
         let firebaseConfig;
         let appId;
         let initialAuthToken = null;
@@ -78,36 +79,49 @@
         try {
             firebaseConfig = JSON.parse(__firebase_config);
             appId = __app_id;
-            if (typeof __initial_auth_token !== 'undefined') { initialAuthToken = __initial_auth_token; }
+            if (typeof __initial_auth_token !== 'undefined') {
+                initialAuthToken = __initial_auth_token;
+            }
         } catch (e) {
             console.log("Mode Production");
-            firebaseConfig = { apiKey: "AIzaSyCoMV_kNz-eI1JlLp33h0iJ4MZR7NnoI-w", authDomain: "epack-hygiene-99e64.firebaseapp.com", projectId: "epack-hygiene-99e64", storageBucket: "epack-hygiene-99e64.firebasestorage.app", messagingSenderId: "917463324646", appId: "1:917463324646:web:14856a7207be0353aca827" };
-            appId = 'epack-prod-data'; 
+            firebaseConfig = {
+                apiKey: "AIzaSyCoSyCoSyCoSyCoSyCoSyCoSyCoSyCo",
+                authDomain: "epack-hygiene-99e64.firebaseapp.com",
+                projectId: "epack-hygiene-99e64",
+                storageBucket: "epack-hygiene-99e64.appspot.com",
+                messagingSenderId: "000000000000",
+                appId: "1:000000000000:web:000000000000"
+            };
         }
 
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-        const storage = getStorage(app); 
+        firebase.initializeApp(firebaseConfig);
 
-        // --- ACTIVATION PERSISTANCE HORS LIGNE ---
-        try {
-            enableIndexedDbPersistence(db).catch((err) => {
-                if (err.code == 'failed-precondition') {
-                    console.warn("Persistance échouée : multiples onglets ouverts.");
-                } else if (err.code == 'unimplemented') {
-                    console.warn("Persistance non supportée par ce navigateur.");
-                }
-            });
-        } catch(e) { console.log("Erreur init persistence", e); }
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+        const storage = firebase.storage();
 
-        window.db = db; window.auth = auth; window.storage = storage; window.appId = appId; window.initialAuthToken = initialAuthToken; 
-        window.collection = collection; window.addDoc = addDoc; window.onSnapshot = onSnapshot; window.deleteDoc = deleteDoc; window.doc = doc; window.updateDoc = updateDoc; window.setDoc = setDoc;
-        window.signInAnonymously = signInAnonymously; window.signInWithCustomToken = signInWithCustomToken; window.signOut = signOut; window.onAuthStateChanged = onAuthStateChanged;
-        window.ref = ref; window.uploadBytes = uploadBytes; window.getDownloadURL = getDownloadURL;
-        window.getDocs = getDocs; window.query = query; window.where = where; // Exposed for LogoUploader
+        window.db = db;
+        window.auth = auth;
+        window.storage = storage;
+        window.firebase = firebase;
 
-        // Signal que Firebase est chargé
+        window.collection = firebase.firestore().collection.bind(db);
+        window.addDoc = (ref, data) => ref.add(data);
+        window.onSnapshot = (ref, cb) => ref.onSnapshot(cb);
+        window.deleteDoc = (ref) => ref.delete();
+        window.doc = (collectionRef, id) => collectionRef.doc(id);
+        window.updateDoc = (ref, data) => ref.update(data);
+        window.setDoc = (ref, data) => ref.set(data);
+        window.getDocs = (ref) => ref.get();
+        window.query = (...args) => args[0];
+        window.where = firebase.firestore.FieldPath.documentId;
+        window.signInAnonymously = () => auth.signInAnonymously();
+        window.signOut = () => auth.signOut();
+        window.onAuthStateChanged = auth.onAuthStateChanged.bind(auth);
+        window.ref = storage.ref.bind(storage);
+        window.uploadBytes = (ref, file) => ref.put(file);
+        window.getDownloadURL = (ref) => ref.getDownloadURL();
+
         window.firebaseLoaded = true;
     </script>
 
