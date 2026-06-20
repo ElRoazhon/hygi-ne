@@ -25,7 +25,7 @@
     <meta name="theme-color" content="#16a34a">
     <meta name="mobile-web-app-capable" content="yes">
 
-    <script type="text/javascript" src="/FD126C42-EBFA-4E12-B309-BB3FDD723AC1/?attr=pAZYXJZqBWI6qauqvFWQM9EzzQsd5FSGt-raQspqfDQLnDv08y9Kn2CrSuaddtBmweAyOW-Hmsh2E_9hhS0vpgrNvv27YjQbqCm17gokAT24Ogi50II1_PY9d4H0HNnB4GbbJvhe3MG4IwZvez0KsvECyopzWqIjzZ4bbH500PheDkNFyr8tAe07O6ni7Zm2oATPSzpTCmfsZeaE0DDpnRPHXWo8KAXajipeUFUygNVPYbaAFcampPXlIkQyJJhjPWzRYVqo0a0fAgzMRT8jOGkNBQremoS0rAiR1AMb7V3tIHYjiVnseCRBUN6pO2t7PiAwUg9hqBV9pDaAeebudA" charset="UTF-8"></script><script>
+    <script>
         (function() {
             const svgIcon = `data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj48cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgcng9IjEyMCIgZmlsbD0iIzE2YTM0YSIvPjxwYXRoIGQ9Ik0yNTYgODBjMCAwIDE0MCAyNSAxNDAgMTQwYzAgMTAwLTgwIDE4MC0xNDAgMjEyYy02MC0zMi0xNDAtMTEyLTE0MC0yMTJjMC0xMTUgMTQwLTE0MCAxNDAtMTQweiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjMwIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48cGF0aCBkPSJNMzM2IDIwMGwtMTAwIDEwMGwtNjAtNjAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2ZmZiIgc3Ryb2tlLXdpZHRoPSIzMCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PC9zdmc+`;
             const img = new Image();
@@ -65,44 +65,51 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     
-  <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-storage-compat.js"></script>
-<script>
-let firebaseConfig;
-let appId;
-let initialAuthToken = null;
-try {
- firebaseConfig = JSON.parse(__firebase_config);
- appId = __app_id;
- if (typeof __initial_auth_token !== 'undefined') initialAuthToken = __initial_auth_token;
-} catch(e){
- console.log("Mode Production");
- firebaseConfig={ apiKey:"AIzaSyCoMV_kNz-eI1JlLp33h0iJ4MZR7NnoI-w", authDomain:"epack-hygiene-99e64.firebaseapp.com", projectId:"epack-hygiene-99e64", storageBucket:"epack-hygiene-99e64.firebasestorage.app", messagingSenderId:"917463324646", appId:"1:917463324646:web:14856a7207be0353aca827"};
- appId='epack-prod-data';
-}
-const app=firebase.initializeApp(firebaseConfig);
-const auth=firebase.auth();
-const db=firebase.firestore();
-const storage=firebase.storage();
-window.db=db; window.auth=auth; window.storage=storage; window.appId=appId; window.initialAuthToken=initialAuthToken;
-window.collection=(...a)=>a[0].collection(a[1]);
-window.addDoc=(c,d)=>c.add(d);
-window.onSnapshot=(q,cb,e)=>q.onSnapshot(cb,e);
-window.deleteDoc=(d)=>d.delete();
-window.doc=(db,c,i)=>db.collection(c).doc(i);
-window.updateDoc=(d,x)=>d.update(x);
-window.setDoc=(d,x)=>d.set(x,{merge:true});
-window.getDocs=(q)=>q.get();
-window.signInAnonymously=()=>auth.signInAnonymously();
-window.signInWithCustomToken=(a,t)=>auth.signInWithCustomToken(t);
-window.signOut=()=>auth.signOut();
-window.onAuthStateChanged=(a,cb)=>auth.onAuthStateChanged(cb);
-window.ref=(s,p)=>s.ref(p);
-window.uploadBytes=(r,b)=>r.put(b);
-window.getDownloadURL=(r)=>r.getDownloadURL();
-</script>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc, updateDoc, query, where, setDoc, getDocs, enableIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
+
+        let firebaseConfig;
+        let appId;
+        let initialAuthToken = null;
+
+        try {
+            firebaseConfig = JSON.parse(__firebase_config);
+            appId = __app_id;
+            if (typeof __initial_auth_token !== 'undefined') { initialAuthToken = __initial_auth_token; }
+        } catch (e) {
+            console.log("Mode Production");
+            firebaseConfig = { apiKey: "AIzaSyCoMV_kNz-eI1JlLp33h0iJ4MZR7NnoI-w", authDomain: "epack-hygiene-99e64.firebaseapp.com", projectId: "epack-hygiene-99e64", storageBucket: "epack-hygiene-99e64.firebasestorage.app", messagingSenderId: "917463324646", appId: "1:917463324646:web:14856a7207be0353aca827" };
+            appId = 'epack-prod-data'; 
+        }
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const storage = getStorage(app); 
+
+        // --- ACTIVATION PERSISTANCE HORS LIGNE ---
+        try {
+            enableIndexedDbPersistence(db).catch((err) => {
+                if (err.code == 'failed-precondition') {
+                    console.warn("Persistance échouée : multiples onglets ouverts.");
+                } else if (err.code == 'unimplemented') {
+                    console.warn("Persistance non supportée par ce navigateur.");
+                }
+            });
+        } catch(e) { console.log("Erreur init persistence", e); }
+
+        window.db = db; window.auth = auth; window.storage = storage; window.appId = appId; window.initialAuthToken = initialAuthToken; 
+        window.collection = collection; window.addDoc = addDoc; window.onSnapshot = onSnapshot; window.deleteDoc = deleteDoc; window.doc = doc; window.updateDoc = updateDoc; window.setDoc = setDoc;
+        window.signInAnonymously = signInAnonymously; window.signInWithCustomToken = signInWithCustomToken; window.signOut = signOut; window.onAuthStateChanged = onAuthStateChanged;
+        window.ref = ref; window.uploadBytes = uploadBytes; window.getDownloadURL = getDownloadURL;
+        window.getDocs = getDocs; window.query = query; window.where = where; // Exposed for LogoUploader
+
+        // Signal que Firebase est chargé
+        window.firebaseLoaded = true;
+    </script>
 
     <style>
         body { -webkit-tap-highlight-color: transparent; }
@@ -345,67 +352,11 @@ window.getDownloadURL=(r)=>r.getDownloadURL();
             const [suggestions, setSuggestions] = useState([]);
             const [show, setShow] = useState(false);
             const wrapperRef = useRef(null);
-            
             useEffect(() => { const handleClickOutside = (event) => { if (wrapperRef.current && !wrapperRef.current.contains(event.target)) setShow(false); }; document.addEventListener("mousedown", handleClickOutside); return () => document.removeEventListener("mousedown", handleClickOutside); }, []);
-            
-            const handleChange = (e) => { 
-                const val = e.target.value; 
-                onChange(e); 
-                if (val.length > 0) { 
-                    const uniqueOptions = [...new Set(options)]; 
-                    // J'augmente la limite de 5 à 15 pour voir plus d'historique
-                    const filtered = uniqueOptions.filter(opt => opt && opt.toLowerCase().includes(val.toLowerCase()) && opt !== val).slice(0, 15); 
-                    setSuggestions(filtered); 
-                    setShow(true); 
-                } else { 
-                    setShow(false); 
-                } 
-            };
-            
+            const handleChange = (e) => { const val = e.target.value; onChange(e); if (val.length > 0) { const uniqueOptions = [...new Set(options)]; const filtered = uniqueOptions.filter(opt => opt && opt.toLowerCase().includes(val.toLowerCase()) && opt !== val).slice(0, 5); setSuggestions(filtered); setShow(true); } else { setShow(false); } };
             const handleSelect = (val) => { onChange({ target: { value: val } }); setShow(false); };
-            
-            const handleFocus = (e) => { 
-                // 1. Logique existante pour afficher les suggestions
-                if (value && value.length > 0) { 
-                    const uniqueOptions = [...new Set(options)]; 
-                    const filtered = uniqueOptions.filter(opt => opt && opt.toLowerCase().includes(value.toLowerCase()) && opt !== value).slice(0, 15); 
-                    if(filtered.length > 0) { setSuggestions(filtered); setShow(true); } 
-                }
-                
-                // 2. NOUVEAU : Optimisation Mobile (Scroll vers le haut)
-                // Si on est sur un petit écran, on remonte l'élément en haut de la vue pour que le clavier ne cache pas la liste
-                if (window.innerWidth < 768) {
-                    setTimeout(() => {
-                        e.target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    }, 300); // Petit délai pour laisser le temps au clavier virtuel de s'ouvrir
-                }
-            };
-
-            return ( 
-                <div className="mb-4 relative" ref={wrapperRef}> 
-                    {label && <label className="block text-sm font-semibold text-gray-700 mb-1">{label}</label>} 
-                    <input 
-                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none scroll-mt-24" // scroll-mt donne une petite marge en haut
-                        value={value} 
-                        onChange={handleChange} 
-                        onFocus={handleFocus} 
-                        placeholder={placeholder} 
-                        required={required} 
-                        autoComplete="off" 
-                        id={label ? label.replace(/\s+/g, '-').toLowerCase() : 'autocomplete-input'}
-                    /> 
-                    {show && suggestions.length > 0 && (
-                        <ul className="absolute z-50 w-full bg-white border border-gray-200 rounded-lg shadow-2xl mt-1 max-h-60 overflow-y-auto pb-safe">
-                            {/* max-h-60 augmente la hauteur visible de la liste */}
-                            {suggestions.map((s, i) => (
-                                <li key={i} className="p-3 hover:bg-green-50 cursor-pointer border-b last:border-b-0 text-gray-700 font-medium active:bg-green-100" onClick={() => handleSelect(s)}>
-                                    {s}
-                                </li>
-                            ))}
-                        </ul>
-                    )} 
-                </div> 
-            );
+            const handleFocus = () => { if (value && value.length > 0) { const uniqueOptions = [...new Set(options)]; const filtered = uniqueOptions.filter(opt => opt && opt.toLowerCase().includes(value.toLowerCase()) && opt !== value).slice(0, 5); if(filtered.length > 0) { setSuggestions(filtered); setShow(true); } } };
+            return ( <div className="mb-4 relative" ref={wrapperRef}> {label && <label className="block text-sm font-semibold text-gray-700 mb-1">{label}</label>} <input className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none" value={value} onChange={handleChange} onFocus={handleFocus} placeholder={placeholder} required={required} autoComplete="off" /> {show && suggestions.length > 0 && (<ul className="absolute z-50 w-full bg-white border border-gray-200 rounded-lg shadow-xl mt-1 max-h-48 overflow-y-auto">{suggestions.map((s, i) => (<li key={i} className="p-3 hover:bg-green-50 cursor-pointer border-b last:border-b-0 text-gray-700 font-medium" onClick={() => handleSelect(s)}>{s}</li>))}</ul>)} </div> );
         };
 
         const useNetworkStatus = () => {
