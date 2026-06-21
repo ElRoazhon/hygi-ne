@@ -1229,4 +1229,147 @@
                                         <div className="flex gap-2">
                                             <select className="p-2 rounded border border-gray-300 bg-white flex-1" value={newZone.freq} onChange={e=>setNewZone({...newZone, freq: e.target.value})}>
                                                 <option value="Journalier">Journalier</option>
-                                                <option value="Hebdomadaire">Hebdomadaire</option>
+                                               <option value="Mensuel">Mensuel</option>
+                                                <option value="Biannuel">Biannuel</option>
+                                                <option value="Annuel">Annuel</option>
+                                            </select>
+                                            <Button onClick={() => {
+                                                if (newZone.name) {
+                                                    if (editingZoneId) {
+                                                        updateZone(editingZoneId, newZone);
+                                                        cancelEditZone();
+                                                    } else {
+                                                        addZone(newZone);
+                                                        setShowAddZone(false);
+                                                        setNewZone({ name: "", freq: "Journalier" });
+                                                    }
+                                                }
+                                            }}>{editingZoneId ? 'Modifier' : 'Ajouter'}</Button>
+                                            <Button variant="ghost" onClick={cancelEditZone}>Annuler</Button>
+                                        </div>
+                                    </div>
+                                </Card>
+                            ) : (
+                                <button onClick={() => setShowAddZone(true)} className="w-full py-4 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 font-bold hover:bg-green-50 flex items-center justify-center gap-2"><Icon name="Plus" className="w-5 h-5"/> Ajouter une tâche</button>
+                            )}
+                        </div>
+                    </div>
+
+                    {historyModalTask && (
+                        <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setHistoryModalTask(null)}>
+                            <div className="bg-white p-6 rounded-2xl w-full max-w-md shadow-2xl max-h-[80vh] flex flex-col" onClick={e => e.stopPropagation()}>
+                                <div className="flex justify-between items-start mb-4">
+                                    <div>
+                                        <h3 className="text-xl font-bold text-gray-800">{historyModalTask.name}</h3>
+                                        <span className="text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded-full">{historyModalTask.freq}</span>
+                                    </div>
+                                    <button onClick={() => setHistoryModalTask(null)} className="text-gray-400 hover:text-gray-600 bg-gray-100 rounded-full p-2">
+                                        <Icon name="X" className="w-5 h-5"/>
+                                    </button>
+                                </div>
+                                <div className="overflow-y-auto flex-1 pr-2">
+                                    <div className="space-y-2">
+                                        {Object.keys(logs).sort().reverse().filter(d => logs[d]?.[historyModalTask.id]).length > 0 ? (
+                                            Object.keys(logs).sort().reverse().filter(d => logs[d]?.[historyModalTask.id]).map(d => (
+                                                <div key={d} className="flex justify-between items-center p-3 bg-green-50 border border-green-100 rounded-lg">
+                                                    <span className="font-bold text-green-800 flex items-center gap-2"><Icon name="CheckCircle" className="w-4 h-4"/> Fait le</span>
+                                                    <span className="text-green-700 font-medium">{new Date(d).toLocaleDateString('fr-FR')}</span>
+                                                </div>
+                                            ))
+                                        ) : (
+                                            <div className="text-center py-8 text-gray-400 italic">
+                                                Aucun historique trouvé pour cette tâche.
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        const MainMenu = ({ onNavigate }) => {
+            return (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-4xl mx-auto w-full px-4 pt-4">
+                    <button onClick={() => onNavigate('traceability')} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:border-green-300 hover:shadow-md transition-all group flex flex-col items-center text-center gap-3">
+                        <div className="w-16 h-16 bg-green-50 rounded-full flex items-center justify-center text-green-600 group-hover:scale-110 transition-transform"><Icon name="ScanBarcode" className="w-8 h-8"/></div>
+                        <div><h3 className="font-bold text-gray-800 text-lg">Traçabilité</h3><p className="text-sm text-gray-500">Étiquettes & DLC</p></div>
+                    </button>
+                    <button onClick={() => onNavigate('temperatures')} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:border-blue-300 hover:shadow-md transition-all group flex flex-col items-center text-center gap-3">
+                        <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center text-blue-600 group-hover:scale-110 transition-transform"><Icon name="Thermometer" className="w-8 h-8"/></div>
+                        <div><h3 className="font-bold text-gray-800 text-lg">Températures</h3><p className="text-sm text-gray-500">Relevés quotidiens</p></div>
+                    </button>
+                    <button onClick={() => onNavigate('monitoring')} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:border-orange-300 hover:shadow-md transition-all group flex flex-col items-center text-center gap-3">
+                        <div className="w-16 h-16 bg-orange-50 rounded-full flex items-center justify-center text-orange-600 group-hover:scale-110 transition-transform"><Icon name="ClipboardList" className="w-8 h-8"/></div>
+                        <div><h3 className="font-bold text-gray-800 text-lg">Suivi & Hygiène</h3><p className="text-sm text-gray-500">Réception, Nettoyage, Cellule</p></div>
+                    </button>
+                </div>
+            );
+        };
+
+        const App = () => {
+            const [currentView, setCurrentView] = useState('menu');
+            const [restaurantId, setRestaurantId] = useState(null);
+            const [authChecked, setAuthChecked] = useState(false);
+            const isOnline = useNetworkStatus();
+
+            useEffect(() => {
+                if (!window.auth) return;
+                const unsubscribe = window.onAuthStateChanged(window.auth, async (user) => {
+                    if (user) {
+                        setRestaurantId(window.appId === 'epack-prod-data' ? 'SoChris' : window.appId);
+                        setAuthChecked(true);
+                    } else {
+                        try {
+                            if (window.initialAuthToken) { await window.signInWithCustomToken(window.auth, window.initialAuthToken); }
+                            else { await window.signInAnonymously(window.auth); }
+                        } catch(e) { console.error("Auth error", e); setAuthChecked(true); }
+                    }
+                });
+                return () => unsubscribe();
+            }, []);
+
+            useEffect(() => {
+                if (authChecked) {
+                    const loader = document.getElementById('static-loader');
+                    if (loader) {
+                        loader.style.opacity = '0';
+                        setTimeout(() => loader.remove(), 500);
+                    }
+                }
+            }, [authChecked]);
+
+            if (!authChecked) return null;
+
+            return (
+                <div className="h-full flex flex-col bg-gray-50 overflow-hidden font-sans">
+                    <header className="bg-white border-b border-gray-200 px-4 py-3 flex justify-between items-center shrink-0 shadow-sm z-20 relative">
+                        <div className="flex items-center gap-3">
+                            {currentView !== 'menu' && ( <button onClick={() => setCurrentView('menu')} className="p-2 hover:bg-gray-100 rounded-full transition-colors mr-2"><Icon name="ChevronLeft" className="w-6 h-6 text-gray-600"/></button> )}
+                            <LogoUploader restaurantId={restaurantId} className="hidden sm:flex" />
+                            <div>
+                                <h1 className="font-extrabold text-green-700 text-xl tracking-tight">eHygiène</h1>
+                                <p className="text-xs font-semibold text-gray-400 tracking-wider">SO'CHRIS</p>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                            {!isOnline && ( <div className="offline-badge"><Icon name="WifiOff" className="w-4 h-4"/><span>Hors-ligne</span></div> )}
+                        </div>
+                    </header>
+                    <main className="flex-1 overflow-y-auto no-scrollbar p-4 relative z-10">
+                        {currentView === 'menu' && <MainMenu onNavigate={setCurrentView} />}
+                        {currentView === 'traceability' && <TraceabilityModule restaurantId={restaurantId} />}
+                        {currentView === 'temperatures' && <TemperatureModule restaurantId={restaurantId} />}
+                        {currentView === 'monitoring' && <MonitoringModule restaurantId={restaurantId} />}
+                    </main>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
