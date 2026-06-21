@@ -8,12 +8,14 @@
     <!-- OPTIMISATION CACHE & PRELOAD -->
     <meta http-equiv="Cache-Control" content="public, max-age=31536000">
     <link rel="preload" href="https://cdn.tailwindcss.com" as="script">
-    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js" as="script" crossorigin>
-    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js" as="script" crossorigin>
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js" as="script">
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js" as="script">
     <link rel="preload" href="https://unpkg.com/@babel/standalone/babel.min.js" as="script">
+    <link rel="preload" href="https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js" as="script">
+    <link rel="preload" href="https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js" as="script">
     
     <!-- ICONS -->
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj48cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgcng9IjEyMCIgZmlsbD0iIzE2YTM0YSIvPjxwYXRoIGQ9Ik0yNTYgODBjMCAwIDE0MCAyNSAxNDAgMT0iZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjMwIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48cGF0aCBkPSJNMzM2IDIwMGwtMTAwIDEwMGwtNjAtNjAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2ZmZiIgc3Ryb2tlLXdpZHRoPSIzMCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PC9zdmc+">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj48cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgcng9IjEyMCIgZmlsbD0iIzE2YTM0YSIvPjxwYXRoIGQ9Ik0yNTYgODBjMCAwIDE0MCAyNSAxNDAgMTQwYzAgMTAwLTgwIDE4MC0xNDAgMjEyYy02MC0zMi0xNDAtMTEyLTE0MC0yMTJjMC0xMTUgMTQwLTE0MCAxNDAtMTQweiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjMwIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48cGF0aCBkPSJNMzM2IDIwMGwtMTAwIDEwMGwtNjAtNjAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2ZmZiIgc3Ryb2tlLXdpZHRoPSIzMCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PC9zdmc+">
     <link rel="apple-touch-icon" id="dynamic-apple-icon" href="">
     <link rel="manifest" id="dynamic-manifest" href="">
 
@@ -73,17 +75,12 @@
         let appId;
         let initialAuthToken = null;
 
-        // Sécurisation du chargement de la configuration pour éviter les erreurs rouges dans la console
         try {
-            if (typeof __firebase_config !== 'undefined') {
-                firebaseConfig = JSON.parse(__firebase_config);
-                appId = __app_id;
-            } else {
-                throw new Error("Pas de configuration locale");
-            }
+            firebaseConfig = JSON.parse(__firebase_config);
+            appId = __app_id;
             if (typeof __initial_auth_token !== 'undefined') { initialAuthToken = __initial_auth_token; }
         } catch (e) {
-            console.log("Mode Production eHygiène");
+            console.log("Mode Production");
             firebaseConfig = { apiKey: "AIzaSyCoMV_kNz-eI1JlLp33h0iJ4MZR7NnoI-w", authDomain: "epack-hygiene-99e64.firebaseapp.com", projectId: "epack-hygiene-99e64", storageBucket: "epack-hygiene-99e64.firebasestorage.app", messagingSenderId: "917463324646", appId: "1:917463324646:web:14856a7207be0353aca827" };
             appId = 'epack-prod-data'; 
         }
@@ -110,9 +107,8 @@
         window.ref = ref; window.uploadBytes = uploadBytes; window.getDownloadURL = getDownloadURL;
         window.getDocs = getDocs; window.query = query; window.where = where; // Exposed for LogoUploader
 
-        // Signal que Firebase est complétement chargé et prêt
+        // Signal que Firebase est chargé
         window.firebaseLoaded = true;
-        window.dispatchEvent(new Event('firebaseReady')); // LE FEU VERT POUR REACT !
     </script>
 
     <style>
@@ -136,7 +132,7 @@
     </style>
 </head>
 <body class="bg-green-50 text-gray-900 h-screen w-screen overflow-hidden select-none font-sans">
-    <!-- LOADER INITIAL -->
+    <!-- LOADER INITIAL (Visible avant que React ne charge) -->
     <div id="root" class="h-full w-full">
         <div id="static-loader">
             <div class="loader-spinner" id="loader-spinner"></div>
@@ -155,7 +151,7 @@
             </div>
 
             <p id="loader-hint" style="color: #9ca3af; font-size: 0.8rem; margin-top: 20px; max-width: 300px;">
-                Connexion à la base de données...
+                Initialisation des composants...
             </p>
         </div>
     </div>
@@ -163,16 +159,16 @@
     <!-- Script de secours pour détecter l'échec de chargement -->
     <script>
         setTimeout(function() {
+            // Si React n'est pas chargé après 8 secondes, c'est probablement un problème réseau au démarrage
             if (!window.React) {
                 document.getElementById('loader-spinner').style.display = 'none';
                 document.getElementById('loader-text').style.display = 'none';
                 document.getElementById('loader-hint').style.display = 'none';
                 document.getElementById('offline-error').style.display = 'block';
             }
-        }, 12000); // J'ai augmenté un peu le délai pour les mauvaises connexions
+        }, 8000);
     </script>
 
-    <!-- SUPPRESSION de data-type="module" ici qui pouvait causer des soucis -->
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
 
@@ -356,67 +352,11 @@
             const [suggestions, setSuggestions] = useState([]);
             const [show, setShow] = useState(false);
             const wrapperRef = useRef(null);
-            
             useEffect(() => { const handleClickOutside = (event) => { if (wrapperRef.current && !wrapperRef.current.contains(event.target)) setShow(false); }; document.addEventListener("mousedown", handleClickOutside); return () => document.removeEventListener("mousedown", handleClickOutside); }, []);
-            
-            const handleChange = (e) => { 
-                const val = e.target.value; 
-                onChange(e); 
-                if (val.length > 0) { 
-                    const uniqueOptions = [...new Set(options)]; 
-                    // J'augmente la limite de 5 à 15 pour voir plus d'historique
-                    const filtered = uniqueOptions.filter(opt => opt && opt.toLowerCase().includes(val.toLowerCase()) && opt !== val).slice(0, 15); 
-                    setSuggestions(filtered); 
-                    setShow(true); 
-                } else { 
-                    setShow(false); 
-                } 
-            };
-            
+            const handleChange = (e) => { const val = e.target.value; onChange(e); if (val.length > 0) { const uniqueOptions = [...new Set(options)]; const filtered = uniqueOptions.filter(opt => opt && opt.toLowerCase().includes(val.toLowerCase()) && opt !== val).slice(0, 5); setSuggestions(filtered); setShow(true); } else { setShow(false); } };
             const handleSelect = (val) => { onChange({ target: { value: val } }); setShow(false); };
-            
-            const handleFocus = (e) => { 
-                // 1. Logique existante pour afficher les suggestions
-                if (value && value.length > 0) { 
-                    const uniqueOptions = [...new Set(options)]; 
-                    const filtered = uniqueOptions.filter(opt => opt && opt.toLowerCase().includes(value.toLowerCase()) && opt !== value).slice(0, 15); 
-                    if(filtered.length > 0) { setSuggestions(filtered); setShow(true); } 
-                }
-                
-                // 2. NOUVEAU : Optimisation Mobile (Scroll vers le haut)
-                // Si on est sur un petit écran, on remonte l'élément en haut de la vue pour que le clavier ne cache pas la liste
-                if (window.innerWidth < 768) {
-                    setTimeout(() => {
-                        e.target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    }, 300); // Petit délai pour laisser le temps au clavier virtuel de s'ouvrir
-                }
-            };
-
-            return ( 
-                <div className="mb-4 relative" ref={wrapperRef}> 
-                    {label && <label className="block text-sm font-semibold text-gray-700 mb-1">{label}</label>} 
-                    <input 
-                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none scroll-mt-24" // scroll-mt donne une petite marge en haut
-                        value={value} 
-                        onChange={handleChange} 
-                        onFocus={handleFocus} 
-                        placeholder={placeholder} 
-                        required={required} 
-                        autoComplete="off" 
-                        id={label ? label.replace(/\s+/g, '-').toLowerCase() : 'autocomplete-input'}
-                    /> 
-                    {show && suggestions.length > 0 && (
-                        <ul className="absolute z-50 w-full bg-white border border-gray-200 rounded-lg shadow-2xl mt-1 max-h-60 overflow-y-auto pb-safe">
-                            {/* max-h-60 augmente la hauteur visible de la liste */}
-                            {suggestions.map((s, i) => (
-                                <li key={i} className="p-3 hover:bg-green-50 cursor-pointer border-b last:border-b-0 text-gray-700 font-medium active:bg-green-100" onClick={() => handleSelect(s)}>
-                                    {s}
-                                </li>
-                            ))}
-                        </ul>
-                    )} 
-                </div> 
-            );
+            const handleFocus = () => { if (value && value.length > 0) { const uniqueOptions = [...new Set(options)]; const filtered = uniqueOptions.filter(opt => opt && opt.toLowerCase().includes(value.toLowerCase()) && opt !== value).slice(0, 5); if(filtered.length > 0) { setSuggestions(filtered); setShow(true); } } };
+            return ( <div className="mb-4 relative" ref={wrapperRef}> {label && <label className="block text-sm font-semibold text-gray-700 mb-1">{label}</label>} <input className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none" value={value} onChange={handleChange} onFocus={handleFocus} placeholder={placeholder} required={required} autoComplete="off" /> {show && suggestions.length > 0 && (<ul className="absolute z-50 w-full bg-white border border-gray-200 rounded-lg shadow-xl mt-1 max-h-48 overflow-y-auto">{suggestions.map((s, i) => (<li key={i} className="p-3 hover:bg-green-50 cursor-pointer border-b last:border-b-0 text-gray-700 font-medium" onClick={() => handleSelect(s)}>{s}</li>))}</ul>)} </div> );
         };
 
         const useNetworkStatus = () => {
@@ -510,9 +450,6 @@
             const [newProduct, setNewProduct] = useState({ name: '', quantity: '', batch: '', photo: null, rawFile: null });
             const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
             
-            // AJOUT: État pour la recherche
-            const [searchQuery, setSearchQuery] = useState("");
-
             // WEBCAM STATES
             const [isWebcamOpen, setIsWebcamOpen] = useState(false);
             const [hasFlash, setHasFlash] = useState(false);
@@ -673,14 +610,8 @@
                 } 
             };
 
-            // --- LOGIQUE DE FILTRAGE MISE À JOUR (Recherche vs Date) ---
-            const isSearching = searchQuery.trim().length > 0;
-            
-            const filtered = isSearching
-                ? products.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()))
-                          .sort((a, b) => b.sortDate.localeCompare(a.sortDate)) // Tri décroissant (plus récent en haut) pour l'historique
-                : products.filter(p => p.sortDate === selectedDate);
-
+            // --- FONCTIONS RESTAURÉES: filtered, changeDate, generateReport ---
+            const filtered = products.filter(p => p.sortDate === selectedDate);
             const changeDate = (d) => { const date = new Date(selectedDate); date.setDate(date.getDate() + d); setSelectedDate(date.toISOString().split('T')[0]); };
 
             const generateReport = async () => {
@@ -719,79 +650,17 @@
                             </Card>
                         </div>
                         <div className="lg:col-span-8">
-                            
-                            {/* --- BARRE DE RECHERCHE --- */}
-                            <div className="mb-4 relative">
-                                <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"><Icon name="Search" className="w-5 h-5"/></div>
-                                <input 
-                                    type="text" 
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                    placeholder="🔍 Rechercher un produit dans l'historique (ex: Boeuf)..."
-                                    className="w-full pl-10 pr-10 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-green-500 outline-none shadow-sm transition-all text-gray-700 font-medium"
-                                />
-                                {isSearching && (
-                                    <button onClick={() => setSearchQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 bg-gray-100 rounded-full p-1 transition-colors">
-                                        <Icon name="X" className="w-4 h-4"/>
-                                    </button>
-                                )}
-                            </div>
-
-                            {/* --- NAVIGATION DATE OU EN-TÊTE RECHERCHE --- */}
-                            {!isSearching ? (
-                                <div className="bg-white p-4 rounded-xl border flex justify-between items-center mb-4 transition-all">
-                                    <div className="flex items-center gap-2">
-                                        <button onClick={() => changeDate(-1)}><Icon name="ChevronLeft" className="w-6 h-6"/></button>
-                                        <div className="flex items-center gap-2 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">
-                                            <Icon name="Calendar" className="w-5 h-5 text-green-600"/>
-                                            <input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} className="bg-transparent font-bold text-gray-700 outline-none" />
-                                        </div>
-                                        <button onClick={() => changeDate(1)}><Icon name="ChevronRight" className="w-6 h-6"/></button>
-                                    </div>
-                                    <span className="text-sm text-gray-500">{filtered.length} produit(s)</span>
-                                </div>
-                            ) : (
-                                <div className="bg-green-50 p-4 rounded-xl border border-green-200 mb-4 flex justify-between items-center animate-[fadeIn_0.3s]">
-                                    <span className="font-bold text-green-800 flex items-center gap-2"><Icon name="Search" className="w-4 h-4"/> Résultats pour "{searchQuery}"</span>
-                                    <span className="text-sm font-bold text-green-700 bg-white px-3 py-1 rounded-lg shadow-sm border border-green-100">{filtered.length} trouvé(s)</span>
-                                </div>
-                            )}
-
-                            {/* --- LISTE DES PRODUITS --- */}
+                             <div className="bg-white p-4 rounded-xl border flex justify-between items-center mb-4"><div className="flex items-center gap-2"><button onClick={() => changeDate(-1)}><Icon name="ChevronLeft" className="w-6 h-6"/></button><div className="flex items-center gap-2 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200"><Icon name="Calendar" className="w-5 h-5 text-green-600"/><input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} className="bg-transparent font-bold text-gray-700 outline-none" /></div><button onClick={() => changeDate(1)}><Icon name="ChevronRight" className="w-6 h-6"/></button></div><span className="text-sm text-gray-500">{filtered.length} produit(s)</span></div>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                {filtered.length === 0 && (
-                                    <div className="col-span-full text-center py-10 text-gray-400 bg-white rounded-xl border border-dashed border-gray-200">
-                                        <Icon name={isSearching ? "Search" : "Calendar"} className="w-12 h-12 mx-auto mb-2 opacity-20"/>
-                                        <p>{isSearching ? "Aucun produit trouvé dans l'historique." : "Rien enregistré ce jour."}</p>
-                                    </div>
-                                )}
-                                {filtered.map(item => (
-                                    <div key={item.id} className="bg-white rounded-lg border p-3 flex justify-between items-start relative overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-                                        
-                                        {/* Badge de date visible UNIQUEMENT en mode recherche */}
-                                        {isSearching && (
-                                            <div className="absolute top-0 right-0 bg-green-100 text-green-700 text-[10px] font-bold px-2 py-1 rounded-bl-lg z-10 border-b border-l border-green-200">
-                                                {new Date(item.sortDate).toLocaleDateString('fr-FR')}
-                                            </div>
-                                        )}
-
-                                        <div className="flex gap-3 w-full" onClick={() => setFullscreenPhoto(item.photo)}>
-                                            <img src={item.photo} className="w-20 h-20 object-cover rounded-lg bg-gray-100 cursor-zoom-in border border-gray-100" />
-                                            <div>
-                                                <p className="font-bold text-gray-800 pr-6">{item.name}</p>
-                                                <p className="text-sm text-gray-600 mt-1">
-                                                    {item.quantity ? <span className="font-bold bg-gray-100 px-1.5 py-0.5 rounded text-gray-700 mr-1">Qté: {item.quantity}</span> : ''} 
-                                                    {item.batch && <span className="text-gray-500">{item.quantity ? '• ' : ''}{item.batch}</span>}
-                                                </p>
-                                            </div>
-                                        </div>
-                                        <button onClick={() => deleteItem(item.id)} className="text-gray-300 hover:text-red-500 self-end mb-1"><Icon name="Trash2"/></button>
-                                    </div>
-                                ))}
+                                {filtered.length === 0 && <div className="col-span-full text-center py-10 text-gray-400">Rien ce jour.</div>}
+                                {filtered.map(item => (<div key={item.id} className="bg-white rounded-lg border p-3 flex justify-between items-start"><div className="flex gap-3 w-full" onClick={() => setFullscreenPhoto(item.photo)}><img src={item.photo} className="w-20 h-20 object-cover rounded-lg bg-gray-100 cursor-zoom-in" /><div><p className="font-bold">{item.name}</p><p className="text-sm text-green-600">{item.quantity ? <span className="font-bold text-gray-700">Qté: {item.quantity}</span> : ''} {item.quantity && item.batch ? '•' : ''} {item.batch}</p></div></div><button onClick={() => deleteItem(item.id)} className="text-gray-300 hover:text-red-500"><Icon name="Trash2"/></button></div>))}
                             </div>
                         </div>
                     </div>
+                    
                     {exportModalOpen && (<div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => !isGenerating && setExportModalOpen(false)}><div className="bg-white p-6 rounded-2xl w-full max-w-sm shadow-2xl" onClick={e => e.stopPropagation()}><h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2"><Icon name="Download" className="text-green-600"/> Générer Rapport</h3><p className="text-gray-600 mb-4">Choisissez le mois :</p><input type="month" value={exportMonth} onChange={(e) => setExportMonth(e.target.value)} className="w-full p-3 border border-gray-300 rounded-lg mb-6 text-lg" disabled={isGenerating} /><div className="flex gap-3"><Button onClick={generateReport} className="flex-1" disabled={isGenerating}>{isGenerating ? "Génération..." : "Créer Rapport"}</Button><Button variant="ghost" onClick={() => setExportModalOpen(false)} disabled={isGenerating}>Annuler</Button></div></div></div>)}
+                    
+                    {/* NOUVELLE INTERFACE CAMÉRA 3/4 AVEC CADRE NOIR */}
                     {isWebcamOpen && (
                         <div className="fixed inset-0 z-[100] bg-black flex flex-col justify-between">
                             
@@ -985,13 +854,14 @@
             const supplierHistory = deliveries.map(d => d.supplier);
             const deliveryProductHistory = deliveries.map(d => d.product);
 
-            // --- 3. Nettoyage ---
+            // --- 3. Nettoyage (MODIFICATION AJOUTÉE) ---
+            // J'ai ajouté 'updateItem' alias 'updateZone' ici
             const { data: zones, addItem: addZone, deleteItem: removeZone, updateItem: updateZone } = useSharedCollection(restaurantId, 'cleaning');
             const { logs, updateLog } = useSharedLogs(restaurantId, 'cleaning_logs');
             const [showAddZone, setShowAddZone] = useState(false);
             const [newZone, setNewZone] = useState({ name: "", freq: "Journalier" });
-            const [editingZoneId, setEditingZoneId] = useState(null); 
-            const [historyModalTask, setHistoryModalTask] = useState(null); 
+            const [editingZoneId, setEditingZoneId] = useState(null); // Nouvel état pour savoir quelle tâche on modifie
+            const [historyModalTask, setHistoryModalTask] = useState(null); // État pour la modale d'historique
             const cleaningTaskHistory = zones.map(z => z.name);
             
             // État pour le commentaire du jour
@@ -1017,22 +887,26 @@
                 setEditingZoneId(zone.id);
                 setNewZone({ name: zone.name, freq: zone.freq });
                 setShowAddZone(true);
+                // Petit scroll vers le bas pour voir le formulaire
                 setTimeout(() => {
                     document.getElementById('zone-form')?.scrollIntoView({ behavior: 'smooth' });
                 }, 100);
             };
 
+            // Fonction pour annuler la modification
             const cancelEditZone = () => {
                 setEditingZoneId(null);
                 setNewZone({ name: "", freq: "Journalier" });
                 setShowAddZone(false);
             };
 
-            // Fonction intelligente pour calculer le statut d'une tâche
+            // Fonction intelligente pour calculer le statut d'une tâche selon sa fréquence
             const getTaskStatus = (task, targetDate) => {
+                // 1. Récupérer toutes les dates où cette tâche a été faite, triées de la plus récente à la plus ancienne
                 const dates = Object.keys(logs).sort().reverse(); 
                 let lastDoneDate = null;
                 
+                // 2. Trouver la dernière fois qu'elle a été faite (avant ou égal à la date sélectionnée)
                 for (const d of dates) {
                     if (d <= targetDate && logs[d]?.[task.id]) {
                         lastDoneDate = d;
@@ -1042,19 +916,22 @@
 
                 if (!lastDoneDate) return { isValid: false, label: "Jamais fait", color: "text-gray-400", bg: "bg-white", border: "border-gray-200" };
 
+                // 3. Calculer l'écart en jours
                 const d1 = new Date(targetDate);
                 const d2 = new Date(lastDoneDate);
                 const diffTime = Math.abs(d1 - d2);
                 const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
 
+                // 4. Déterminer si c'est valide selon la fréquence
                 let isValid = false;
                 if (task.freq === 'Journalier') isValid = (diffDays === 0);
                 else if (task.freq === 'Hebdomadaire') isValid = (diffDays < 7);
                 else if (task.freq === 'Mensuel') isValid = (diffDays < 30);
-                else if (task.freq === 'Biannuel') isValid = (diffDays < 182); 
-                else if (task.freq === 'Annuel') isValid = (diffDays < 365); 
+                else if (task.freq === 'Biannuel') isValid = (diffDays < 182); // ~6 mois
+                else if (task.freq === 'Annuel') isValid = (diffDays < 365); // 1 an
 
-                let dateDisplay = lastDoneDate.split('-').reverse().slice(0, 2).join('/'); 
+                // 5. Formater la date pour l'affichage
+                let dateDisplay = lastDoneDate.split('-').reverse().slice(0, 2).join('/'); // JJ/MM
                 if (diffDays === 0) dateDisplay = "Aujourd'hui";
                 else if (diffDays === 1) dateDisplay = "Hier";
 
@@ -1072,6 +949,7 @@
                 updateLog(selectedDate, { [id]: !currentVal });
             };
 
+            // Calcul de progression basé sur la validité (Smart Logic)
             const cleanProgress = zones.length === 0 ? 0 : Math.round((zones.filter(z => getTaskStatus(z, selectedDate).isValid).length / zones.length) * 100);
 
             // --- WEBCAM LOGIC ---
@@ -1080,6 +958,7 @@
             const videoRef = useRef(null);
             const canvasRef = useRef(null);
             
+            // ... (Code webcam existant inchangé) ...
             const startWebcam = async () => { setTempPhoto(null); setIsWebcamOpen(true); try { const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } }); setTimeout(() => { if (videoRef.current) videoRef.current.srcObject = stream; }, 100); } catch (e) { alert("Impossible d'accéder à la webcam."); setIsWebcamOpen(false); } };
             const captureWebcam = () => { if (videoRef.current && canvasRef.current) { const v = videoRef.current; const c = canvasRef.current; c.width = v.videoWidth; c.height = v.videoHeight; c.getContext('2d').drawImage(v, 0, 0); c.toBlob((blob) => { const previewUrl = c.toDataURL('image/jpeg', 0.8); setTempPhoto({ preview: previewUrl, file: blob }); }, 'image/jpeg', 0.95); v.pause(); } };
             const retakePhoto = () => { setTempPhoto(null); if (videoRef.current) videoRef.current.play(); };
@@ -1156,11 +1035,12 @@
                         <div className="space-y-2">{filteredDeliveries.map(d => ( <div key={d.id} className={`flex justify-between items-start bg-white p-3 rounded-lg border shadow-sm ${d.compliant === 'Non' ? 'border-l-4 border-l-red-500' : ''}`}><div className="flex gap-3">{d.photo && <img src={d.photo} className="w-12 h-12 object-cover rounded bg-gray-200" />}<div><div className="font-bold text-gray-800">{d.product} <span className="text-xs text-gray-500">({d.supplier})</span></div><div className="text-sm text-gray-600">Lot: {d.batch} • {d.temp}°C • <span className={d.compliant==='Oui'?'text-green-600 font-bold':'text-red-600 font-bold'}>{d.compliant==='Oui'?'Conforme':'Non Conforme'}</span></div>{d.comment && <div className="text-xs text-red-500 mt-1 italic">⚠️ {d.comment}</div>}</div></div><button onClick={() => removeDelivery(d.id)} className="text-gray-300 hover:text-red-500"><Icon name="Trash2"/></button></div> ))}{filteredDeliveries.length === 0 && <p className="text-center text-gray-400 italic text-sm">Aucune livraison scannée ce jour.</p>}</div>
                     </Card>
 
-                    {/* 3. Nettoyage */}
+                    {/* 3. Nettoyage (NOUVEAU DESIGN INTELLIGENT) */}
                     <div className="border-t pt-8">
                         <div className="flex justify-between items-end mb-4"><h3 className="text-xl font-bold text-gray-700 flex items-center gap-2"><Icon name="ClipboardCheck" className="w-6 h-6"/> Plan de Nettoyage</h3><span className={`text-2xl font-bold ${cleanProgress === 100 ? 'text-green-600' : 'text-orange-500'}`}>{cleanProgress}%</span></div>
                         <div className="w-full bg-gray-200 rounded-full h-2 mb-6"><div className={`h-2 rounded-full transition-all duration-500 ${cleanProgress === 100 ? 'bg-green-600' : 'bg-orange-400'}`} style={{width: `${cleanProgress}%`}}></div></div>
                         
+                        {/* AJOUT DE LA ZONE DE COMMENTAIRES DU JOUR */}
                         <div className="mb-6">
                             <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 block flex justify-between items-center">
                                 <span>Observation du {new Date(selectedDate).toLocaleDateString('fr-FR')}</span>
@@ -1200,7 +1080,7 @@
                                             <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${status.isValid ? 'bg-green-600 text-white shadow-lg shadow-green-200' : 'bg-gray-200 text-gray-400'}`}>
                                                 {status.isValid && <Icon name="CheckCircle" />}
                                             </div>
-                                            {/* BOUTONS D'ACTION */}
+                                            {/* BOUTONS D'ACTION (MODIFIER / SUPPRIMER) */}
                                             <div className="flex gap-1 ml-2">
                                                 <button onClick={(e) => { e.stopPropagation(); startEditZone(z); }} className="p-2 hover:bg-blue-50 text-gray-300 hover:text-blue-500 rounded-full transition-colors" title="Modifier">
                                                     <Icon name="Edit" className="w-5 h-5"/>
@@ -1222,156 +1102,232 @@
                                         <div className="flex gap-2">
                                             <select className="p-2 rounded border border-gray-300 bg-white flex-1" value={newZone.freq} onChange={e=>setNewZone({...newZone, freq: e.target.value})}>
                                                 <option value="Journalier">Journalier</option>
-                                               <option value="Mensuel">Mensuel</option>
+                                                <option value="Hebdomadaire">Hebdomadaire</option>
+                                                <option value="Mensuel">Mensuel</option>
                                                 <option value="Biannuel">Biannuel</option>
                                                 <option value="Annuel">Annuel</option>
                                             </select>
-                                            <Button onClick={() => {
-                                                if (newZone.name) {
+                                            <Button className={`flex-1 ${editingZoneId ? 'bg-orange-500 hover:bg-orange-600' : 'bg-green-600 hover:bg-green-700'}`} onClick={() => { 
+                                                if(newZone.name) { 
                                                     if (editingZoneId) {
+                                                        // MODIFICATION
                                                         updateZone(editingZoneId, newZone);
-                                                        cancelEditZone();
+                                                        setEditingZoneId(null);
                                                     } else {
-                                                        addZone(newZone);
-                                                        setShowAddZone(false);
-                                                        setNewZone({ name: "", freq: "Journalier" });
+                                                        // AJOUT
+                                                        addZone(newZone); 
                                                     }
-                                                }
-                                            }}>{editingZoneId ? 'Modifier' : 'Ajouter'}</Button>
-                                            <Button variant="ghost" onClick={cancelEditZone}>Annuler</Button>
+                                                    setNewZone({name:"", freq:"Journalier"}); 
+                                                    setShowAddZone(false); 
+                                                } 
+                                            }}>
+                                                {editingZoneId ? "Modifier" : "Ajouter"}
+                                            </Button>
                                         </div>
+                                        <Button variant="ghost" onClick={cancelEditZone} className="w-full text-sm py-1">Annuler</Button>
                                     </div>
-                                </Card>
+                                </Card> 
                             ) : (
-                                <button onClick={() => setShowAddZone(true)} className="w-full py-4 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 font-bold hover:bg-green-50 flex items-center justify-center gap-2"><Icon name="Plus" className="w-5 h-5"/> Ajouter une tâche</button>
+                                <button onClick={() => setShowAddZone(true)} className="w-full py-4 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 font-bold hover:bg-green-50">+ Nouvelle tâche</button>
                             )}
                         </div>
                     </div>
 
+                    {/* FENÊTRE D'HISTORIQUE (MODALE) */}
                     {historyModalTask && (
                         <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setHistoryModalTask(null)}>
-                            <div className="bg-white p-6 rounded-2xl w-full max-w-md shadow-2xl max-h-[80vh] flex flex-col" onClick={e => e.stopPropagation()}>
-                                <div className="flex justify-between items-start mb-4">
-                                    <div>
-                                        <h3 className="text-xl font-bold text-gray-800">{historyModalTask.name}</h3>
-                                        <span className="text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded-full">{historyModalTask.freq}</span>
-                                    </div>
-                                    <button onClick={() => setHistoryModalTask(null)} className="text-gray-400 hover:text-gray-600 bg-gray-100 rounded-full p-2">
-                                        <Icon name="X" className="w-5 h-5"/>
-                                    </button>
+                            <div className="bg-white p-6 rounded-2xl w-full max-w-sm shadow-2xl max-h-[80vh] flex flex-col" onClick={e => e.stopPropagation()}>
+                                <div className="flex justify-between items-center mb-4 border-b pb-2">
+                                    <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+                                        <Icon name="Calendar" className="text-blue-600"/> Historique
+                                    </h3>
+                                    <button onClick={() => setHistoryModalTask(null)} className="text-gray-400 hover:text-gray-600"><Icon name="X"/></button>
                                 </div>
-                                <div className="overflow-y-auto flex-1 pr-2">
-                                    <div className="space-y-2">
-                                        {Object.keys(logs).sort().reverse().filter(d => logs[d]?.[historyModalTask.id]).length > 0 ? (
-                                            Object.keys(logs).sort().reverse().filter(d => logs[d]?.[historyModalTask.id]).map(d => (
-                                                <div key={d} className="flex justify-between items-center p-3 bg-green-50 border border-green-100 rounded-lg">
-                                                    <span className="font-bold text-green-800 flex items-center gap-2"><Icon name="CheckCircle" className="w-4 h-4"/> Fait le</span>
-                                                    <span className="text-green-700 font-medium">{new Date(d).toLocaleDateString('fr-FR')}</span>
-                                                </div>
-                                            ))
-                                        ) : (
-                                            <div className="text-center py-8 text-gray-400 italic">
-                                                Aucun historique trouvé pour cette tâche.
+                                <div className="mb-4">
+                                    <p className="text-sm text-gray-500 uppercase font-bold tracking-wider">Tâche :</p>
+                                    <p className="font-bold text-lg text-blue-800">{historyModalTask.name}</p>
+                                    <p className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded w-fit mt-1 font-medium">{historyModalTask.freq}</p>
+                                </div>
+                                <div className="flex-1 overflow-y-auto space-y-2 pr-2 custom-scrollbar">
+                                    {Object.keys(logs)
+                                        .filter(date => logs[date]?.[historyModalTask.id]) // On garde seulement les dates où c'est coché
+                                        .sort((a, b) => b.localeCompare(a)) // Tri du plus récent au plus ancien
+                                        .map(date => (
+                                            <div key={date} className="flex justify-between items-center p-3 bg-green-50 rounded-lg border border-green-100">
+                                                 <span className="font-bold text-gray-700">{new Date(date).toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                                                 <span className="text-green-600 flex items-center gap-1 text-xs font-bold bg-white px-2 py-1 rounded-full border border-green-200 shadow-sm"><Icon name="CheckCircle" className="w-3 h-3"/> Fait</span>
                                             </div>
-                                        )}
-                                    </div>
+                                        ))
+                                    }
+                                    {Object.keys(logs).filter(date => logs[date]?.[historyModalTask.id]).length === 0 && (
+                                        <div className="text-center py-8">
+                                            <p className="text-gray-400 italic">Aucun historique disponible.</p>
+                                            <p className="text-xs text-gray-300 mt-1">Cette tâche n'a jamais été validée.</p>
+                                        </div>
+                                    )}
                                 </div>
+                                <button onClick={() => setHistoryModalTask(null)} className="mt-4 w-full py-3 bg-gray-100 text-gray-600 font-bold rounded-xl hover:bg-gray-200 transition-colors">Fermer</button>
                             </div>
                         </div>
                     )}
+
+                    {/* WEBCAM OVERLAY */}
+                    {isWebcamOpen && (<div className="fixed inset-0 z-[100] bg-black flex flex-col"><div className="relative flex-1 w-full h-full overflow-hidden"><video ref={videoRef} autoPlay playsInline className={`absolute inset-0 w-full h-full object-cover ${tempPhoto ? 'hidden' : ''}`}></video>{tempPhoto && <img src={tempPhoto.preview} className="absolute inset-0 w-full h-full object-cover" />}{!tempPhoto ? (<><div className="absolute inset-0 flex items-center justify-center pointer-events-none"><div className="w-[80%] h-[60%] border-2 border-green-500/50 rounded-2xl relative"><div className="scan-line"></div></div></div><div className="absolute top-0 w-full p-4 flex justify-between items-center z-20 bg-gradient-to-b from-black/60 to-transparent"><span className="text-white font-bold tracking-wide drop-shadow-md">Scanner</span><button onClick={() => { if(videoRef.current?.srcObject) videoRef.current.srcObject.getTracks().forEach(t=>t.stop()); setIsWebcamOpen(false); }} className="p-3 bg-black/40 rounded-full text-white backdrop-blur-md border border-white/20"><Icon name="X" className="w-6 h-6"/></button></div><div className="absolute bottom-8 w-full flex justify-center z-20"><button onClick={captureWebcam} className="w-20 h-20 bg-white rounded-full border-4 border-gray-200/50 shadow-2xl active:scale-95 transition-transform flex items-center justify-center"><div className="w-16 h-16 bg-white rounded-full border-2 border-black"></div></button></div></>) : (<div className="absolute bottom-8 w-full flex justify-center gap-6 z-20 px-8"><button onClick={retakePhoto} className="flex-1 py-4 bg-red-500/90 backdrop-blur-md text-white rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg active:scale-95 border border-red-400"><Icon name="RotateCcw" className="w-6 h-6"/> Reprendre</button><button onClick={confirmPhoto} className="flex-1 py-4 bg-green-500 text-white rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg active:scale-95"><Icon name="CheckCircle" className="w-6 h-6"/> Valider</button></div>)}</div><canvas ref={canvasRef} className="hidden"></canvas></div>)}
                 </div>
             );
         };
 
-        const MainMenu = ({ onNavigate }) => {
+        const PinScreen = ({ onLogin, isLoading }) => {
+            const [code, setCode] = useState(""); const [error, setError] = useState(false);
+            const handleNum = (num) => { if (code.length < 6 && !isLoading) { const newCode = code + num; setCode(newCode); setError(false); if (newCode.length === 6) { onLogin(newCode); } } };
+            const handleBackspace = () => setCode(prev => prev.slice(0, -1));
             return (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-4xl mx-auto w-full px-4 pt-4">
-                    <button onClick={() => onNavigate('traceability')} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:border-green-300 hover:shadow-md transition-all group flex flex-col items-center text-center gap-3">
-                        <div className="w-16 h-16 bg-green-50 rounded-full flex items-center justify-center text-green-600 group-hover:scale-110 transition-transform"><Icon name="ScanBarcode" className="w-8 h-8"/></div>
-                        <div><h3 className="font-bold text-gray-800 text-lg">Traçabilité</h3><p className="text-sm text-gray-500">Étiquettes & DLC</p></div>
-                    </button>
-                    <button onClick={() => onNavigate('temperatures')} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:border-blue-300 hover:shadow-md transition-all group flex flex-col items-center text-center gap-3">
-                        <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center text-blue-600 group-hover:scale-110 transition-transform"><Icon name="Thermometer" className="w-8 h-8"/></div>
-                        <div><h3 className="font-bold text-gray-800 text-lg">Températures</h3><p className="text-sm text-gray-500">Relevés quotidiens</p></div>
-                    </button>
-                    <button onClick={() => onNavigate('monitoring')} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:border-orange-300 hover:shadow-md transition-all group flex flex-col items-center text-center gap-3">
-                        <div className="w-16 h-16 bg-orange-50 rounded-full flex items-center justify-center text-orange-600 group-hover:scale-110 transition-transform"><Icon name="ClipboardList" className="w-8 h-8"/></div>
-                        <div><h3 className="font-bold text-gray-800 text-lg">Suivi & Hygiène</h3><p className="text-sm text-gray-500">Réception, Nettoyage, Cellule</p></div>
-                    </button>
+                <div className="flex flex-col items-center justify-center h-full bg-green-50 p-6 fade-in-element">
+                    <div className="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-sm text-center border border-green-100">
+                        <div className="mb-6"><div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 text-green-600"><Icon name="Lock" className="w-8 h-8"/></div><h2 className="text-2xl font-bold text-gray-800">Verrouillé</h2><p className="text-gray-500 text-sm mt-1">{isLoading ? "Connexion..." : "Entrez le code de sécurité (6 chiffres)"}</p></div>
+                        <div className="flex justify-center gap-4 mb-8">{[0, 1, 2, 3, 4, 5].map(i => (<div key={i} className={`w-4 h-4 rounded-full transition-all duration-200 ${i < code.length ? (error ? 'bg-red-500' : 'bg-green-500') : 'bg-gray-200'}`}></div>))}</div>
+                        <div className="grid grid-cols-3 gap-4 mb-4">{[1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => (<button key={n} onClick={() => handleNum(n.toString())} disabled={isLoading} className="h-16 rounded-2xl bg-gray-50 text-2xl font-bold text-gray-700 active:bg-gray-200 active:scale-95 transition-all outline-none touch-manipulation disabled:opacity-50">{n}</button>))}<div className="h-16"></div><button onClick={() => handleNum('0')} disabled={isLoading} className="h-16 rounded-2xl bg-gray-50 text-2xl font-bold text-gray-700 active:bg-gray-200 active:scale-95 transition-all outline-none touch-manipulation disabled:opacity-50">0</button><button onClick={handleBackspace} disabled={isLoading} className="h-16 rounded-2xl flex items-center justify-center text-gray-400 active:bg-red-50 active:text-red-500 active:scale-95 transition-all outline-none touch-manipulation disabled:opacity-50"><Icon name="Delete" className="w-8 h-8"/></button></div>
+                        {error && <p className="text-red-500 font-bold text-sm animate-bounce">Code incorrect ou erreur connexion</p>}
+                    </div>
                 </div>
             );
         };
 
         const App = () => {
-            const [currentView, setCurrentView] = useState('menu');
-            const [restaurantId, setRestaurantId] = useState(null);
-            const [authChecked, setAuthChecked] = useState(false);
+            const [user, setUser] = useState(null);
+            const [restaurantId, setRestaurantId] = useState(localStorage.getItem('haccp_restaurant_id') || 'mon-restaurant');
+            const [tab, setTab] = useState('traceability');
+            const [isLocked, setIsLocked] = useState(!localStorage.getItem('haccp_app_unlocked'));
+            const [isAuthLoading, setIsAuthLoading] = useState(true); 
+            const [isLoginLoading, setIsLoginLoading] = useState(false);
+            const [isCaching, setIsCaching] = useState(false);
             const isOnline = useNetworkStatus();
 
             useEffect(() => {
-                if (!window.auth) return;
-                const unsubscribe = window.onAuthStateChanged(window.auth, async (user) => {
-                    if (user) {
-                        setRestaurantId(window.appId === 'epack-prod-data' ? 'SoChris' : window.appId);
-                        setAuthChecked(true);
-                    } else {
-                        try {
-                            if (window.initialAuthToken) { await window.signInWithCustomToken(window.auth, window.initialAuthToken); }
-                            else { await window.signInAnonymously(window.auth); }
-                        } catch(e) { console.error("Auth error", e); setAuthChecked(true); }
-                    }
-                });
-                return () => unsubscribe();
+                const loader = document.getElementById('static-loader');
+                if (loader) loader.style.display = 'none';
+
+                let unsubscribe;
+                const startAuth = async () => {
+                    unsubscribe = window.onAuthStateChanged(window.auth, (u) => {
+                        if (u) {
+                            setUser(u);
+                            setIsAuthLoading(false);
+                        } else {
+                            const doLogin = async () => {
+                                try {
+                                    if (window.initialAuthToken) { 
+                                        await window.signInWithCustomToken(window.auth, window.initialAuthToken); 
+                                    } else { 
+                                        await window.signInAnonymously(window.auth); 
+                                    }
+                                } catch (e) {
+                                    console.error("Erreur Auth", e);
+                                    setIsAuthLoading(false);
+                                }
+                            };
+                            doLogin();
+                        }
+                    });
+                };
+                startAuth();
+                return () => { if(unsubscribe) unsubscribe(); };
             }, []);
 
-            useEffect(() => {
-                if (authChecked) {
-                    const loader = document.getElementById('static-loader');
-                    if (loader) {
-                        loader.style.opacity = '0';
-                        setTimeout(() => loader.remove(), 500);
-                    }
-                }
-            }, [authChecked]);
+            useEffect(() => { localStorage.setItem('haccp_restaurant_id', restaurantId); }, [restaurantId]);
+            const handleLogin = async (code) => { if (code === '030613') { localStorage.setItem('haccp_app_unlocked', 'true'); setIsLocked(false); } else { alert("Code incorrect"); } };
+            const handleLock = () => { localStorage.removeItem('haccp_app_unlocked'); setIsLocked(true); };
+            
+            const handleInstallCache = async () => {
+                setIsCaching(true);
+                alert("L'application va télécharger tous les fichiers nécessaires. Veuillez patienter...");
+                const urlsToCache = [
+                    "https://cdn.tailwindcss.com",
+                    "https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js",
+                    "https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js",
+                    "https://unpkg.com/@babel/standalone/babel.min.js",
+                    "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js",
+                    "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js",
+                    "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js",
+                    "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js",
+                    "https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js",
+                    "https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"
+                ];
 
-            if (!authChecked) return null;
+                try {
+                    await Promise.all(urlsToCache.map(url => fetch(url, { mode: 'cors' })));
+                    alert("✅ Succès ! L'application est prête.");
+                } catch (e) {
+                    alert("⚠️ Erreur lors du téléchargement. Vérifiez votre connexion.");
+                } finally {
+                    setIsCaching(false);
+                }
+            };
+
+            if (isAuthLoading) return <div className="flex items-center justify-center h-full text-green-700 font-bold animate-pulse">Chargement de vos données...</div>;
+            if (isLocked) { return <PinScreen onLogin={handleLogin} isLoading={isLoginLoading} />; }
+            
+            const MenuBtn = ({ id, label, icon }) => ( <button onClick={() => setTab(id)} className={`w-full flex items-center gap-4 px-4 py-4 rounded-xl transition-all ${tab === id ? 'bg-green-600 text-white shadow-lg' : 'text-gray-600 hover:bg-green-50'}`}><Icon name={icon} className="w-6 h-6"/> <span className="font-semibold text-lg hidden lg:inline">{label}</span><span className="lg:hidden"><Icon name={icon} className="w-8 h-8"/></span></button> );
 
             return (
-                <div className="h-full flex flex-col bg-gray-50 overflow-hidden font-sans">
-                    <header className="bg-white border-b border-gray-200 px-4 py-3 flex justify-between items-center shrink-0 shadow-sm z-20 relative">
-                        <div className="flex items-center gap-3">
-                            {currentView !== 'menu' && ( <button onClick={() => setCurrentView('menu')} className="p-2 hover:bg-gray-100 rounded-full transition-colors mr-2"><Icon name="ChevronLeft" className="w-6 h-6 text-gray-600"/></button> )}
-                            <LogoUploader restaurantId={restaurantId} className="hidden sm:flex" />
+                <div className="flex h-[100dvh] bg-green-50/50 w-full overflow-hidden flex-col md:flex-row fade-in-element">
+                    <div className="md:w-72 bg-white border-r border-gray-200 z-50 flex flex-col md:h-full shadow-xl order-2 md:order-1">
+                        <div className="p-6 border-b hidden md:flex justify-start items-center gap-4">
+                            <LogoUploader restaurantId={restaurantId} />
                             <div>
-                                <h1 className="font-extrabold text-green-700 text-xl tracking-tight">eHygiène</h1>
-                                <p className="text-xs font-semibold text-gray-400 tracking-wider">SO'CHRIS</p>
+                                <h1 className="text-2xl font-extrabold text-green-700 leading-none">eHygiène<span className="text-green-400">.</span></h1>
+                                <p className="text-xs text-gray-400 font-medium">So'Chris</p>
                             </div>
                         </div>
-                        <div className="flex items-center gap-3">
-                            {!isOnline && ( <div className="offline-badge"><Icon name="WifiOff" className="w-4 h-4"/><span>Hors-ligne</span></div> )}
+                        <div className="p-4 bg-green-50 border-b hidden md:block"><p className="text-xs text-green-600 font-bold uppercase tracking-wider">Restaurant</p><p className="font-bold text-gray-800 truncate">{restaurantId}</p></div>
+                        <nav className="p-2 space-y-2 flex-1 overflow-y-auto hidden md:block">
+                            <MenuBtn id="traceability" label="Traçabilité" icon="ScanBarcode"/>
+                            <MenuBtn id="temperature" label="Températures" icon="Thermometer"/>
+                            <MenuBtn id="tracking" label="Suivi & Hygiène" icon="ClipboardList"/>
+                            
+                            <div className="pt-4 mt-4 border-t px-2">
+                                <button onClick={handleInstallCache} disabled={isCaching || !isOnline} className="w-full py-3 px-3 text-sm bg-orange-50 text-orange-700 hover:bg-orange-100 rounded-lg flex items-center gap-2 border border-orange-200 font-semibold disabled:opacity-50">
+                                    <Icon name="Smartphone" className="w-5 h-5"/> {isCaching ? "Téléchargement..." : "Installer pour Hors-Ligne"}
+                                </button>
+                            </div>
+                        </nav>
+                        <div className="p-4 border-t hidden md:block"><button onClick={handleLock} className="w-full py-2 text-sm text-red-500 hover:bg-red-50 rounded flex items-center justify-center gap-2"><Icon name="LogOut" className="w-4 h-4"/> Verrouiller</button></div>
+                        <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 flex justify-around p-3 z-50 pb-safe">
+                            <button onClick={() => setTab('traceability')} className={`flex flex-col items-center ${tab === 'traceability' ? 'text-green-600' : 'text-green-600/50'}`}><Icon name="ScanBarcode" className="w-6 h-6"/><span className="text-xs">Traçabilité</span></button>
+                            <button onClick={() => setTab('temperature')} className={`flex flex-col items-center ${tab === 'temperature' ? 'text-green-600' : 'text-green-600/50'}`}><Icon name="Thermometer" className="w-6 h-6"/><span className="text-xs">Températures</span></button>
+                            <button onClick={() => setTab('tracking')} className={`flex flex-col items-center ${tab === 'tracking' ? 'text-green-600' : 'text-green-600/50'}`}><Icon name="ClipboardList" className="w-6 h-6"/><span className="text-xs">Suivi</span></button>
+                            <button onClick={handleInstallCache} className={`flex flex-col items-center text-orange-600/70`}><Icon name="Smartphone" className="w-6 h-6"/><span className="text-xs">Install</span></button>
                         </div>
-                    </header>
-                    <main className="flex-1 overflow-y-auto no-scrollbar p-4 relative z-10">
-                        {currentView === 'menu' && <MainMenu onNavigate={setCurrentView} />}
-                        {currentView === 'traceability' && <TraceabilityModule restaurantId={restaurantId} />}
-                        {currentView === 'temperatures' && <TemperatureModule restaurantId={restaurantId} />}
-                        {currentView === 'monitoring' && <MonitoringModule restaurantId={restaurantId} />}
+                    </div>
+                    <main className="flex-1 flex flex-col h-full overflow-hidden relative w-full order-1 md:order-2 pb-16 md:pb-0">
+                        {/* HEADER MOBILE + BADGE OFFLINE + LOGO */}
+                        <div className="md:hidden bg-white p-4 border-b flex justify-between items-center relative">
+                            <div className="flex items-center gap-3">
+                                <LogoUploader restaurantId={restaurantId} className="w-10 h-10" />
+                                <h1 className="text-xl font-extrabold text-green-700">eHygiène<span className="text-green-400">.</span></h1>
+                            </div>
+                            {!isOnline && <div className="absolute left-1/2 transform -translate-x-1/2 bg-orange-100 text-orange-600 px-3 py-1 rounded-full text-xs font-bold border border-orange-200 flex items-center gap-1 shadow-sm"><Icon name="WifiOff" className="w-3 h-3"/> Hors Ligne</div>}
+                            <button onClick={handleLock} className="text-red-500"><Icon name="LogOut" className="w-6 h-6"/></button>
+                        </div>
+                         {/* HEADER DESKTOP BADGE OFFLINE */}
+                         <div className="hidden md:flex absolute top-4 right-10 z-50">
+                            {!isOnline && <div className="offline-badge"><Icon name="WifiOff" className="w-4 h-4"/> Mode Hors Ligne</div>}
+                        </div>
+
+                        <div className="flex-1 overflow-y-auto p-4 lg:p-10 w-full">
+                            <div className="max-w-5xl mx-auto w-full">
+                                {tab === 'traceability' && <TraceabilityModule restaurantId={restaurantId} />}
+                                {tab === 'temperature' && <TemperatureModule restaurantId={restaurantId} />}
+                                {tab === 'tracking' && <MonitoringModule restaurantId={restaurantId} />}
+                            </div>
+                        </div>
                     </main>
                 </div>
             );
         };
 
-        // LA GRANDE CORRECTION : On attend que Firebase crie "Prêt !" avant de lancer React
-        const startApp = () => {
-            const root = ReactDOM.createRoot(document.getElementById('root'));
-            root.render(<App />);
-        };
-
-        if (window.firebaseLoaded) {
-            startApp();
-        } else {
-            window.addEventListener('firebaseReady', startApp);
-        }
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
     </script>
 </body>
 </html>
